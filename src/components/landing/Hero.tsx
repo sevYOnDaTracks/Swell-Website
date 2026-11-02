@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, ShoppingBag, Sparkles } from "lucide-react";
 import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getPublishedProductions } from "@/lib/productions";
@@ -75,6 +75,7 @@ export async function Hero() {
             href="/boutique"
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-6 py-3 font-medium transition-colors hover:bg-white/10 sm:w-auto"
           >
+            <ShoppingBag size={18} />
             Boutique
             <ArrowRight size={18} />
           </Link>
