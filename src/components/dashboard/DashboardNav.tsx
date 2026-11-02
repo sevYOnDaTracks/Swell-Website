@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarPlus, Clock, Disc3, Gauge, ShoppingBag, Tags, UserRound } from "lucide-react";
+import { CalendarPlus, Clock, Disc3, Gauge, Settings, ShoppingBag, Tags, UserRound } from "lucide-react";
 
 const CLIENT_LINKS = [
   { href: "/compte", label: "Mon espace", Icon: UserRound },
   { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
+  { href: "/compte/profil", label: "Mon profil", Icon: Settings },
 ];
 
 const ADMIN_LINKS = [
@@ -20,7 +21,7 @@ const ADMIN_LINKS = [
 /** Menu de l'espace connecté : icônes avec info-bulle, la page active en blanc. */
 export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/admin" ? pathname === href : pathname.startsWith(href));
+  const isActive = (href: string) => (href === "/admin" || href === "/compte" ? pathname === href : pathname.startsWith(href));
 
   const renderLinks = (links: typeof CLIENT_LINKS) =>
     links.map(({ href, label, Icon }) => {

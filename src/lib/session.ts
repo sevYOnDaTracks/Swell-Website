@@ -10,8 +10,8 @@ import { auth } from "./auth";
 export async function getCurrentUser() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
-  const { id, name, email, role, createdAt } = session.user;
-  return { id, name, email, role: role ?? "user", createdAt };
+  const { id, name, email, image, role, createdAt } = session.user;
+  return { id, name, email, image: image ?? null, role: role ?? "user", createdAt };
 }
 
 export async function requireUser() {

@@ -16,6 +16,7 @@ export default function ConfidentialitePage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>Compte : nom ou nom d&apos;artiste, adresse email, mot de passe (stocké chiffré, jamais lisible).</li>
           <li>Connexion avec Google : nom, email et photo de profil transmis par Google.</li>
+          <li>Profil (facultatif) : numéro de téléphone, date de naissance et photo de profil, modifiables ou supprimables à tout moment depuis « Mon profil ».</li>
           <li>Réservations : service, date, créneau et message laissé lors de la réservation.</li>
           <li>Achats (à venir) : produits achetés et historique de téléchargement.</li>
           <li>Données techniques : adresse IP et navigateur, utilisés pour la sécurité des connexions.</li>
