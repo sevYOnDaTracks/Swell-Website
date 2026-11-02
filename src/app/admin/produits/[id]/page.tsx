@@ -40,6 +40,8 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           shortDescription: row.shortDescription,
           description: row.description,
           genres: row.genres,
+          platforms: row.platforms,
+          formats: row.formats,
           coverFile: row.coverFile,
           previewFile: row.previewFile,
           downloadFile: row.downloadFile,

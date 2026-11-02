@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Drum, Package, Piano, SlidersVertical } from "lucide-react";
 import type { ProductType } from "@/db/schema";
-import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { formatPrice, mediaUrl, PLATFORMS, productTypeLabels } from "@/lib/shop-format";
 import { PreviewButton } from "./PreviewButton";
 
 export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
@@ -20,6 +20,7 @@ type CardProduct = {
   priceCents: number;
   coverFile: string | null;
   previewFile: string | null;
+  platforms?: string[];
 };
 
 export function ProductCover({ product, sizes, eager }: { product: CardProduct; sizes: string; eager?: boolean }) {
@@ -43,9 +44,16 @@ export function ProductCard({ product }: { product: CardProduct }) {
         <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-[1.03]">
           <ProductCover product={product} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
         </div>
-        <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-xs text-white/90 backdrop-blur">
-          {productTypeLabels[product.type]}
-        </span>
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white/90 backdrop-blur">
+            {productTypeLabels[product.type]}
+          </span>
+          {PLATFORMS.filter((p) => product.platforms?.includes(p.value)).map((p) => (
+            <span key={p.value} title={`Compatible ${p.label}`} className="rounded-full bg-white px-2 py-1 text-xs font-medium text-black">
+              {p.short}
+            </span>
+          ))}
+        </div>
         {product.previewFile && (
           <div className="absolute bottom-3 right-3">
             <PreviewButton src={mediaUrl(product.previewFile)} label={product.name} />

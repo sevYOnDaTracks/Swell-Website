@@ -7,7 +7,8 @@ import { Footer } from "@/components/landing/Footer";
 import { ProductCover } from "@/components/shop/ProductCard";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { getProductBySlug } from "@/lib/shop";
-import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { fileFormat, formatBytes, formatLabel, formatPrice, mediaUrl, platformLabel, productTypeLabels } from "@/lib/shop-format";
+import { Monitor } from "lucide-react";
 
 export async function generateMetadata({ params }: PageProps<"/boutique/[slug]">) {
   const product = await getProductBySlug((await params).slug);
@@ -47,6 +48,24 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
         <p className="text-sm text-muted">{productTypeLabels[product.type]}</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{product.name}</h1>
         {product.shortDescription && <p className="mt-3 text-lg text-muted">{product.shortDescription}</p>}
+
+        {(product.platforms.length > 0 || product.formats.length > 0) && (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-white/10 bg-surface px-4 py-3 text-sm">
+            <Monitor size={18} className="mt-0.5 shrink-0 text-muted" />
+            <div>
+              {product.platforms.length > 0 && (
+                <p>
+                  <span className="text-muted">Compatible :</span> {product.platforms.map(platformLabel).join(" · ")}
+                </p>
+              )}
+              {product.formats.length > 0 && (
+                <p className="mt-0.5">
+                  <span className="text-muted">Formats :</span> {product.formats.map(formatLabel).join(", ")}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {product.genres.length > 0 && (
           <ul className="mt-5 flex flex-wrap gap-2">

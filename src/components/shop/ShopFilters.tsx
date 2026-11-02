@@ -4,14 +4,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
 import type { ProductType } from "@/db/schema";
-import { priceOptions, productTypeLabels, sortOptions } from "@/lib/shop-format";
+import { PLATFORMS, priceOptions, productTypeLabels, sortOptions } from "@/lib/shop-format";
 
-type Filters = { q?: string; type?: string; genre?: string; max?: number; sort?: string };
+type Filters = { q?: string; type?: string; genre?: string; max?: number; platform?: string; sort?: string };
 
 const select =
   "min-w-0 flex-1 rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-white/50 [color-scheme:dark]";
 
-export function ShopFilters({ filters, types, genres }: { filters: Filters; types: ProductType[]; genres: string[] }) {
+export function ShopFilters({
+  filters,
+  types,
+  genres,
+  showPlatform,
+}: {
+  filters: Filters;
+  types: ProductType[];
+  genres: string[];
+  showPlatform: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
@@ -20,7 +30,15 @@ export function ShopFilters({ filters, types, genres }: { filters: Filters; type
 
   function update(changes: Record<string, string | undefined>) {
     const params = new URLSearchParams();
-    const next = { q: filters.q, type: filters.type, genre: filters.genre, max: filters.max?.toString(), sort: filters.sort, ...changes };
+    const next = {
+      q: filters.q,
+      type: filters.type,
+      genre: filters.genre,
+      max: filters.max?.toString(),
+      platform: filters.platform,
+      sort: filters.sort,
+      ...changes,
+    };
     for (const [k, v] of Object.entries(next)) if (v && !(k === "sort" && v === "recent")) params.set(k, v);
     const query = params.toString();
     startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
@@ -37,7 +55,7 @@ export function ShopFilters({ filters, types, genres }: { filters: Filters; type
     // eslint-disable-next-line react-hooks/exhaustive-deps -- seule la saisie déclenche la recherche
   }, [q]);
 
-  const hasFilters = Boolean(filters.q || filters.type || filters.genre || filters.max !== undefined);
+  const hasFilters = Boolean(filters.q || filters.type || filters.genre || filters.platform || filters.max !== undefined);
 
   return (
     <div className="space-y-4">
@@ -53,13 +71,23 @@ export function ShopFilters({ filters, types, genres }: { filters: Filters; type
             className="w-full rounded-lg border border-white/10 bg-surface py-2.5 pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-white/50"
           />
         </label>
-        <div className="flex gap-2 sm:flex-none">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-none">
           {genres.length > 0 && (
             <select aria-label="Genre" value={filters.genre ?? ""} onChange={(e) => update({ genre: e.target.value || undefined })} className={select}>
               <option value="">Genres</option>
               {genres.map((g) => (
                 <option key={g} value={g}>
                   {g}
+                </option>
+              ))}
+            </select>
+          )}
+          {showPlatform && (
+            <select aria-label="Plateforme" value={filters.platform ?? ""} onChange={(e) => update({ platform: e.target.value || undefined })} className={select}>
+              <option value="">Win / Mac</option>
+              {PLATFORMS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
                 </option>
               ))}
             </select>
