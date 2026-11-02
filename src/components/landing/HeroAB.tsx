@@ -75,7 +75,7 @@ export function HeroAB({
           type="button"
           onClick={toggle}
           aria-label={playing ? "Mettre en pause" : "Écouter l'avant / après"}
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand text-black shadow-lg shadow-brand/30 transition-transform hover:scale-105"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-black shadow-lg shadow-white/10 transition-transform hover:scale-105"
         >
           {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
         </button>
@@ -95,7 +95,7 @@ export function HeroAB({
               type="button"
               aria-pressed={mixed === v.value}
               onClick={() => setMixed(v.value)}
-              className={`rounded-md px-3 py-1.5 transition-colors ${mixed === v.value ? (v.value ? "bg-brand text-black" : "bg-white text-black") : "text-muted hover:text-foreground"}`}
+              className={`rounded-md px-3 py-1.5 transition-colors ${mixed === v.value ? "bg-white text-black" : "text-muted hover:text-foreground"}`}
             >
               {v.label}
             </button>
@@ -109,7 +109,7 @@ export function HeroAB({
           return (
             <span
               key={i}
-              className={`flex-1 rounded-full transition-colors ${done ? (mixed ? "bg-brand" : "bg-white") : "bg-white/15"}`}
+              className={`flex-1 rounded-full transition-colors ${done ? (mixed ? "bg-white" : "bg-white/60") : "bg-white/15"}`}
               style={{ height: `${mixed ? h : Math.max(12, h * 0.55)}%` }}
             />
           );

@@ -8,7 +8,6 @@
   --muted: #9a9a9a;
   --primary: #fafafa;
   --accent: #d4d4d4;
-  --brand: #ff8a3d;
 }
 
 @theme inline {
@@ -19,7 +18,6 @@
   --color-muted: var(--muted);
   --color-primary: var(--primary);
   --color-accent: var(--accent);
-  --color-brand: var(--brand);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-unbounded);
@@ -37,13 +35,6 @@ body {
 
 .text-gradient {
   background: linear-gradient(90deg, #ffffff 0%, #8a8a8a 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.text-gradient-brand {
-  background: linear-gradient(90deg, #ffffff 0%, #ffb27a 45%, var(--brand) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

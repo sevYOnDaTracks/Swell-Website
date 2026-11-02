@@ -32,23 +32,23 @@ export async function Hero() {
     <section className="relative overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-white/[0.06] blur-[120px]" />
-      <div className="pointer-events-none absolute top-56 left-1/2 h-[360px] w-[620px] -translate-x-1/2 rounded-full bg-brand/[0.12] blur-[140px]" />
+      <div className="pointer-events-none absolute top-56 left-1/2 h-[360px] w-[620px] -translate-x-1/2 rounded-full bg-white/[0.04] blur-[140px]" />
 
       <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-20 text-center sm:px-6 sm:pt-28">
         {pluginCount > 0 ? (
           <Link
             href="/boutique?type=vst"
-            className="group inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs text-foreground transition-colors hover:border-brand/60"
+            className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-foreground transition-colors hover:border-white/40"
           >
-            <Sparkles size={13} className="text-brand" />
+            <Sparkles size={13} />
             <span>
-              <span className="font-semibold text-brand">Nouveau</span> · {pluginCount} plugin{pluginCount > 1 ? "s" : ""} Swell dans la boutique
+              <span className="font-semibold">Nouveau</span> · {pluginCount} plugin{pluginCount > 1 ? "s" : ""} Swell dans la boutique
             </span>
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
           </Link>
         ) : (
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             Sessions ouvertes · réservation en ligne
           </span>
         )}
@@ -56,7 +56,7 @@ export async function Hero() {
         <p className="mt-8 text-xs font-medium uppercase tracking-[0.25em] text-muted">Studio Swell · par sevyondatracks</p>
 
         <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-          Ton son, <span className="text-gradient-brand">prêt à sortir.</span>
+          Ton son, <span className="text-gradient">prêt à sortir.</span>
         </h1>
 
         <p className="mx-auto mt-6 max-w-xl text-base text-muted sm:text-lg">
@@ -110,7 +110,7 @@ export async function Hero() {
             <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm font-semibold">
               {artists.map((a, i) => (
                 <li key={a} className="flex items-center gap-3">
-                  {i > 0 && <span className="h-1 w-1 rounded-full bg-brand" aria-hidden />}
+                  {i > 0 && <span className="h-1 w-1 rounded-full bg-white/40" aria-hidden />}
                   {a}
                 </li>
               ))}
