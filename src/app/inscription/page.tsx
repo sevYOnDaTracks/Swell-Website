@@ -57,6 +57,17 @@ export default function SignUpPage() {
         <Field label="Confirmer le mot de passe" name="confirm" type="password" required minLength={8} autoComplete="new-password" />
         <FormError message={error} />
         <SubmitButton pending={pending}>Créer mon compte</SubmitButton>
+        <p className="text-center text-xs leading-relaxed text-muted">
+          En créant un compte, tu acceptes les{" "}
+          <Link href="/cgv" className="underline underline-offset-2 hover:text-foreground">
+            CGV
+          </Link>{" "}
+          et la{" "}
+          <Link href="/confidentialite" className="underline underline-offset-2 hover:text-foreground">
+            politique de confidentialité
+          </Link>
+          .
+        </p>
       </form>
     </AuthShell>
   );

@@ -96,6 +96,8 @@ export const booking = sqliteTable(
     endTime: text("end_time").notNull(),
     status: text("status", { enum: bookingStatuses }).notNull().default("pending"),
     notes: text("notes"),
+    // Rappel de la veille déjà envoyé (évite les doublons).
+    reminderSentAt: integer("reminder_sent_at", { mode: "timestamp_ms" }),
     ...timestamps,
   },
   (t) => [index("booking_date_idx").on(t.date), index("booking_user_id_idx").on(t.userId)],

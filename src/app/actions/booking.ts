@@ -2,9 +2,11 @@
 
 import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/db";
 import { availability, booking, bookingStatuses, type BookingStatus } from "@/db/schema";
 import { fromMinutes, getAvailableSlots, parisNow, toMinutes } from "@/lib/booking";
+import { sendBookingEmails } from "@/lib/booking-emails";
 import { getServiceById } from "@/lib/offers";
 import { requireAdmin, requireUser } from "@/lib/session";
 
@@ -31,14 +33,18 @@ export async function createBooking(input: {
     return { error: "Ce créneau vient d'être pris, choisis-en un autre." };
   }
 
-  await db.insert(booking).values({
-    userId: user.id,
-    service: service.id,
-    date: input.date,
-    startTime: input.startTime,
-    endTime: fromMinutes(toMinutes(input.startTime) + service.durationMinutes),
-    notes: input.notes.trim().slice(0, 1000) || null,
-  });
+  const [created] = await db
+    .insert(booking)
+    .values({
+      userId: user.id,
+      service: service.id,
+      date: input.date,
+      startTime: input.startTime,
+      endTime: fromMinutes(toMinutes(input.startTime) + service.durationMinutes),
+      notes: input.notes.trim().slice(0, 1000) || null,
+    })
+    .returning({ id: booking.id });
+  after(() => sendBookingEmails(created.id, "created"));
   return { ok: true };
 }
 
@@ -51,13 +57,18 @@ export async function cancelMyBooking(id: string) {
   if (!row || row.status === "cancelled" || row.date < parisNow().date) return;
 
   await db.update(booking).set({ status: "cancelled" }).where(eq(booking.id, id));
+  after(() => sendBookingEmails(id, "cancelled_by_client"));
   refresh();
 }
 
 export async function setBookingStatus(id: string, status: BookingStatus) {
   await requireAdmin();
   if (!bookingStatuses.includes(status)) return;
+  const [current] = await db.select({ status: booking.status }).from(booking).where(eq(booking.id, id));
+  if (!current || current.status === status) return;
   await db.update(booking).set({ status }).where(eq(booking.id, id));
+  if (status === "confirmed") after(() => sendBookingEmails(id, "confirmed"));
+  if (status === "cancelled") after(() => sendBookingEmails(id, "cancelled_by_admin"));
   refresh();
 }
 
