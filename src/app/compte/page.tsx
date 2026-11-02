@@ -104,7 +104,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
           >
             <EmptyState>
               Tes VST et drum kits achetés apparaîtront ici.{" "}
-              <Link href="/#boutique" className="text-foreground underline underline-offset-4">
+              <Link href="/boutique" className="text-foreground underline underline-offset-4">
                 Voir la boutique
               </Link>
             </EmptyState>
