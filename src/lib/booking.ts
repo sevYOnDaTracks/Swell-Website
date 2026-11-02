@@ -2,17 +2,13 @@ import "server-only";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { availability, booking } from "@/db/schema";
-import { bookingServices } from "./content";
+import { getServiceById } from "./offers";
 
 export const TIME_ZONE = "Europe/Paris";
 export const BOOKING_WINDOW_DAYS = 30;
 const SLOT_STEP = 60; // un créneau possible toutes les heures
 
 const DEFAULT_HOURS = { startTime: "10:00", endTime: "19:00" };
-
-export function getService(id: string) {
-  return bookingServices.find((s) => s.id === id);
-}
 
 export const toMinutes = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -79,8 +75,8 @@ export function isInBookingWindow(date: string) {
 
 /** Heures de début libres pour un service à une date donnée. */
 export async function getAvailableSlots(date: string, serviceId: string) {
-  const service = getService(serviceId);
-  if (!service || !isInBookingWindow(date)) return [];
+  const service = await getServiceById(serviceId);
+  if (!service?.bookable || !isInBookingWindow(date)) return [];
 
   const hours = (await getWeeklyHours())[weekdayOf(date)];
   if (!hours.enabled) return [];
@@ -98,8 +94,8 @@ export async function getAvailableSlots(date: string, serviceId: string) {
   const close = toMinutes(hours.endTime);
 
   const slots: string[] = [];
-  for (let start = open; start + service.duration <= close; start += SLOT_STEP) {
-    const end = start + service.duration;
+  for (let start = open; start + service.durationMinutes <= close; start += SLOT_STEP) {
+    const end = start + service.durationMinutes;
     const overlaps = taken.some(([s, e]) => start < e && end > s);
     if (start >= earliest && !overlaps) slots.push(fromMinutes(start));
   }

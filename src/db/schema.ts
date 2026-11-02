@@ -136,3 +136,39 @@ export const product = sqliteTable(
   },
   (t) => [index("product_type_idx").on(t.type)],
 );
+
+// --- Services et tarifs (modifiables depuis /admin/offres) ----------------
+
+export const service = sqliteTable("service", {
+  // Identifiant lisible ("mixing"), fixé à la création : les réservations y font référence.
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  icon: text("icon").notNull().default("sliders"),
+  durationMinutes: integer("duration_minutes").notNull().default(60),
+  bookable: integer("bookable", { mode: "boolean" }).notNull().default(true),
+  visible: integer("visible", { mode: "boolean" }).notNull().default(true),
+  position: integer("position").notNull().default(0),
+});
+
+export const plan = sqliteTable("plan", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  // Texte libre : "79 €", "Sur devis"...
+  price: text("price").notNull(),
+  unit: text("unit").notNull().default(""),
+  description: text("description").notNull().default(""),
+  features: text("features", { mode: "json" }).$type<string[]>().notNull().default([]),
+  highlighted: integer("highlighted", { mode: "boolean" }).notNull().default(false),
+  serviceId: text("service_id").references(() => service.id, { onDelete: "set null" }),
+  visible: integer("visible", { mode: "boolean" }).notNull().default(true),
+  position: integer("position").notNull().default(0),
+});
+
+// Petits réglages clé / valeur (ex : données par défaut déjà insérées).
+export const setting = sqliteTable("setting", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});

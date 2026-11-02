@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { DashboardShell, DashboardSkeleton } from "@/components/dashboard/DashboardShell";
 import { BookingForm } from "@/components/booking/BookingForm";
-import { bookingServices } from "@/lib/content";
+import { getBookableServices } from "@/lib/offers";
 import { getBookableDays } from "@/lib/booking";
 import { requireUser } from "@/lib/session";
 
@@ -18,12 +18,22 @@ export default function BookingPage({ searchParams }: PageProps<"/reserver">) {
 async function BookingContent({ searchParams }: Pick<PageProps<"/reserver">, "searchParams">) {
   const user = await requireUser();
   const { service } = await searchParams;
-  const days = await getBookableDays();
-  const initialService = bookingServices.some((s) => s.id === service) ? String(service) : undefined;
+  const [days, services] = await Promise.all([getBookableDays(), getBookableServices()]);
+  const initialService = services.some((s) => s.id === service) ? String(service) : undefined;
 
   return (
     <DashboardShell user={user} title="Réserver une session" subtitle="Choisis ton service, ta date et ton créneau.">
-      <BookingForm services={[...bookingServices]} days={days} initialService={initialService} />
+      {services.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center text-sm text-muted">
+          Aucun service n&apos;est réservable pour le moment.
+        </p>
+      ) : (
+        <BookingForm
+          services={services.map((s) => ({ id: s.id, label: s.name, duration: s.durationMinutes, description: s.description }))}
+          days={days}
+          initialService={initialService}
+        />
+      )}
     </DashboardShell>
   );
 }

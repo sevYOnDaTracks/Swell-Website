@@ -1,10 +1,11 @@
-import { Mic, Music, Plug, SlidersHorizontal } from "lucide-react";
-import { services, steps } from "@/lib/content";
+import { steps } from "@/lib/content";
+import { serviceIcon } from "@/lib/offer-icons";
+import { getServices } from "@/lib/offers";
 import { SectionHeading } from "./SectionHeading";
 
-const ICONS = { sliders: SlidersHorizontal, music: Music, mic: Mic, plug: Plug };
+export async function Services() {
+  const services = (await getServices()).filter((s) => s.visible);
 
-export function Services() {
   return (
     <section id="services" className="scroll-mt-20 py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -14,18 +15,18 @@ export function Services() {
           description="Du premier beat au master final, en studio ou à distance."
         />
 
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`mt-14 grid gap-4 sm:grid-cols-2 ${services.length % 4 === 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           {services.map((s) => {
-            const Icon = ICONS[s.icon];
+            const Icon = serviceIcon(s.icon);
             return (
               <article
-                key={s.title}
+                key={s.id}
                 className="group rounded-2xl border border-white/5 bg-surface p-6 transition-colors hover:border-white/25"
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-foreground transition-colors group-hover:bg-white/10">
                   <Icon size={20} />
                 </span>
-                <h3 className="mt-5 font-semibold">{s.title}</h3>
+                <h3 className="mt-5 font-semibold">{s.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{s.description}</p>
               </article>
             );

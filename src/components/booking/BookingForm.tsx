@@ -13,7 +13,8 @@ const dayMonth = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "U
 const fullDate = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 const asDate = (d: string) => new Date(`${d}T00:00:00Z`);
 
-const formatDuration = (min: number) => (min % 60 ? `${Math.floor(min / 60)}h${min % 60}` : `${min / 60}h`);
+const formatDuration = (min: number) =>
+  min < 60 ? `${min} min` : min % 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}` : `${min / 60}h`;
 
 export function BookingForm({
   services,

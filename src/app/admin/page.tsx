@@ -6,7 +6,8 @@ import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { AdminBookingActions } from "@/components/booking/BookingActions";
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
-import { formatDate, getService, parisNow } from "@/lib/booking";
+import { formatDate, parisNow } from "@/lib/booking";
+import { getServiceNames } from "@/lib/offers";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Admin — Swell" };
@@ -25,7 +26,7 @@ async function AdminContent() {
   const admin = await requireAdmin();
   const today = parisNow().date;
 
-  const [users, bookings] = await Promise.all([
+  const [users, bookings, serviceName] = await Promise.all([
     db
       .select({
         id: userTable.id,
@@ -52,6 +53,7 @@ async function AdminContent() {
       .innerJoin(userTable, eq(booking.userId, userTable.id))
       .where(and(gte(booking.date, today), ne(booking.status, "cancelled")))
       .orderBy(asc(booking.date), asc(booking.startTime)),
+    getServiceNames(),
   ]);
 
   const clients = users.filter((u) => u.role !== "admin");
@@ -96,7 +98,7 @@ async function AdminContent() {
                       <BookingStatusBadge status={b.status} />
                     </p>
                     <p className="mt-1 text-sm text-muted">
-                      {getService(b.service)?.label ?? b.service} — {b.clientName} ({b.clientEmail})
+                      {serviceName(b.service)} — {b.clientName} ({b.clientEmail})
                     </p>
                     {b.notes && <p className="mt-1 line-clamp-2 text-sm text-foreground/80">« {b.notes} »</p>}
                   </div>

@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { plans } from "@/lib/content";
+import { getPlans } from "@/lib/offers";
 import { SectionHeading } from "./SectionHeading";
 
-export function Pricing() {
+export async function Pricing() {
+  const plans = (await getPlans()).filter((p) => p.visible);
+  if (plans.length === 0) return null;
+
   return (
     <section id="tarifs" className="scroll-mt-20 py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -13,10 +16,10 @@ export function Pricing() {
           description="Choisis ta formule, réserve ton créneau, on s'occupe du reste."
         />
 
-        <div className="mt-14 grid gap-4 lg:grid-cols-3">
+        <div className={`mt-14 grid gap-4 ${plans.length === 1 ? "mx-auto max-w-md" : plans.length === 2 ? "mx-auto max-w-4xl md:grid-cols-2" : plans.length === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "lg:grid-cols-3"}`}>
           {plans.map((plan) => (
             <article
-              key={plan.name}
+              key={plan.id}
               className={`relative flex flex-col rounded-2xl border p-7 ${
                 plan.highlighted
                   ? "border-white/40 bg-gradient-to-b from-white/[0.06] to-surface shadow-xl shadow-black/40"
@@ -43,7 +46,7 @@ export function Pricing() {
                 ))}
               </ul>
               <Link
-                href={`/reserver?service=${plan.service}`}
+                href={plan.serviceId ? `/reserver?service=${plan.serviceId}` : "/reserver"}
                 className={`mt-8 rounded-lg px-4 py-2.5 text-center text-sm font-medium transition-colors ${
                   plan.highlighted
                     ? "bg-primary text-black hover:bg-neutral-200"

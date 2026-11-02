@@ -7,8 +7,8 @@ import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton } from "@/components/booking/BookingActions";
 import { db } from "@/db";
 import { booking } from "@/db/schema";
-import { bookingServices } from "@/lib/content";
-import { formatDate, getService, parisNow } from "@/lib/booking";
+import { formatDate, parisNow } from "@/lib/booking";
+import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
 
 export const metadata = { title: "Mon espace — Swell" };
@@ -27,7 +27,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
 
-  const [upcoming, past] = await Promise.all([
+  const [upcoming, past, serviceName, bookingServices] = await Promise.all([
     db
       .select()
       .from(booking)
@@ -39,6 +39,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
       .where(and(eq(booking.userId, user.id), lt(booking.date, today)))
       .orderBy(desc(booking.date))
       .limit(5),
+    getServiceNames(),
+    getBookableServices(),
   ]);
   const activeCount = upcoming.filter((b) => b.status !== "cancelled").length;
 
@@ -66,7 +68,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                 {upcoming.map((b) => (
                   <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                     <div>
-                      <p className="font-medium">{getService(b.service)?.label ?? b.service}</p>
+                      <p className="font-medium">{serviceName(b.service)}</p>
                       <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
                         <Clock size={13} />
                         <span className="capitalize">{formatDate(b.date)}</span> · {b.startTime} – {b.endTime}
@@ -86,7 +88,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                 <ul className="mt-2 space-y-1 text-muted">
                   {past.map((b) => (
                     <li key={b.id}>
-                      <span className="capitalize">{formatDate(b.date)}</span> · {getService(b.service)?.label ?? b.service}
+                      <span className="capitalize">{formatDate(b.date)}</span> · {serviceName(b.service)}
                     </li>
                   ))}
                 </ul>
@@ -119,7 +121,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                   href={`/reserver?service=${s.id}`}
                   className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-background/40 px-3 py-3 text-sm transition-colors hover:border-white/25"
                 >
-                  {s.label}
+                  {s.name}
                   <CalendarPlus size={16} className="text-muted" />
                 </Link>
               </li>

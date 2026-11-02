@@ -4,13 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { availability, booking, bookingStatuses, type BookingStatus } from "@/db/schema";
-import {
-  fromMinutes,
-  getAvailableSlots,
-  getService,
-  parisNow,
-  toMinutes,
-} from "@/lib/booking";
+import { fromMinutes, getAvailableSlots, parisNow, toMinutes } from "@/lib/booking";
+import { getServiceById } from "@/lib/offers";
 import { requireAdmin, requireUser } from "@/lib/session";
 
 // Chaque action revérifie la session : on ne fait jamais confiance au client.
@@ -27,8 +22,8 @@ export async function createBooking(input: {
   notes: string;
 }): Promise<{ error: string } | { ok: true }> {
   const user = await requireUser();
-  const service = getService(input.serviceId);
-  if (!service) return { error: "Service inconnu." };
+  const service = await getServiceById(input.serviceId);
+  if (!service?.bookable) return { error: "Service inconnu." };
 
   // Le créneau a pu être pris entre-temps : on recalcule juste avant d'écrire.
   const slots = await getAvailableSlots(input.date, service.id);
@@ -41,7 +36,7 @@ export async function createBooking(input: {
     service: service.id,
     date: input.date,
     startTime: input.startTime,
-    endTime: fromMinutes(toMinutes(input.startTime) + service.duration),
+    endTime: fromMinutes(toMinutes(input.startTime) + service.durationMinutes),
     notes: input.notes.trim().slice(0, 1000) || null,
   });
   return { ok: true };
