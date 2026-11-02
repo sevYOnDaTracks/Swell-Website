@@ -24,6 +24,12 @@ export function CallToAction() {
   );
 }
 
+const legalLinks = [
+  { href: "/mentions-legales", label: "Mentions légales" },
+  { href: "/cgv", label: "CGV" },
+  { href: "/confidentialite", label: "Confidentialité" },
+];
+
 export function Footer() {
   return (
     <footer className="border-t border-white/5 py-10">
@@ -40,6 +46,15 @@ export function Footer() {
         </ul>
         <p className="text-xs text-muted">© 2026 Swell</p>
       </div>
+      <ul className="mx-auto mt-6 flex max-w-6xl flex-wrap justify-center gap-x-5 gap-y-2 px-4 text-xs text-muted/80 sm:justify-end sm:px-6">
+        {legalLinks.map((l) => (
+          <li key={l.href}>
+            <Link href={l.href} className="hover:text-foreground">
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </footer>
   );
 }
