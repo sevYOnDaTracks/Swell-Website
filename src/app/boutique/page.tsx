@@ -17,7 +17,6 @@ export default function ShopPage({ searchParams }: PageProps<"/boutique">) {
       <Navbar />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-white/5">
-          <div className="bg-grid pointer-events-none absolute inset-0" />
           <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6">
             <p className="text-sm font-medium text-accent">Boutique</p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">VST, drum kits & sons</h1>

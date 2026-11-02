@@ -40,14 +40,6 @@ body {
   color: transparent;
 }
 
-.bg-grid {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
-}
-
 @keyframes wave {
   0%, 100% { transform: scaleY(0.35); }
   50% { transform: scaleY(1); }

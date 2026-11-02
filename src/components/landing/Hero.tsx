@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, Sparkles } from "lucide-react";
 import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getShopProducts } from "@/lib/shop";
@@ -28,12 +28,9 @@ export async function Hero() {
   const logos = HERO_DAWS.flatMap((name) => daws.filter((d) => d.name === name));
 
   return (
-    <section className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
-      <div className="bg-grid pointer-events-none absolute inset-0" />
-      <div className="pointer-events-none absolute -top-40 left-1/4 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-white/[0.06] blur-[120px]" />
-
-      <div className="relative mx-auto max-w-6xl px-4 pt-14 pb-20 sm:px-6 sm:pt-16 lg:pb-28">
+    // Sur grand écran, la hero tient en un seul écran (hauteur de la fenêtre moins le menu).
+    <section className="relative overflow-hidden lg:flex lg:min-h-[calc(100svh-4rem)] lg:flex-col lg:justify-center">
+      <div className="relative mx-auto w-full max-w-6xl px-4 pt-12 pb-16 sm:px-6 lg:py-10">
         <div className="flex justify-center">
           {pluginCount > 0 ? (
             <Link
@@ -56,7 +53,7 @@ export async function Hero() {
           )}
         </div>
 
-        <div className="mt-14 grid items-center gap-14 lg:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-10">
+        <div className="mt-12 grid items-center gap-12 lg:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-10">
           <div>
             <h1 className="text-5xl leading-[1.05] font-bold tracking-tight sm:text-6xl lg:text-7xl">
               Ton son,
@@ -64,12 +61,12 @@ export async function Hero() {
               prêt à sortir.
             </h1>
 
-            <p className="mt-8 max-w-lg text-lg leading-relaxed text-muted sm:text-xl">
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted sm:text-xl">
               Swell, c&apos;est le studio de <span className="text-foreground">sevyondatracks</span> : mix, prod et prise de
               voix à distance, plus les <span className="text-foreground">plugins Swell</span> pour ton DAW.
             </p>
 
-            <ul className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 text-foreground" aria-label="Logiciels utilisés">
+            <ul className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4 text-foreground" aria-label="Logiciels utilisés">
               {logos.map((d) => (
                 <li key={d.name} title={d.name} className="flex h-7 items-center gap-2 opacity-90">
                   {d.logo && d.image && (
@@ -94,16 +91,23 @@ export async function Hero() {
               ))}
             </ul>
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <Link
+                href="/reserver"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 font-medium whitespace-nowrap text-black shadow-lg shadow-white/10 transition-colors hover:bg-neutral-200"
+              >
+                <CalendarCheck size={18} />
+                Réserver ta session
+              </Link>
               <Link
                 href="/inscription"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-7 py-3.5 text-lg font-medium text-black shadow-lg shadow-white/10 transition-colors hover:bg-neutral-200"
+                className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/5"
               >
                 Inscription
               </Link>
               <Link
                 href="/boutique"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 px-7 py-3.5 text-lg font-medium transition-colors hover:bg-white/5"
+                className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-3.5 font-medium whitespace-nowrap text-muted transition-colors hover:text-foreground"
               >
                 Boutique
                 <ArrowRight size={18} />
@@ -118,8 +122,8 @@ export async function Hero() {
           </div>
 
           {/* La fenêtre déborde à droite de l'écran, comme une vraie session ouverte. */}
-          <div className="relative h-[220px] sm:h-[325px] md:h-[390px] lg:h-[520px]">
-            <div className="absolute top-0 left-0 origin-top-left scale-[0.42] sm:scale-[0.62] md:scale-[0.75] lg:scale-100">
+          <div className="relative h-[220px] sm:h-[325px] md:h-[390px] lg:h-[470px] xl:h-[520px]">
+            <div className="absolute top-0 left-0 origin-top-left scale-[0.42] sm:scale-[0.62] md:scale-[0.75] lg:scale-90 xl:scale-100">
               <StudioSession />
             </div>
           </div>
