@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 import { db } from "@/db";
 import { availability, booking } from "@/db/schema";
 import { getServiceById } from "./offers";
@@ -73,20 +73,34 @@ export function isInBookingWindow(date: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && date < addDays(today, BOOKING_WINDOW_DAYS);
 }
 
-/** Heures de début libres pour un service à une date donnée. */
-export async function getAvailableSlots(date: string, serviceId: string) {
+/** Plages occupées un jour donné. Une réservation « proposed » occupe le créneau proposé, pas l'ancien. */
+async function takenRanges(date: string, excludeId?: string) {
+  const rows = await db
+    .select()
+    .from(booking)
+    .where(and(ne(booking.status, "cancelled"), or(eq(booking.date, date), eq(booking.proposedDate, date))));
+  return rows
+    .filter((b) => b.id !== excludeId)
+    .flatMap((b) => {
+      if (b.status !== "proposed") return b.date === date ? [[toMinutes(b.startTime), toMinutes(b.endTime)]] : [];
+      return b.proposedDate === date && b.proposedStartTime && b.proposedEndTime
+        ? [[toMinutes(b.proposedStartTime), toMinutes(b.proposedEndTime)]]
+        : [];
+    });
+}
+
+/**
+ * Heures de début libres pour un service à une date donnée.
+ * excludeId : réservation dont on cherche un nouveau créneau (son créneau actuel ne compte pas).
+ */
+export async function getAvailableSlots(date: string, serviceId: string, excludeId?: string) {
   const service = await getServiceById(serviceId);
   if (!service?.bookable || !isInBookingWindow(date)) return [];
 
   const hours = (await getWeeklyHours())[weekdayOf(date)];
   if (!hours.enabled) return [];
 
-  const taken = (
-    await db
-      .select({ start: booking.startTime, end: booking.endTime })
-      .from(booking)
-      .where(and(eq(booking.date, date), ne(booking.status, "cancelled")))
-  ).map((b) => [toMinutes(b.start), toMinutes(b.end)]);
+  const taken = await takenRanges(date, excludeId);
 
   const now = parisNow();
   const earliest = date === now.date ? now.minutes + 60 : 0; // au moins 1h à l'avance

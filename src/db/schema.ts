@@ -82,7 +82,8 @@ export const verification = sqliteTable(
 
 // --- Réservations ---------------------------------------------------------
 
-export const bookingStatuses = ["pending", "confirmed", "cancelled"] as const;
+// "proposed" : l'admin a proposé un autre créneau, en attente de la réponse du client.
+export const bookingStatuses = ["pending", "confirmed", "cancelled", "proposed"] as const;
 export type BookingStatus = (typeof bookingStatuses)[number];
 
 export const booking = sqliteTable(
@@ -101,6 +102,11 @@ export const booking = sqliteTable(
     endTime: text("end_time").notNull(),
     status: text("status", { enum: bookingStatuses }).notNull().default("pending"),
     notes: text("notes"),
+    // Autre créneau proposé par l'admin (statut "proposed") ; il remplace date / heures si le client accepte.
+    proposedDate: text("proposed_date"),
+    proposedStartTime: text("proposed_start_time"),
+    proposedEndTime: text("proposed_end_time"),
+    proposalNote: text("proposal_note"),
     // Rappel de la veille déjà envoyé (évite les doublons).
     reminderSentAt: integer("reminder_sent_at", { mode: "timestamp_ms" }),
     ...timestamps,
