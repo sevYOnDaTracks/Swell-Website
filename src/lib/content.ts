@@ -45,7 +45,7 @@ export const faq = [
   },
   {
     q: "Comment fonctionne l'installation de plugins à distance ?",
-    a: "On prend un créneau, je me connecte à ton ordinateur avec ton accord via un logiciel de prise en main, et j'installe / configure tes plugins.",
+    a: "On prend un créneau, tu installes AnyDesk (gratuit) et, avec ton accord, je me connecte à ton ordinateur pour installer et configurer tes plugins.",
   },
   {
     q: "Les VST et drum kits sont-ils libres de droits ?",
