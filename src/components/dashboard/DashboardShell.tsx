@@ -58,6 +58,7 @@ function NavLinks({ isAdmin }: { isAdmin: boolean }) {
       {isAdmin && <NavLink href="/admin">Admin</NavLink>}
       {isAdmin && <NavLink href="/admin/disponibilites">Disponibilités</NavLink>}
       {isAdmin && <NavLink href="/admin/produits">Boutique</NavLink>}
+      {isAdmin && <NavLink href="/admin/offres">Services & tarifs</NavLink>}
     </>
   );
 }
