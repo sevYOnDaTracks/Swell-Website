@@ -15,8 +15,6 @@ export function AuthShell({
 }) {
   return (
     <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-      <div className="bg-grid pointer-events-none absolute inset-0" />
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[700px] -translate-x-1/2 rounded-full bg-white/[0.06] blur-[120px]" />
 
       <div className="relative w-full max-w-sm">
         <div className="flex justify-center">
