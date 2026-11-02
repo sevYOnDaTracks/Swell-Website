@@ -50,6 +50,9 @@ async function AdminContent() {
         endTime: booking.endTime,
         status: booking.status,
         notes: booking.notes,
+        proposedDate: booking.proposedDate,
+        proposedStartTime: booking.proposedStartTime,
+        proposedEndTime: booking.proposedEndTime,
         clientName: userTable.name,
         clientEmail: userTable.email,
         clientPhone: userTable.phone,
@@ -114,8 +117,14 @@ async function AdminContent() {
                       )}
                     </p>
                     {b.notes && <p className="mt-1 line-clamp-2 text-sm text-foreground/80">« {b.notes} »</p>}
+                    {b.status === "proposed" && b.proposedDate && (
+                      <p className="mt-1 text-sm">
+                        Proposé : <span className="capitalize">{formatDate(b.proposedDate)}</span> · {b.proposedStartTime} –{" "}
+                        {b.proposedEndTime} <span className="text-muted">— en attente du client</span>
+                      </p>
+                    )}
                   </div>
-                  <AdminBookingActions id={b.id} status={b.status} />
+                  <AdminBookingActions id={b.id} status={b.status} today={today} />
                 </li>
               ))}
             </ul>

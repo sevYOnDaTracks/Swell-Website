@@ -9,7 +9,15 @@ import { getServiceNames } from "./offers";
 // Emails liés aux réservations. Appelés via after() : ils partent une fois
 // la réponse envoyée, sans ralentir ni bloquer l'action.
 
-type Event = "created" | "confirmed" | "cancelled_by_admin" | "cancelled_by_client" | "reminder";
+type Event =
+  | "created"
+  | "confirmed"
+  | "cancelled_by_admin"
+  | "cancelled_by_client"
+  | "reminder"
+  | "proposed"
+  | "proposal_accepted"
+  | "proposal_declined";
 
 async function loadBooking(id: string) {
   const [row] = await db
@@ -20,6 +28,10 @@ async function loadBooking(id: string) {
       startTime: booking.startTime,
       endTime: booking.endTime,
       notes: booking.notes,
+      proposedDate: booking.proposedDate,
+      proposedStartTime: booking.proposedStartTime,
+      proposedEndTime: booking.proposedEndTime,
+      proposalNote: booking.proposalNote,
       clientName: user.name,
       clientEmail: user.email,
     })
@@ -93,6 +105,54 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
         subject: `Réservation annulée par le client — ${formatDate(b.date)} ${b.startTime}`,
         title: "Une réservation a été annulée",
         paragraphs: [`${b.clientName} (${b.clientEmail}) a annulé « ${serviceName} » prévue le ${when}.`, "Le créneau est de nouveau libre."],
+        cta: admin,
+      });
+      break;
+    case "proposed": {
+      if (!b.proposedDate) break;
+      const proposed = `${formatDate(b.proposedDate)} de ${b.proposedStartTime} à ${b.proposedEndTime}`;
+      await sendEmail({
+        to: b.clientEmail,
+        subject: `Nouveau créneau proposé — ${serviceName}`,
+        title: "Je te propose un autre créneau",
+        paragraphs: [
+          `Salut ${firstName},`,
+          `Le créneau que tu as demandé (${when}) ne m'est pas possible pour ta session « ${serviceName} ».`,
+          `Je te propose à la place : ${proposed}.`,
+          ...(b.proposalNote ? [`Mon message : « ${b.proposalNote} »`] : []),
+          "Accepte ou refuse depuis ton espace : si tu acceptes, ta session est confirmée directement.",
+        ],
+        cta: { label: "Répondre à la proposition", href: `${SITE_URL}/compte` },
+      });
+      break;
+    }
+    case "proposal_accepted":
+      await Promise.all([
+        sendEmail({
+          to: b.clientEmail,
+          subject: `Session confirmée — ${serviceName} le ${formatDate(b.date)}`,
+          title: "Ta session est confirmée ✅",
+          paragraphs: [`Salut ${firstName},`, `C'est validé : « ${serviceName} » le ${when}.`, "À très vite !"],
+          cta: account,
+        }),
+        sendEmail({
+          to: ADMIN_NOTIFY_EMAIL,
+          subject: `Créneau accepté : ${serviceName} — ${formatDate(b.date)} ${b.startTime}`,
+          title: "Le client a accepté ton créneau",
+          paragraphs: [`${b.clientName} (${b.clientEmail}) a accepté « ${serviceName} » le ${when}.`, "La session est confirmée."],
+          cta: admin,
+        }),
+      ]);
+      break;
+    case "proposal_declined":
+      await sendEmail({
+        to: ADMIN_NOTIFY_EMAIL,
+        subject: `Créneau refusé — ${serviceName}`,
+        title: "Le client a refusé ton créneau",
+        paragraphs: [
+          `${b.clientName} (${b.clientEmail}) a refusé le créneau proposé pour « ${serviceName} ».`,
+          "La réservation est annulée ; il peut en refaire une depuis le site.",
+        ],
         cta: admin,
       });
       break;

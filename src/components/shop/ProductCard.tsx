@@ -44,7 +44,7 @@ export function ProductCard({ product }: { product: CardProduct }) {
         <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-[1.03]">
           <ProductCover product={product} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
         </div>
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+        <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-1.5">
           <span className="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white/90 backdrop-blur">
             {productTypeLabels[product.type]}
           </span>

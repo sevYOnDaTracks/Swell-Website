@@ -5,7 +5,7 @@ import { CalendarPlus, CheckCircle2, Clock, Download, MonitorSmartphone } from "
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
-import { CancelMyBookingButton } from "@/components/booking/BookingActions";
+import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/BookingActions";
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
@@ -107,10 +107,24 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                     <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                       <div>
                         <p className="font-medium">{serviceName(b.service)}</p>
-                        <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
+                        <p className={`mt-0.5 flex items-center gap-1.5 text-sm text-muted ${b.status === "proposed" ? "line-through" : ""}`}>
                           <Clock size={13} />
                           <span className="capitalize">{formatDate(b.date)}</span> · {b.startTime} – {b.endTime}
                         </p>
+                        {b.status === "proposed" && b.proposedDate && (
+                          <div className="mt-3 rounded-xl border border-dashed border-white/30 p-3">
+                            <p className="text-sm">
+                              Nouveau créneau proposé :{" "}
+                              <span className="font-medium">
+                                <span className="capitalize">{formatDate(b.proposedDate)}</span> · {b.proposedStartTime} – {b.proposedEndTime}
+                              </span>
+                            </p>
+                            {b.proposalNote && <p className="mt-1 text-sm text-muted">« {b.proposalNote} »</p>}
+                            <div className="mt-3">
+                              <ProposalAnswer id={b.id} />
+                            </div>
+                          </div>
+                        )}
                         {REMOTE_SERVICES.has(b.service) && (
                           <a
                             href="#anydesk"
