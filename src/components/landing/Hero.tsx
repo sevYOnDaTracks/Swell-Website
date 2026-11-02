@@ -4,6 +4,7 @@ import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getShopProducts } from "@/lib/shop";
 import { HeroAB } from "./HeroAB";
+import { SignupButton } from "./SignupButton";
 import { StudioSession } from "./StudioSession";
 
 // Hauteurs pseudo-aléatoires mais fixes pour éviter un mismatch serveur/client.
@@ -99,12 +100,7 @@ export async function Hero() {
                 <CalendarCheck size={18} />
                 Réserver ta session
               </Link>
-              <Link
-                href="/inscription"
-                className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/5"
-              >
-                Inscription
-              </Link>
+              <SignupButton className="inline-flex items-center justify-center rounded-lg border border-white/20 px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/5" />
               <Link
                 href="/boutique"
                 className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-3.5 font-medium whitespace-nowrap text-muted transition-colors hover:text-foreground"
