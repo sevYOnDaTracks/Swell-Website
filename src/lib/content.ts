@@ -8,7 +8,17 @@ export const navLinks = [
   { label: "FAQ", href: "/#faq" },
 ];
 
-export const daws = ["FL Studio", "Ableton Live", "Logic Pro", "Pro Tools", "Cubase", "Studio One"];
+// Logiciels affichés sous l'accroche. "wordmark" : le logo contient déjà le nom ;
+// "icon" : petit logo suivi du nom ; sans logo : nom seul.
+// Les logos (public/daws) viennent de Wikimedia Commons et Simple Icons.
+export const daws: { name: string; logo?: string; kind?: "wordmark" | "icon"; ratio?: number; image?: boolean }[] = [
+  { name: "FL Studio", logo: "/daws/fl-studio.svg", kind: "wordmark", ratio: 1493 / 253 },
+  { name: "Ableton Live", logo: "/daws/ableton.svg", kind: "wordmark", ratio: 160 / 28 },
+  { name: "Logic Pro", logo: "/daws/logic-pro.png", kind: "icon", image: true },
+  { name: "Pro Tools", logo: "/daws/pro-tools.svg", kind: "icon" },
+  { name: "Cubase", logo: "/daws/cubase.svg", kind: "wordmark", ratio: 1729 / 486 },
+  { name: "Studio One" },
+];
 
 export const steps = [
   { title: "Crée ton compte", description: "En 30 secondes, pour suivre tes projets et tes achats." },
