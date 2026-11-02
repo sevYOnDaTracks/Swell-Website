@@ -7,6 +7,7 @@ import { ImagePlus, Loader2, Music } from "lucide-react";
 import { saveProduct } from "@/app/actions/products";
 import type { ProductType } from "@/db/schema";
 import { mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { DeliverableUpload } from "./DeliverableUpload";
 
 export type ProductFormValues = {
   id: string;
@@ -19,6 +20,9 @@ export type ProductFormValues = {
   genres: string[];
   coverFile: string | null;
   previewFile: string | null;
+  downloadFile: string | null;
+  downloadName: string | null;
+  downloadSize: number | null;
   published: boolean;
   featured: boolean;
 };
@@ -40,7 +44,8 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
     start(async () => {
       const result = await saveProduct(formData);
       if ("error" in result) return setError(result.error);
-      router.push("/admin/produits");
+      // Nouveau produit : on ouvre sa fiche pour pouvoir y joindre le fichier à livrer.
+      router.push(product ? "/admin/produits" : `/admin/produits/${result.id}?nouveau=1`);
     });
   }
 
@@ -164,6 +169,18 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           </label>
           <p className="mt-2 text-xs text-muted">MP3, WAV ou OGG, 15 Mo max.</p>
         </div>
+
+        {product ? (
+          <DeliverableUpload
+            productId={product.id}
+            current={product.downloadFile ? { name: product.downloadName ?? "fichier", size: product.downloadSize ?? 0 } : null}
+          />
+        ) : (
+          <div className="rounded-2xl border border-dashed border-white/10 p-5 text-sm text-muted">
+            <p className="font-medium text-foreground">Fichier à livrer</p>
+            <p className="mt-1">Crée d&apos;abord le produit : tu pourras ensuite y joindre le ZIP ou l&apos;installateur.</p>
+          </div>
+        )}
 
         <div className="space-y-3 rounded-2xl border border-white/5 bg-surface p-5 text-sm">
           <label className="flex items-center gap-3">

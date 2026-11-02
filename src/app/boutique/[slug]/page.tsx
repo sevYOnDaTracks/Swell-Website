@@ -7,7 +7,7 @@ import { Footer } from "@/components/landing/Footer";
 import { ProductCover } from "@/components/shop/ProductCard";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { getProductBySlug } from "@/lib/shop";
-import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
 
 export async function generateMetadata({ params }: PageProps<"/boutique/[slug]">) {
   const product = await getProductBySlug((await params).slug);
@@ -75,6 +75,12 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-surface p-5">
           <p className="text-3xl font-bold tracking-tight">{formatPrice(product.priceCents)}</p>
+          {product.downloadName && (
+            <p className="mt-1 text-sm text-muted">
+              Téléchargement : {fileFormat(product.downloadName)}
+              {product.downloadSize ? ` · ${formatBytes(product.downloadSize)}` : ""}
+            </p>
+          )}
           <button
             type="button"
             disabled
