@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, CalendarCheck } from "lucide-react";
 import { daws } from "@/lib/content";
 
@@ -26,20 +27,20 @@ export function Hero() {
         </p>
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a
+          <Link
             href="/reserver"
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-black shadow-lg shadow-white/10 transition-colors hover:bg-neutral-200 sm:w-auto"
           >
             <CalendarCheck size={18} />
             Réserver une session
-          </a>
-          <a
-            href="#boutique"
+          </Link>
+          <Link
+            href="/boutique"
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-6 py-3 font-medium transition-colors hover:bg-white/10 sm:w-auto"
           >
             Boutique
             <ArrowRight size={18} />
-          </a>
+          </Link>
         </div>
 
         <div

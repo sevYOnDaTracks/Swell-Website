@@ -108,3 +108,31 @@ export const availability = sqliteTable("availability", {
   startTime: text("start_time").notNull(),
   endTime: text("end_time").notNull(),
 });
+
+// --- Boutique -------------------------------------------------------------
+
+export const productTypes = ["vst", "drumkit", "samplepack", "preset"] as const;
+export type ProductType = (typeof productTypes)[number];
+
+export const product = sqliteTable(
+  "product",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    type: text("type", { enum: productTypes }).notNull(),
+    shortDescription: text("short_description").notNull().default(""),
+    description: text("description").notNull().default(""),
+    priceCents: integer("price_cents").notNull(),
+    genres: text("genres", { mode: "json" }).$type<string[]>().notNull().default([]),
+    // Noms de fichiers dans storage/uploads, servis par /media/<fichier>.
+    coverFile: text("cover_file"),
+    previewFile: text("preview_file"),
+    published: integer("published", { mode: "boolean" }).notNull().default(false),
+    featured: integer("featured", { mode: "boolean" }).notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [index("product_type_idx").on(t.type)],
+);

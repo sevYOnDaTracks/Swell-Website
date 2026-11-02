@@ -23,9 +23,9 @@ export function Navbar() {
         <ul className="hidden items-center gap-8 text-sm text-muted md:flex">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <a href={link.href} className="transition-colors hover:text-foreground">
+              <Link href={link.href} className="transition-colors hover:text-foreground">
                 {link.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -69,13 +69,13 @@ export function Navbar() {
           <ul className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <a
+                <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
                   className="block rounded-md px-2 py-3 text-muted hover:bg-white/5 hover:text-foreground"
                 >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

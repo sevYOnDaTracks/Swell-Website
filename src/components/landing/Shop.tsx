@@ -1,8 +1,13 @@
-import { ArrowRight, Drum, Piano } from "lucide-react";
-import { products } from "@/lib/content";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { ProductCard } from "@/components/shop/ProductCard";
+import { getFeaturedProducts } from "@/lib/shop";
 import { SectionHeading } from "./SectionHeading";
 
-export function Shop() {
+export async function Shop() {
+  const products = await getFeaturedProducts();
+  if (products.length === 0) return null;
+
   return (
     <section id="boutique" className="scroll-mt-20 border-y border-white/5 bg-surface/40 py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -12,33 +17,19 @@ export function Shop() {
           description="Des sons testés en vraie session, prêts à glisser dans ton DAW."
         />
 
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
-          {products.map((p) => {
-            const Icon = p.type === "VST" ? Piano : Drum;
-            return (
-              <article key={p.name} className="overflow-hidden rounded-2xl border border-white/5 bg-surface">
-                <div className="relative flex h-40 items-center justify-center bg-gradient-to-br from-white/10 via-surface-2 to-white/[0.02]">
-                  <Icon size={44} className="text-white/80" />
-                  <span className="absolute left-4 top-4 rounded-full bg-black/40 px-2.5 py-1 text-xs text-white/80">
-                    {p.type}
-                  </span>
-                </div>
-                <div className="flex items-end justify-between p-5">
-                  <div>
-                    <h3 className="font-semibold">{p.name}</h3>
-                    <p className="mt-1 text-sm text-muted">{p.detail}</p>
-                  </div>
-                  <span className="font-semibold text-accent">{p.price}</span>
-                </div>
-              </article>
-            );
-          })}
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
 
         <div className="mt-10 text-center">
-          <a href="#" className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline hover:text-white">
+          <Link
+            href="/boutique"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-white/10"
+          >
             Voir toute la boutique <ArrowRight size={16} />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

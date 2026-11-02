@@ -2,10 +2,10 @@
 // les services, les prix, les produits ou la FAQ sans toucher aux composants.
 
 export const navLinks = [
-  { label: "Services", href: "#services" },
-  { label: "Boutique", href: "#boutique" },
-  { label: "Tarifs", href: "#tarifs" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Services", href: "/#services" },
+  { label: "Boutique", href: "/boutique" },
+  { label: "Tarifs", href: "/#tarifs" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export const daws = ["FL Studio", "Ableton Live", "Logic Pro", "Pro Tools", "Cubase", "Studio One"];
@@ -37,12 +37,6 @@ export const steps = [
   { title: "Crée ton compte", description: "En 30 secondes, pour suivre tes projets et tes achats." },
   { title: "Réserve ton créneau", description: "Choisis le service et la date qui te conviennent." },
   { title: "Reçois ton son", description: "Fichiers livrés dans ton espace, révisions incluses." },
-];
-
-export const products = [
-  { name: "Swell Drums Vol. 1", type: "Drum kit", detail: "120+ one-shots & loops", price: "29 €" },
-  { name: "Night Keys", type: "VST", detail: "Synthé ambient & pads", price: "49 €" },
-  { name: "808 Lab", type: "Drum kit", detail: "60 808 calibrées", price: "19 €" },
 ];
 
 export const plans = [

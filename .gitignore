@@ -44,3 +44,6 @@ next-env.d.ts
 *.db
 *.db-*
 !.env.example
+
+# fichiers envoyés depuis l admin
+/storage
