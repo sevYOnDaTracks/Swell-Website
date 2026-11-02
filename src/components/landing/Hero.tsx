@@ -58,9 +58,28 @@ export function Hero() {
 
         <div className="mt-12">
           <p className="text-xs uppercase tracking-widest text-muted/70">Je travaille sur</p>
-          <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-medium text-muted">
+          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6 text-muted">
             {daws.map((d) => (
-              <li key={d}>{d}</li>
+              <li key={d.name} title={d.name} className="flex h-7 items-center gap-2.5 opacity-80 transition-opacity hover:opacity-100">
+                {d.logo && d.image && (
+                  // eslint-disable-next-line @next/next/no-img-element -- petite icône statique
+                  <img src={d.logo} alt="" className="h-7 w-7 opacity-90" />
+                )}
+                {d.logo && !d.image && (
+                  // Logo passé en couleur unie via un masque CSS (s'adapte au thème noir et blanc).
+                  <span
+                    aria-hidden
+                    className="block h-full bg-current"
+                    style={{
+                      aspectRatio: d.ratio ?? 1,
+                      height: d.kind === "wordmark" ? "1.35rem" : "1.6rem",
+                      mask: `url(${d.logo}) center / contain no-repeat`,
+                      WebkitMask: `url(${d.logo}) center / contain no-repeat`,
+                    }}
+                  />
+                )}
+                <span className={d.kind === "wordmark" ? "sr-only" : "text-sm font-semibold"}>{d.name}</span>
+              </li>
             ))}
           </ul>
         </div>
