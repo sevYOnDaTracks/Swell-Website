@@ -3,10 +3,11 @@ import { Suspense } from "react";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import { CalendarPlus, CheckCircle2, Clock, Download, MonitorSmartphone } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
+import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton } from "@/components/booking/BookingActions";
 import { db } from "@/db";
-import { booking } from "@/db/schema";
+import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
@@ -36,7 +37,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
 
-  const [upcoming, past, serviceName, bookingServices] = await Promise.all([
+  const [upcoming, past, serviceName, bookingServices, [me]] = await Promise.all([
     db
       .select()
       .from(booking)
@@ -50,6 +51,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
       .limit(50),
     getServiceNames(),
     getBookableServices(),
+    db.select({ onboardedAt: userTable.onboardedAt }).from(userTable).where(eq(userTable.id, user.id)),
   ]);
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
@@ -63,6 +65,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
   return (
     <DashboardShell user={user} title={`Salut ${firstName} 👋`} subtitle="Retrouve ici tes réservations et tes achats.">
+      {!me?.onboardedAt && <OnboardingTour firstName={firstName} />}
       {reservation === "ok" && (
         <p className="mb-6 flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm">
           <CheckCircle2 size={18} className="shrink-0" /> Réservation envoyée ! Elle passera en « Confirmée » dès que

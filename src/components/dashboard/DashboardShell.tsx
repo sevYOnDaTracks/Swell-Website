@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { Logo } from "@/components/landing/Logo";
+import { Avatar } from "./Avatar";
 import { DashboardNav } from "./DashboardNav";
 import { SignOutButton } from "./SignOutButton";
 
-type User = { name: string; email: string; role: string };
+type User = { name: string; email: string; image?: string | null; role: string };
 
 export function DashboardShell({
   user,
@@ -29,10 +31,13 @@ export function DashboardShell({
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium leading-tight">{user.name}</p>
-              <p className="text-xs text-muted">{user.email}</p>
-            </div>
+            <Link href="/compte/profil" aria-label="Mon profil" className="flex items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/5">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-medium leading-tight">{user.name}</p>
+                <p className="text-xs text-muted">{user.email}</p>
+              </div>
+              <Avatar name={user.name} image={user.image} size={34} />
+            </Link>
             <SignOutButton />
           </div>
         </div>

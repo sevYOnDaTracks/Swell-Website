@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { and, asc, desc, eq, gte, ne } from "drizzle-orm";
 import { CalendarCheck, Hourglass, ShoppingBag, Users } from "lucide-react";
+import { Avatar } from "@/components/dashboard/Avatar";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { AdminBookingActions } from "@/components/booking/BookingActions";
@@ -8,6 +9,7 @@ import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getServiceNames } from "@/lib/offers";
+import { formatPhone, phoneHref } from "@/lib/phone";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Admin — Swell" };
@@ -32,6 +34,8 @@ async function AdminContent() {
         id: userTable.id,
         name: userTable.name,
         email: userTable.email,
+        image: userTable.image,
+        phone: userTable.phone,
         role: userTable.role,
         createdAt: userTable.createdAt,
       })
@@ -48,6 +52,7 @@ async function AdminContent() {
         notes: booking.notes,
         clientName: userTable.name,
         clientEmail: userTable.email,
+        clientPhone: userTable.phone,
       })
       .from(booking)
       .innerJoin(userTable, eq(booking.userId, userTable.id))
@@ -99,6 +104,14 @@ async function AdminContent() {
                     </p>
                     <p className="mt-1 text-sm text-muted">
                       {serviceName(b.service)} — {b.clientName} ({b.clientEmail})
+                      {b.clientPhone && (
+                        <>
+                          {" · "}
+                          <a href={phoneHref(b.clientPhone)} className="whitespace-nowrap text-foreground hover:underline">
+                            {formatPhone(b.clientPhone)}
+                          </a>
+                        </>
+                      )}
                     </p>
                     {b.notes && <p className="mt-1 line-clamp-2 text-sm text-foreground/80">« {b.notes} »</p>}
                   </div>
@@ -114,11 +127,12 @@ async function AdminContent() {
             <EmptyState>Aucun utilisateur.</EmptyState>
           ) : (
             <div className="-mx-6 overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left text-sm">
+              <table className="w-full min-w-[680px] text-left text-sm">
                 <thead className="text-xs uppercase tracking-wider text-muted">
                   <tr className="border-b border-white/5">
                     <th className="px-6 py-3 font-medium">Nom</th>
                     <th className="px-6 py-3 font-medium">Email</th>
+                    <th className="px-6 py-3 font-medium">Téléphone</th>
                     <th className="px-6 py-3 font-medium">Rôle</th>
                     <th className="px-6 py-3 font-medium">Inscrit le</th>
                   </tr>
@@ -126,8 +140,22 @@ async function AdminContent() {
                 <tbody className="divide-y divide-white/5">
                   {users.map((u) => (
                     <tr key={u.id} className="hover:bg-white/[0.02]">
-                      <td className="px-6 py-3 font-medium">{u.name}</td>
+                      <td className="px-6 py-3 font-medium">
+                        <span className="flex items-center gap-2.5">
+                          <Avatar name={u.name} image={u.image} size={28} />
+                          {u.name}
+                        </span>
+                      </td>
                       <td className="px-6 py-3 text-muted">{u.email}</td>
+                      <td className="px-6 py-3 whitespace-nowrap text-muted">
+                        {u.phone ? (
+                          <a href={phoneHref(u.phone)} className="hover:text-foreground hover:underline">
+                            {formatPhone(u.phone)}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="px-6 py-3">
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs ${
