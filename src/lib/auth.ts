@@ -19,6 +19,8 @@ const google =
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
+  // Le site répond aussi sur www : sans ça, la connexion y est refusée (INVALID_ORIGIN).
+  trustedOrigins: ["https://swell-audio.fr", "https://www.swell-audio.fr"],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
