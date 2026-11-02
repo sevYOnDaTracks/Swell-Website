@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell, Field, FormError, SubmitButton } from "@/components/auth/AuthShell";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
 
 export default function SignInPage() {
@@ -47,7 +48,8 @@ export default function SignInPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-4">
+      <GoogleButton label="Continuer avec Google" />
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <Field label="Email" name="email" type="email" required autoComplete="email" placeholder="toi@exemple.com" />
         <Field label="Mot de passe" name="password" type="password" required autoComplete="current-password" />
         <FormError message={error} />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell, Field, FormError, SubmitButton } from "@/components/auth/AuthShell";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
 
 export default function SignUpPage() {
@@ -48,7 +49,8 @@ export default function SignUpPage() {
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-4">
+      <GoogleButton label="S'inscrire avec Google" />
+      <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <Field label="Nom d'artiste ou nom" name="name" required autoComplete="name" placeholder="Sevy" />
         <Field label="Email" name="email" type="email" required autoComplete="email" placeholder="toi@exemple.com" />
         <Field label="Mot de passe" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="8 caractères minimum" />
