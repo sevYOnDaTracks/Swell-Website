@@ -2,6 +2,7 @@
 // depuis /admin/offres, les produits depuis /admin/produits.
 
 export const navLinks = [
+  { label: "Productions", href: "/#productions" },
   { label: "Services", href: "/#services" },
   { label: "Boutique", href: "/boutique" },
   { label: "Tarifs", href: "/#tarifs" },

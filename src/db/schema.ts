@@ -172,3 +172,22 @@ export const setting = sqliteTable("setting", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+// --- Dernières productions (section de l'accueil, gérée depuis /admin/productions)
+
+export const production = sqliteTable("production", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  artist: text("artist").notNull().default(""),
+  // Ton rôle sur le titre : "Mix & Master", "Prod", "Prise de voix"...
+  role: text("role").notNull().default(""),
+  coverFile: text("cover_file"),
+  audioFile: text("audio_file"),
+  // Lien d'écoute externe (Spotify, YouTube, SoundCloud...).
+  link: text("link"),
+  published: integer("published", { mode: "boolean" }).notNull().default(true),
+  position: integer("position").notNull().default(0),
+  ...timestamps,
+});
