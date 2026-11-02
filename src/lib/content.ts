@@ -21,6 +21,13 @@ export const daws: { name: string; logo?: string; kind?: "wordmark" | "icon"; ra
   { name: "Studio One" },
 ];
 
+// Lecteur avant / après de l'accueil : la même voix brute puis mixée.
+// Dépose les deux fichiers dans public/hero/ (MP3 conseillé, même durée et même début)
+// puis renseigne-les ici. Tant que c'est null, l'accueil affiche l'onde animée.
+export const heroDemo: { title: string; artist: string; before: string; after: string } | null = null;
+// Exemple :
+// export const heroDemo = { title: "Nom du titre", artist: "Artiste", before: "/hero/avant.mp3", after: "/hero/apres.mp3" };
+
 export const steps = [
   { title: "Crée ton compte", description: "En 30 secondes, pour suivre tes projets et tes achats." },
   { title: "Réserve ton créneau", description: "Choisis le service et la date qui te conviennent." },
