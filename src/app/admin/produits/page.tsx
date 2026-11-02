@@ -7,7 +7,7 @@ import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/component
 import { ProductRowActions } from "@/components/shop/ProductRowActions";
 import { db } from "@/db";
 import { product } from "@/db/schema";
-import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Produits — Swell" };
@@ -60,6 +60,7 @@ async function AdminProductsContent() {
                   <p className="mt-0.5 text-sm text-muted">
                     {productTypeLabels[p.type]} · {formatPrice(p.priceCents)}
                     {p.genres.length > 0 && ` · ${p.genres.join(", ")}`}
+                    {p.downloadName ? ` · ${fileFormat(p.downloadName)} ${formatBytes(p.downloadSize ?? 0)}` : " · sans fichier"}
                   </p>
                 </div>
                 <span

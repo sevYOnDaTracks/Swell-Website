@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/landing/Logo";
+import { DashboardNav } from "./DashboardNav";
 import { SignOutButton } from "./SignOutButton";
 
 type User = { name: string; email: string; role: string };
@@ -24,8 +24,8 @@ export function DashboardShell({
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-6">
             <Logo />
-            <nav className="hidden gap-1 text-sm xl:flex">
-              <NavLinks isAdmin={isAdmin} />
+            <nav aria-label="Espace" className="hidden md:block">
+              <DashboardNav isAdmin={isAdmin} />
             </nav>
           </div>
           <div className="flex items-center gap-3">
@@ -36,8 +36,8 @@ export function DashboardShell({
             <SignOutButton />
           </div>
         </div>
-        <nav className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 pb-3 text-sm sm:px-6 xl:hidden">
-          <NavLinks isAdmin={isAdmin} />
+        <nav aria-label="Espace" className="mx-auto flex max-w-6xl justify-center px-4 pb-3 md:hidden">
+          <DashboardNav isAdmin={isAdmin} />
         </nav>
       </header>
 
@@ -47,28 +47,6 @@ export function DashboardShell({
         <div className="mt-8">{children}</div>
       </main>
     </div>
-  );
-}
-
-function NavLinks({ isAdmin }: { isAdmin: boolean }) {
-  return (
-    <>
-      <NavLink href="/compte">Mon espace</NavLink>
-      <NavLink href="/reserver">Réserver</NavLink>
-      {isAdmin && <NavLink href="/admin">Admin</NavLink>}
-      {isAdmin && <NavLink href="/admin/disponibilites">Disponibilités</NavLink>}
-      {isAdmin && <NavLink href="/admin/productions">Productions</NavLink>}
-      {isAdmin && <NavLink href="/admin/produits">Boutique</NavLink>}
-      {isAdmin && <NavLink href="/admin/offres">Services & tarifs</NavLink>}
-    </>
-  );
-}
-
-function NavLink({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link href={href} className="whitespace-nowrap rounded-md px-3 py-1.5 text-muted transition-colors hover:bg-white/5 hover:text-foreground">
-      {children}
-    </Link>
   );
 }
 

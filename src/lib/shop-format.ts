@@ -30,3 +30,12 @@ export const priceOptions = [
   { value: "50", label: "Moins de 50 €" },
   { value: "100", label: "Moins de 100 €" },
 ] as const;
+
+export function formatBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0).replace(".", ",")} Mo`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2).replace(".", ",")} Go`;
+}
+
+/** Format affiché du fichier livré ("ZIP", "DMG"...). */
+export const fileFormat = (name: string) => name.split(".").pop()?.toUpperCase() ?? "";

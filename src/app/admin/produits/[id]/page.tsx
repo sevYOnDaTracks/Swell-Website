@@ -9,22 +9,27 @@ import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Modifier un produit — Swell" };
 
-export default function EditProductPage({ params }: PageProps<"/admin/produits/[id]">) {
+export default function EditProductPage({ params, searchParams }: PageProps<"/admin/produits/[id]">) {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <EditProductContent params={params} />
+      <EditProductContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function EditProductContent({ params }: Pick<PageProps<"/admin/produits/[id]">, "params">) {
+async function EditProductContent({ params, searchParams }: PageProps<"/admin/produits/[id]">) {
   const admin = await requireAdmin();
-  const { id } = await params;
+  const [{ id }, { nouveau }] = await Promise.all([params, searchParams]);
   const [row] = await db.select().from(product).where(eq(product.id, id));
   if (!row) notFound();
 
   return (
     <DashboardShell user={admin} title={row.name} subtitle="Modifier le produit">
+      {nouveau && (
+        <p className="mb-6 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm">
+          Produit créé. Ajoute maintenant le fichier à livrer (ZIP, installateur…) dans le bloc à droite.
+        </p>
+      )}
       <ProductForm
         product={{
           id: row.id,
@@ -37,6 +42,9 @@ async function EditProductContent({ params }: Pick<PageProps<"/admin/produits/[i
           genres: row.genres,
           coverFile: row.coverFile,
           previewFile: row.previewFile,
+          downloadFile: row.downloadFile,
+          downloadName: row.downloadName,
+          downloadSize: row.downloadSize,
           published: row.published,
           featured: row.featured,
         }}

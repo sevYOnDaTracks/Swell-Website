@@ -6,9 +6,10 @@ import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
 import { PRODUCTS_TAG, slugify } from "@/lib/shop";
+import { deletePrivateFile } from "@/lib/private-storage";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
 
-type Result = { error: string } | { ok: true };
+type Result = { error: string } | { ok: true; id: string };
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 const file = (formData: FormData, key: string) => {
@@ -80,11 +81,12 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     featured: formData.get("featured") === "on",
   };
 
+  let savedId = existing?.id;
   if (existing) await db.update(product).set(values).where(eq(product.id, existing.id));
-  else await db.insert(product).values(values);
+  else [{ id: savedId }] = await db.insert(product).values(values).returning({ id: product.id });
 
   updateTag(PRODUCTS_TAG);
-  return { ok: true };
+  return { ok: true, id: savedId! };
 }
 
 export async function setProductPublished(id: string, published: boolean) {
@@ -99,7 +101,17 @@ export async function deleteProduct(id: string) {
   const [row] = await db.select().from(product).where(eq(product.id, id));
   if (!row) return;
   await db.delete(product).where(eq(product.id, id));
-  await Promise.all([deleteUpload(row.coverFile), deleteUpload(row.previewFile)]);
+  await Promise.all([deleteUpload(row.coverFile), deleteUpload(row.previewFile), deletePrivateFile(row.downloadFile)]);
+  updateTag(PRODUCTS_TAG);
+  refresh();
+}
+
+export async function removeProductFile(id: string) {
+  await requireAdmin();
+  const [row] = await db.select().from(product).where(eq(product.id, id));
+  if (!row?.downloadFile) return;
+  await db.update(product).set({ downloadFile: null, downloadName: null, downloadSize: null }).where(eq(product.id, id));
+  await deletePrivateFile(row.downloadFile);
   updateTag(PRODUCTS_TAG);
   refresh();
 }

@@ -130,6 +130,10 @@ export const product = sqliteTable(
     // Noms de fichiers dans storage/uploads, servis par /media/<fichier>.
     coverFile: text("cover_file"),
     previewFile: text("preview_file"),
+    // Fichier livré à l'acheteur (stockage privé, jamais servi par /media).
+    downloadFile: text("download_file"),
+    downloadName: text("download_name"),
+    downloadSize: integer("download_size"),
     published: integer("published", { mode: "boolean" }).notNull().default(false),
     featured: integer("featured", { mode: "boolean" }).notNull().default(false),
     ...timestamps,
