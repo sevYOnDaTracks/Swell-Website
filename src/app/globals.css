@@ -58,7 +58,29 @@ body {
   animation: wave 1.4s ease-in-out infinite;
 }
 
+/* Session de mixage de l'accueil : tête de lecture et vumètres */
+@keyframes studio-playhead {
+  from { left: 5rem; }
+  to { left: 100%; }
+}
+
+.studio-playhead {
+  animation: studio-playhead 16s linear infinite;
+}
+
+@keyframes studio-meter {
+  0%, 100% { transform: scaleY(0.45); }
+  30% { transform: scaleY(0.85); }
+  55% { transform: scaleY(0.6); }
+  80% { transform: scaleY(0.95); }
+}
+
+.studio-meter {
+  animation: studio-meter 0.9s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .studio-playhead, .studio-meter { animation: none; }
   .wave-bar { animation: none; }
   html { scroll-behavior: auto; }
 }
