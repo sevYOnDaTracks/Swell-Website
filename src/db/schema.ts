@@ -127,6 +127,9 @@ export const product = sqliteTable(
     description: text("description").notNull().default(""),
     priceCents: integer("price_cents").notNull(),
     genres: text("genres", { mode: "json" }).$type<string[]>().notNull().default([]),
+    // Compatibilité des VST : plateformes ("windows", "mac") et formats ("vst3", "au"...).
+    platforms: text("platforms", { mode: "json" }).$type<string[]>().notNull().default([]),
+    formats: text("formats", { mode: "json" }).$type<string[]>().notNull().default([]),
     // Noms de fichiers dans storage/uploads, servis par /media/<fichier>.
     coverFile: text("cover_file"),
     previewFile: text("preview_file"),

@@ -13,6 +13,7 @@ export type ShopFilters = {
   type?: ProductType;
   genre?: string;
   max?: number;
+  platform?: "windows" | "mac";
   sort?: "recent" | "price-asc" | "price-desc";
 };
 
@@ -32,6 +33,7 @@ export async function getShopProducts(filters: ShopFilters) {
       (!filters.type || p.type === filters.type) &&
       (!filters.genre || p.genres.includes(filters.genre)) &&
       (filters.max === undefined || p.priceCents <= filters.max * 100) &&
+      (!filters.platform || p.platforms.includes(filters.platform)) &&
       (!q || `${p.name} ${p.shortDescription} ${p.genres.join(" ")}`.toLowerCase().includes(q)),
   );
 
@@ -40,7 +42,8 @@ export async function getShopProducts(filters: ShopFilters) {
 
   const genres = [...new Set(all.flatMap((p) => p.genres))].sort((a, b) => a.localeCompare(b, "fr"));
   const types = productTypes.filter((t) => all.some((p) => p.type === t));
-  return { items, genres, types, total: all.length };
+  const hasPlatforms = all.some((p) => p.platforms.length > 0);
+  return { items, genres, types, hasPlatforms, total: all.length };
 }
 
 export async function getProductBySlug(slug: string) {
@@ -65,11 +68,13 @@ export function parseFilters(params: Record<string, string | string[] | undefine
   const type = get("type");
   const max = get("max");
   const sort = get("sort");
+  const platform = get("platform");
   return {
     q: get("q"),
     type: productTypes.includes(type as ProductType) ? (type as ProductType) : undefined,
     genre: get("genre"),
     max: max !== undefined && /^\d+$/.test(max) ? Number(max) : undefined,
+    platform: platform === "windows" || platform === "mac" ? platform : undefined,
     sort: sort === "price-asc" || sort === "price-desc" ? sort : "recent",
   };
 }

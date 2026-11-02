@@ -23,6 +23,24 @@ export const sortOptions = [
   { value: "price-desc", label: "Prix décroissant" },
 ] as const;
 
+export const PLATFORMS = [
+  { value: "windows", label: "Windows", short: "Win" },
+  { value: "mac", label: "macOS", short: "Mac" },
+] as const;
+
+export const PLUGIN_FORMATS = [
+  { value: "vst3", label: "VST3" },
+  { value: "au", label: "AU", hint: "Logic, GarageBand" },
+  { value: "aax", label: "AAX", hint: "Pro Tools" },
+  { value: "standalone", label: "Standalone" },
+] as const;
+
+/** Les cases de compatibilité ne concernent que les plugins. */
+export const hasCompatibility = (type: string) => type === "vst";
+
+export const platformLabel = (v: string) => PLATFORMS.find((p) => p.value === v)?.label ?? v;
+export const formatLabel = (v: string) => PLUGIN_FORMATS.find((f) => f.value === v)?.label ?? v;
+
 export const priceOptions = [
   { value: "", label: "Prix" },
   { value: "0", label: "Gratuit" },

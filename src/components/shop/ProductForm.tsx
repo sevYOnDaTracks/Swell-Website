@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { ImagePlus, Loader2, Music } from "lucide-react";
 import { saveProduct } from "@/app/actions/products";
 import type { ProductType } from "@/db/schema";
-import { mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { hasCompatibility, mediaUrl, PLATFORMS, PLUGIN_FORMATS, productTypeLabels } from "@/lib/shop-format";
 import { DeliverableUpload } from "./DeliverableUpload";
 
 export type ProductFormValues = {
@@ -18,6 +18,8 @@ export type ProductFormValues = {
   shortDescription: string;
   description: string;
   genres: string[];
+  platforms: string[];
+  formats: string[];
   coverFile: string | null;
   previewFile: string | null;
   downloadFile: string | null;
@@ -36,6 +38,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
   const [pending, start] = useTransition();
   const [coverPreview, setCoverPreview] = useState(product?.coverFile ? mediaUrl(product.coverFile) : null);
   const [audioName, setAudioName] = useState<string | null>(null);
+  const [type, setType] = useState<ProductType>(product?.type ?? "drumkit");
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -62,7 +65,12 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">Type *</span>
-            <select name="type" defaultValue={product?.type ?? "drumkit"} className={`${input} [color-scheme:dark]`}>
+            <select
+              name="type"
+              value={type}
+              onChange={(e) => setType(e.target.value as ProductType)}
+              className={`${input} [color-scheme:dark]`}
+            >
               {(Object.keys(productTypeLabels) as ProductType[]).map((t) => (
                 <option key={t} value={t}>
                   {productTypeLabels[t]}
@@ -82,6 +90,31 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
             />
           </label>
         </div>
+
+        {hasCompatibility(type) && (
+          <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+            <fieldset>
+              <legend className="text-sm font-medium">Plateformes</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PLATFORMS.map((p) => (
+                  <CheckPill key={p.value} name="platforms" value={p.value} defaultChecked={product?.platforms.includes(p.value)}>
+                    {p.label}
+                  </CheckPill>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-medium">Formats</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {PLUGIN_FORMATS.map((f) => (
+                  <CheckPill key={f.value} name="formats" value={f.value} defaultChecked={product?.formats.includes(f.value)} title={"hint" in f ? f.hint : undefined}>
+                    {f.label}
+                  </CheckPill>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        )}
 
         <label className="block">
           <span className="text-sm font-medium">Accroche</span>
@@ -214,5 +247,28 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         </div>
       </aside>
     </form>
+  );
+}
+
+function CheckPill({
+  name,
+  value,
+  defaultChecked,
+  title,
+  children,
+}: {
+  name: string;
+  value: string;
+  defaultChecked?: boolean;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label title={title} className="cursor-pointer">
+      <input type="checkbox" name={name} value={value} defaultChecked={defaultChecked} className="peer sr-only" />
+      <span className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-sm text-muted transition-colors hover:border-white/40 peer-checked:border-white peer-checked:bg-white peer-checked:text-black peer-focus-visible:ring-2 peer-focus-visible:ring-white/40">
+        {children}
+      </span>
+    </label>
   );
 }

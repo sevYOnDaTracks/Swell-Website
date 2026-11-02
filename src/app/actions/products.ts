@@ -5,6 +5,7 @@ import { refresh, updateTag } from "next/cache";
 import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
+import { hasCompatibility, PLATFORMS, PLUGIN_FORMATS } from "@/lib/shop-format";
 import { PRODUCTS_TAG, slugify } from "@/lib/shop";
 import { deletePrivateFile } from "@/lib/private-storage";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
@@ -67,6 +68,11 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     if (!newPreview) previewFile = null;
   }
 
+  const pick = (key: string, allowed: readonly { value: string }[]) =>
+    hasCompatibility(type)
+      ? allowed.map((a) => a.value).filter((v) => formData.getAll(key).includes(v))
+      : [];
+
   const values = {
     name,
     slug,
@@ -75,6 +81,8 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     shortDescription: text(formData, "shortDescription").slice(0, 160),
     description: text(formData, "description").slice(0, 5000),
     genres,
+    platforms: pick("platforms", PLATFORMS),
+    formats: pick("formats", PLUGIN_FORMATS),
     coverFile,
     previewFile,
     published: formData.get("published") === "on",

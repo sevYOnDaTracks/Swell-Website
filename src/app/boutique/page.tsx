@@ -38,7 +38,7 @@ export default function ShopPage({ searchParams }: PageProps<"/boutique">) {
 
 async function ShopResults({ searchParams }: Pick<PageProps<"/boutique">, "searchParams">) {
   const filters = parseFilters(await searchParams);
-  const { items, genres, types, total } = await getShopProducts(filters);
+  const { items, genres, types, hasPlatforms, total } = await getShopProducts(filters);
 
   if (total === 0) {
     return (
@@ -52,7 +52,7 @@ async function ShopResults({ searchParams }: Pick<PageProps<"/boutique">, "searc
 
   return (
     <>
-      <ShopFilters filters={filters} types={types} genres={genres} />
+      <ShopFilters filters={filters} types={types} genres={genres} showPlatform={hasPlatforms} />
       <p className="mt-6 text-sm text-muted">
         {items.length} produit{items.length > 1 ? "s" : ""}
       </p>
