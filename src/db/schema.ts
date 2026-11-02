@@ -21,6 +21,8 @@ export const user = sqliteTable("user", {
   // Profil, modifiable depuis /compte/profil : "+33 612345678" et "YYYY-MM-DD".
   phone: text("phone"),
   birthDate: text("birth_date"),
+  // Mini tutoriel affiché une seule fois, à la première visite de l'espace.
+  onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
   role: text("role").default("user"),
   banned: integer("banned", { mode: "boolean" }).default(false),
   banReason: text("ban_reason"),

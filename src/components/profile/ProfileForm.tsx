@@ -87,11 +87,11 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
         <div>
           <span className="text-sm font-medium">Téléphone</span>
           <div className="mt-1.5 flex gap-2">
-            <div className="w-[120px] shrink-0">
+            <div className="w-[96px] shrink-0">
               <select name="phoneCode" defaultValue={phone.code} aria-label="Indicatif" className={`${input} mt-0 [color-scheme:dark]`}>
                 {COUNTRY_CODES.map((c) => (
-                  <option key={`${c.code}-${c.country}`} value={c.code}>
-                    {c.flag} {c.code} {c.country}
+                  <option key={`${c.code}-${c.country}`} value={c.code} title={c.country}>
+                    {c.code}
                   </option>
                 ))}
               </select>

@@ -71,3 +71,9 @@ export async function updateProfile(formData: FormData): Promise<Result> {
   refresh();
   return { ok: true };
 }
+
+/** Marque le mini tutoriel comme vu : il ne s'affiche plus, sur aucun appareil. */
+export async function completeOnboarding() {
+  const me = await requireUser();
+  await db.update(user).set({ onboardedAt: new Date() }).where(eq(user.id, me.id));
+}
