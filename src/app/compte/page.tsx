@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
-import { CalendarPlus, CheckCircle2, Clock, Download, ExternalLink, MonitorSmartphone } from "lucide-react";
+import { CalendarPlus, CheckCircle2, Clock, Download, MonitorSmartphone } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton } from "@/components/booking/BookingActions";
@@ -14,7 +14,11 @@ import { requireUser } from "@/lib/session";
 export const metadata = { title: "Mon espace — Swell" };
 
 // Logiciel de prise en main à distance (installation de plugins, aide sur l'ordinateur).
-const ANYDESK_URL = "https://anydesk.com/fr/downloads";
+// Liens de téléchargement directs : la page anydesk.com bloque souvent derrière une vérification Cloudflare.
+const ANYDESK_DOWNLOADS = [
+  { label: "Windows", href: "https://download.anydesk.com/AnyDesk.exe" },
+  { label: "macOS", href: "https://download.anydesk.com/anydesk.dmg" },
+];
 const REMOTE_SERVICES = new Set(["plugins"]);
 
 export default function AccountPage({ searchParams }: PageProps<"/compte">) {
@@ -106,9 +110,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                         </p>
                         {REMOTE_SERVICES.has(b.service) && (
                           <a
-                            href={ANYDESK_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            href="#anydesk"
                             className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-muted underline-offset-4 hover:text-foreground hover:underline"
                           >
                             <MonitorSmartphone size={13} /> Installe AnyDesk avant la session
@@ -181,23 +183,26 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
             </ul>
           </Card>
 
-          <Card title="Prise en main à distance">
-            <p className="text-sm text-muted">
-              Pour une installation de plugins ou si j&apos;ai besoin de voir ton écran, on passe par AnyDesk. Installe-le
-              avant la session et donne-moi ton identifiant au début.
-            </p>
-            <a
-              href={ANYDESK_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-background/40 px-3 py-3 text-sm transition-colors hover:border-white/25"
-            >
-              <span className="flex items-center gap-2">
-                <MonitorSmartphone size={16} /> Télécharger AnyDesk
-              </span>
-              <ExternalLink size={14} className="text-muted" />
-            </a>
-          </Card>
+          <section id="anydesk" className="scroll-mt-24">
+            <Card title="Prise en main à distance">
+              <p className="text-sm text-muted">
+                Pour une installation de plugins ou si j&apos;ai besoin de voir ton écran, on passe par AnyDesk. Installe-le
+                avant la session et donne-moi ton identifiant au début.
+              </p>
+              <ul className="mt-4 grid grid-cols-2 gap-2">
+                {ANYDESK_DOWNLOADS.map((d) => (
+                  <li key={d.label}>
+                    <a
+                      href={d.href}
+                      className="flex items-center justify-center gap-2 rounded-xl border border-white/5 bg-background/40 px-3 py-3 text-sm transition-colors hover:border-white/25"
+                    >
+                      <Download size={15} /> AnyDesk {d.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </section>
         </div>
       </div>
     </DashboardShell>
