@@ -1,45 +1,21 @@
-// Indicatifs proposés dans le profil. Le numéro est enregistré sous la forme
-// "+33 612345678" : indicatif, espace, numéro national. "trunk" : pays où le 0 de
-// tête du numéro national disparaît après l'indicatif (06… → +33 6…) ; ailleurs
-// (Côte d'Ivoire, Congo…) le 0 fait partie du numéro et on le garde.
-export const COUNTRY_CODES = [
-  { code: "+33", country: "France", trunk: true },
-  { code: "+32", country: "Belgique", trunk: true },
-  { code: "+41", country: "Suisse", trunk: true },
-  { code: "+352", country: "Luxembourg" },
-  { code: "+1", country: "Canada / États-Unis" },
-  { code: "+44", country: "Royaume-Uni", trunk: true },
-  { code: "+49", country: "Allemagne", trunk: true },
-  { code: "+34", country: "Espagne" },
-  { code: "+39", country: "Italie" },
-  { code: "+351", country: "Portugal" },
-  { code: "+31", country: "Pays-Bas", trunk: true },
-  { code: "+225", country: "Côte d'Ivoire" },
-  { code: "+237", country: "Cameroun" },
-  { code: "+221", country: "Sénégal" },
-  { code: "+223", country: "Mali" },
-  { code: "+226", country: "Burkina Faso" },
-  { code: "+228", country: "Togo" },
-  { code: "+229", country: "Bénin" },
-  { code: "+241", country: "Gabon" },
-  { code: "+242", country: "Congo" },
-  { code: "+243", country: "RD Congo", trunk: true },
-  { code: "+212", country: "Maroc", trunk: true },
-  { code: "+213", country: "Algérie", trunk: true },
-  { code: "+216", country: "Tunisie" },
-  { code: "+590", country: "Guadeloupe", trunk: true },
-  { code: "+596", country: "Martinique", trunk: true },
-  { code: "+594", country: "Guyane", trunk: true },
-  { code: "+262", country: "La Réunion", trunk: true },
-] as const;
-
+// Le numéro est enregistré sous la forme "+33 612345678" : indicatif (saisi librement
+// par l'utilisateur), espace, numéro national.
 export const DEFAULT_COUNTRY_CODE = "+33";
+
+// Pays où le 0 de tête du numéro national disparaît après l'indicatif (06… → +33 6…).
+// Ailleurs (Côte d'Ivoire, Congo…) le 0 fait partie du numéro et on le garde.
+const TRUNK_ZERO_CODES = new Set(["+33", "+32", "+41", "+44", "+49", "+31", "+243", "+212", "+213", "+590", "+596", "+594", "+262"]);
+
+/** Indicatif nettoyé ("33", "0033", "+ 33" → "+33"), ou null s'il n'est pas valide. */
+export function normalizeCode(raw: string) {
+  const code = `+${raw.replace(/\s/g, "").replace(/^(\+|00)/, "")}`;
+  return /^\+[1-9]\d{0,3}$/.test(code) ? code : null;
+}
 
 /** Numéro national nettoyé : chiffres seuls, sans le 0 de tête dans les pays où il saute. */
 export function normalizeNumber(code: string, raw: string) {
   const digits = raw.replace(/[\s.\-()]/g, "");
-  const country = COUNTRY_CODES.find((c) => c.code === code);
-  return country && "trunk" in country ? digits.replace(/^0/, "") : digits;
+  return TRUNK_ZERO_CODES.has(code) ? digits.replace(/^0/, "") : digits;
 }
 
 /** Sépare "+33 612345678" en indicatif et numéro, pour pré-remplir le formulaire. */
