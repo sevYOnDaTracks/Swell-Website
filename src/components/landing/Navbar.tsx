@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CircleHelp, Disc3, Gauge, LogIn, Menu, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
+import { CartLink } from "@/components/cart/CartLink";
 import { authClient } from "@/lib/auth-client";
 import { navLinks } from "@/lib/content";
 import { Logo } from "./Logo";
@@ -67,6 +68,7 @@ export function Navbar() {
         </ul>
 
         <div className={`hidden items-center gap-2 transition-opacity md:flex ${isPending ? "opacity-0" : ""}`}>
+          <CartLink />
           {account ? (
             <IconLink href={account.href} label={account.label} Icon={account.Icon} primary />
           ) : (
@@ -82,15 +84,18 @@ export function Navbar() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-md p-2 text-muted hover:text-foreground md:hidden"
-          aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-          aria-expanded={open}
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          <CartLink onClick={() => setOpen(false)} />
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-md p-2 text-muted hover:text-foreground md:hidden"
+            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={open}
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </nav>
 
       {open && (
