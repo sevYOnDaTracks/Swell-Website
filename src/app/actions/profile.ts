@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/schema";
-import { COUNTRY_CODES, normalizeNumber } from "@/lib/phone";
+import { normalizeCode, normalizeNumber } from "@/lib/phone";
 import { requireUser } from "@/lib/session";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
 
@@ -29,11 +29,11 @@ export async function updateProfile(formData: FormData): Promise<Result> {
   const name = text(formData, "name");
   if (name.length < 2) return { error: "Indique ton nom (2 caractères minimum)." };
 
-  const code = text(formData, "phoneCode");
-  const digits = normalizeNumber(code, text(formData, "phone"));
+  const code = normalizeCode(text(formData, "phoneCode"));
+  const digits = code ? normalizeNumber(code, text(formData, "phone")) : text(formData, "phone");
   let phone: string | null = null;
   if (digits) {
-    if (!COUNTRY_CODES.some((c) => c.code === code)) return { error: "Indicatif inconnu." };
+    if (!code) return { error: "Indicatif invalide : par exemple +33, +225 ou +1." };
     if (!/^\d{6,14}$/.test(digits)) return { error: "Numéro de téléphone invalide (chiffres uniquement)." };
     phone = `${code} ${digits}`;
   }

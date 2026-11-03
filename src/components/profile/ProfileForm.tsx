@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Camera, CheckCircle2, Loader2 } from "lucide-react";
 import { updateProfile } from "@/app/actions/profile";
 import { Avatar } from "@/components/dashboard/Avatar";
-import { COUNTRY_CODES, splitPhone } from "@/lib/phone";
+import { splitPhone } from "@/lib/phone";
 
 export const input =
   "mt-1.5 block w-full rounded-lg border border-white/10 bg-background/60 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted/50 focus:border-white/50 focus:ring-2 focus:ring-white/10";
@@ -87,14 +87,18 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
         <div>
           <span className="text-sm font-medium">Téléphone</span>
           <div className="mt-1.5 flex gap-2">
-            <div className="w-[96px] shrink-0">
-              <select name="phoneCode" defaultValue={phone.code} aria-label="Indicatif" className={`${input} mt-0 [color-scheme:dark]`}>
-                {COUNTRY_CODES.map((c) => (
-                  <option key={`${c.code}-${c.country}`} value={c.code} title={c.country}>
-                    {c.code}
-                  </option>
-                ))}
-              </select>
+            <div className="w-[76px] shrink-0">
+              <input
+                name="phoneCode"
+                type="text"
+                inputMode="tel"
+                autoComplete="tel-country-code"
+                defaultValue={phone.code}
+                placeholder="+33"
+                maxLength={5}
+                aria-label="Indicatif"
+                className={`${input} mt-0 text-center`}
+              />
             </div>
             <input
               name="phone"
@@ -103,7 +107,7 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
               autoComplete="tel-national"
               defaultValue={phone.number}
               placeholder="6 12 34 56 78"
-              className={`${input} mt-0`}
+              className={`${input} mt-0 min-w-0`}
             />
           </div>
           <span className="mt-1 block text-xs text-muted">Pour te joindre le jour de ta session.</span>

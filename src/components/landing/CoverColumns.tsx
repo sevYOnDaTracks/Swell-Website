@@ -46,9 +46,9 @@ export function CoverColumns({ items }: { items: CoverItem[] }) {
   const columns = COLUMNS.map((_, c) => pool.filter((_, i) => i % COLUMNS.length === c));
 
   return (
-    <div aria-hidden className="covers-fade grid h-full grid-cols-2 gap-4 overflow-hidden sm:grid-cols-3">
+    <div aria-hidden className="covers-fade grid h-full grid-cols-3 gap-4 overflow-hidden">
       {COLUMNS.map((col, c) => (
-        <div key={c} className={`covers-column ${c === 2 ? "hidden sm:block" : ""}`}>
+        <div key={c} className="covers-column">
           <div
             className={`covers-scroll flex flex-col gap-4 ${col.offset} ${col.down ? "covers-down" : ""}`}
             style={{ "--covers-duration": col.duration } as CSSProperties}

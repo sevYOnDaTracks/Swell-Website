@@ -85,7 +85,7 @@ export async function Hero() {
               </p>
 
               <ul
-                className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4 text-foreground"
+                className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-4 text-foreground sm:gap-x-6"
                 aria-label="Logiciels utilisés"
               >
                 {logos.map((d) => (
@@ -153,7 +153,8 @@ export async function Hero() {
               )}
             </div>
 
-            <div className="h-[380px] overflow-hidden sm:h-[460px] lg:h-full">
+            {/* Pas de pochettes sur téléphone : la hero reste courte et lisible. */}
+          <div className="hidden overflow-hidden md:block md:h-[460px] lg:h-full">
               <CoverColumns items={covers} />
             </div>
           </div>
