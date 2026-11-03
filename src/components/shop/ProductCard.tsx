@@ -43,30 +43,31 @@ export function ProductCard({ product }: { product: CardProduct }) {
     >
       <div className="relative aspect-square overflow-hidden">
         <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-[1.03]">
-          <ProductCover product={product} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
+          <ProductCover product={product} sizes="(min-width: 1024px) 25vw, 50vw" />
         </div>
-        <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-1.5">
-          <span className="rounded-full bg-black/60 px-2.5 py-1 text-xs text-white/90 backdrop-blur">
+        <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1 sm:right-3 sm:top-3 sm:gap-1.5">
+          <span className="rounded-full bg-black/60 px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs text-white/90 backdrop-blur">
             {productTypeLabels[product.type]}
           </span>
           {PLATFORMS.filter((p) => product.platforms?.includes(p.value)).map((p) => (
-            <span key={p.value} title={`Compatible ${p.label}`} className="rounded-full bg-white px-2 py-1 text-xs font-medium text-black">
+            <span key={p.value} title={`Compatible ${p.label}`} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-medium sm:px-2 sm:py-1 sm:text-xs text-black">
               {p.short}
             </span>
           ))}
         </div>
         {product.previewFile && (
-          <div className="absolute bottom-3 right-3">
+          <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3">
             <PreviewButton src={mediaUrl(product.previewFile)} label={product.name} />
           </div>
         )}
       </div>
-      <div className="flex items-start justify-between gap-3 p-4">
+      {/* Deux cartes par ligne sur téléphone : le prix passe sous le nom. */}
+      <div className="flex flex-col gap-1 p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-4">
         <div className="min-w-0">
-          <h3 className="truncate font-semibold">{product.name}</h3>
-          {product.shortDescription && <p className="mt-1 line-clamp-2 text-sm text-muted">{product.shortDescription}</p>}
+          <h3 className="truncate text-sm font-semibold sm:text-base">{product.name}</h3>
+          {product.shortDescription && <p className="mt-1 line-clamp-2 text-xs text-muted sm:text-sm">{product.shortDescription}</p>}
         </div>
-        <span className="shrink-0 font-semibold">{formatPrice(product.priceCents)}</span>
+        <span className="shrink-0 text-sm font-semibold sm:text-base">{formatPrice(product.priceCents)}</span>
       </div>
     </Link>
   );
