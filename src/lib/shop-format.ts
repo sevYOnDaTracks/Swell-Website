@@ -7,6 +7,7 @@ export const productTypeLabels: Record<ProductType, string> = {
   drumkit: "Drum kit",
   samplepack: "Sample pack",
   preset: "Presets",
+  instrumental: "Instrumentale",
 };
 
 const euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
@@ -37,6 +38,9 @@ export const PLUGIN_FORMATS = [
 
 /** Les cases de compatibilité ne concernent que les plugins. */
 export const hasCompatibility = (type: string) => type === "vst";
+
+/** Les instrumentales ont leur propre page (/instrumentales), avec tempo et tonalité. */
+export const isInstrumental = (type: string) => type === "instrumental";
 
 export const platformLabel = (v: string) => PLATFORMS.find((p) => p.value === v)?.label ?? v;
 export const formatLabel = (v: string) => PLUGIN_FORMATS.find((f) => f.value === v)?.label ?? v;

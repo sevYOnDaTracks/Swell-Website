@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Drum, Package, Piano, SlidersVertical } from "lucide-react";
+import { AudioLines, Drum, Package, Piano, SlidersVertical } from "lucide-react";
 import type { ProductType } from "@/db/schema";
 import { formatPrice, mediaUrl, PLATFORMS, productTypeLabels } from "@/lib/shop-format";
 import { PreviewButton } from "./PreviewButton";
@@ -10,6 +10,7 @@ export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
   drumkit: Drum,
   samplepack: Package,
   preset: SlidersVertical,
+  instrumental: AudioLines,
 };
 
 type CardProduct = {

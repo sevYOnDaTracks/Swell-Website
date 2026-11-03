@@ -5,7 +5,7 @@ import { refresh, updateTag } from "next/cache";
 import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
-import { hasCompatibility, PLATFORMS, PLUGIN_FORMATS } from "@/lib/shop-format";
+import { hasCompatibility, isInstrumental, PLATFORMS, PLUGIN_FORMATS } from "@/lib/shop-format";
 import { PRODUCTS_TAG, slugify } from "@/lib/shop";
 import { deletePrivateFile } from "@/lib/private-storage";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
@@ -39,6 +39,8 @@ export async function saveProduct(formData: FormData): Promise<Result> {
   if (!slug) return { error: "L'adresse (slug) est invalide." };
   if (!productTypes.includes(type)) return { error: "Choisis un type de produit." };
   if (!/^\d+(\.\d{1,2})?$/.test(price)) return { error: "Prix invalide (ex : 29 ou 29,99)." };
+  const bpm = isInstrumental(type) ? text(formData, "bpm") : "";
+  if (bpm && !/^\d{2,3}$/.test(bpm)) return { error: "BPM invalide (ex : 140)." };
 
   const [duplicate] = await db
     .select({ id: product.id })
@@ -83,6 +85,8 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     genres,
     platforms: pick("platforms", PLATFORMS),
     formats: pick("formats", PLUGIN_FORMATS),
+    bpm: bpm ? Number(bpm) : null,
+    musicalKey: (isInstrumental(type) && text(formData, "musicalKey").slice(0, 12)) || null,
     coverFile,
     previewFile,
     published: formData.get("published") === "on",

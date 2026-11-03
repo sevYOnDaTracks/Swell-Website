@@ -124,7 +124,7 @@ export const availability = sqliteTable("availability", {
 
 // --- Boutique -------------------------------------------------------------
 
-export const productTypes = ["vst", "drumkit", "samplepack", "preset"] as const;
+export const productTypes = ["vst", "drumkit", "samplepack", "preset", "instrumental"] as const;
 export type ProductType = (typeof productTypes)[number];
 
 export const product = sqliteTable(
@@ -143,6 +143,9 @@ export const product = sqliteTable(
     // Compatibilité des VST : plateformes ("windows", "mac") et formats ("vst3", "au"...).
     platforms: text("platforms", { mode: "json" }).$type<string[]>().notNull().default([]),
     formats: text("formats", { mode: "json" }).$type<string[]>().notNull().default([]),
+    // Instrumentales : tempo et tonalité ("Am", "F# min"...).
+    bpm: integer("bpm"),
+    musicalKey: text("musical_key"),
     // Noms de fichiers dans storage/uploads, servis par /media/<fichier>.
     coverFile: text("cover_file"),
     previewFile: text("preview_file"),

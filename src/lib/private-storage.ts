@@ -11,9 +11,9 @@ import { pipeline } from "node:stream/promises";
 const PRIVATE_DIR = path.join(process.cwd(), "storage", "private");
 
 export const MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 Go
-export const DOWNLOAD_EXTENSIONS = ["zip", "rar", "7z", "dmg", "pkg", "exe", "msi"] as const;
+export const DOWNLOAD_EXTENSIONS = ["zip", "rar", "7z", "dmg", "pkg", "exe", "msi", "wav", "mp3"] as const;
 
-const FILE_NAME = /^[a-f0-9-]{36}\.(zip|rar|7z|dmg|pkg|exe|msi)$/;
+const FILE_NAME = /^[a-f0-9-]{36}\.(zip|rar|7z|dmg|pkg|exe|msi|wav|mp3)$/;
 
 export class PrivateUploadError extends Error {}
 

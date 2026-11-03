@@ -34,7 +34,7 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/admin/produc
 
   const originalName = decodeURIComponent(request.headers.get("x-file-name") ?? "").replace(/[/\\]/g, "").slice(0, 200);
   const ext = extensionOf(originalName);
-  if (!ext) return Response.json({ error: "Format accepté : ZIP, RAR, 7Z, DMG, PKG, EXE ou MSI." }, { status: 400 });
+  if (!ext) return Response.json({ error: "Format accepté : ZIP, RAR, 7Z, DMG, PKG, EXE, MSI, WAV ou MP3." }, { status: 400 });
 
   const declared = Number(request.headers.get("content-length") ?? 0);
   if (declared > MAX_DOWNLOAD_BYTES) return Response.json({ error: "Fichier trop lourd (2 Go max)." }, { status: 413 });

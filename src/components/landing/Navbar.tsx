@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CircleHelp, Disc3, Gauge, LogIn, Menu, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
+import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
 import { CartLink } from "@/components/cart/CartLink";
 import { authClient } from "@/lib/auth-client";
 import { navLinks } from "@/lib/content";
@@ -11,6 +11,7 @@ import { Logo } from "./Logo";
 const ICONS: Record<string, typeof Disc3> = {
   "/#productions": Disc3,
   "/#services": SlidersHorizontal,
+  "/instrumentales": AudioLines,
   "/boutique": ShoppingBag,
   "/#tarifs": Tags,
   "/#faq": CircleHelp,

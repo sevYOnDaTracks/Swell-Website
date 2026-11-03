@@ -25,7 +25,7 @@ async function getPublishedProducts() {
 }
 
 export async function getShopProducts(filters: ShopFilters) {
-  const all = await getPublishedProducts();
+  const all = (await getPublishedProducts()).filter((p) => p.type !== "instrumental");
   const q = filters.q?.trim().toLowerCase();
 
   const items = all.filter(
@@ -55,6 +55,19 @@ export async function getProductBySlug(slug: string) {
     .from(product)
     .where(and(eq(product.slug, slug), eq(product.published, true)));
   return row ?? null;
+}
+
+/** Instrumentales publiées (page /instrumentales), filtrables par recherche et tag. */
+export async function getInstrumentals(filters: { q?: string; genre?: string }) {
+  const all = (await getPublishedProducts()).filter((p) => p.type === "instrumental");
+  const q = filters.q?.trim().toLowerCase();
+  const items = all.filter(
+    (p) =>
+      (!filters.genre || p.genres.includes(filters.genre)) &&
+      (!q || `${p.name} ${p.shortDescription} ${p.genres.join(" ")} ${p.musicalKey ?? ""}`.toLowerCase().includes(q)),
+  );
+  const genres = [...new Set(all.flatMap((p) => p.genres))].sort((a, b) => a.localeCompare(b, "fr"));
+  return { items, genres, total: all.length };
 }
 
 /** Produits mis en avant sur la page d'accueil (à défaut, les plus récents). */
