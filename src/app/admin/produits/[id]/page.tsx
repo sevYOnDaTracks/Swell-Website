@@ -42,6 +42,8 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           genres: row.genres,
           platforms: row.platforms,
           formats: row.formats,
+          bpm: row.bpm,
+          musicalKey: row.musicalKey,
           coverFile: row.coverFile,
           previewFile: row.previewFile,
           downloadFile: row.downloadFile,

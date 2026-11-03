@@ -6,7 +6,7 @@ import { Download, FileArchive, Trash2, Upload } from "lucide-react";
 import { removeProductFile } from "@/app/actions/products";
 import { formatBytes } from "@/lib/shop-format";
 
-const ACCEPT = ".zip,.rar,.7z,.dmg,.pkg,.exe,.msi";
+const ACCEPT = ".zip,.rar,.7z,.dmg,.pkg,.exe,.msi,.wav,.mp3";
 
 /** Envoi du fichier livré à l'acheteur, en direct vers le serveur avec progression. */
 export function DeliverableUpload({
@@ -108,7 +108,7 @@ export function DeliverableUpload({
           if (f) upload(f);
         }}
       />
-      <p className="mt-2 text-xs text-muted">ZIP, RAR, 7Z, DMG, PKG, EXE ou MSI · 2 Go max.</p>
+      <p className="mt-2 text-xs text-muted">ZIP, RAR, 7Z, DMG, PKG, EXE, MSI, WAV ou MP3 · 2 Go max.</p>
       {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
     </div>
   );

@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { ImagePlus, Loader2, Music } from "lucide-react";
 import { saveProduct } from "@/app/actions/products";
 import type { ProductType } from "@/db/schema";
-import { hasCompatibility, mediaUrl, PLATFORMS, PLUGIN_FORMATS, productTypeLabels } from "@/lib/shop-format";
+import { hasCompatibility, isInstrumental, mediaUrl, PLATFORMS, PLUGIN_FORMATS, productTypeLabels } from "@/lib/shop-format";
 import { DeliverableUpload } from "./DeliverableUpload";
 
 export type ProductFormValues = {
@@ -20,6 +20,8 @@ export type ProductFormValues = {
   genres: string[];
   platforms: string[];
   formats: string[];
+  bpm: number | null;
+  musicalKey: string | null;
   coverFile: string | null;
   previewFile: string | null;
   downloadFile: string | null;
@@ -113,6 +115,19 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
                 ))}
               </div>
             </fieldset>
+          </div>
+        )}
+
+        {isInstrumental(type) && (
+          <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-medium">BPM</span>
+              <input name="bpm" inputMode="numeric" defaultValue={product?.bpm ?? ""} placeholder="140" className={input} />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Tonalité</span>
+              <input name="musicalKey" maxLength={12} defaultValue={product?.musicalKey ?? ""} placeholder="Am, F# min…" className={input} />
+            </label>
           </div>
         )}
 
