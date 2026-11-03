@@ -71,7 +71,11 @@ export async function Hero() {
       <section className="relative overflow-hidden lg:flex lg:h-[calc(100svh-4rem)] lg:min-h-[600px] lg:flex-col lg:justify-center">
           <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 lg:h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-14 lg:py-0">
             <div>
-              <p className="text-sm tracking-wide text-muted">#FAITCHEZSWELL par @sevyondatracks</p>
+              <p className="text-sm tracking-wide text-muted">
+                #FAITCHEZSWELL
+                <br />
+                par @sevyondatracks
+              </p>
 
               <h1 className="mt-4 font-condensed text-6xl leading-[0.95] tracking-tight uppercase sm:text-7xl lg:text-[5.5rem]">
                 Ton son,
