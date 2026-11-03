@@ -60,7 +60,7 @@ async function ShopResults({ searchParams }: Pick<PageProps<"/boutique">, "searc
           Aucun produit ne correspond à ta recherche.
         </p>
       ) : (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {items.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
@@ -74,8 +74,8 @@ function GridSkeleton() {
   return (
     <div className="animate-pulse">
       <div className="h-11 rounded-lg bg-white/5" />
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => (
+      <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
           <div key={i} className="aspect-[4/5] rounded-2xl bg-white/5" />
         ))}
       </div>

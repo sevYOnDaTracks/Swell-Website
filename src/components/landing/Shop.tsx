@@ -5,7 +5,7 @@ import { getFeaturedProducts } from "@/lib/shop";
 import { SectionHeading } from "./SectionHeading";
 
 export async function Shop() {
-  const products = await getFeaturedProducts();
+  const products = await getFeaturedProducts(4);
   if (products.length === 0) return null;
 
   return (
@@ -17,7 +17,7 @@ export async function Shop() {
           description="Des sons testés en vraie session, prêts à glisser dans ton DAW."
         />
 
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
