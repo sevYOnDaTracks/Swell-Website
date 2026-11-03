@@ -21,6 +21,7 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-unbounded);
+  --font-condensed: var(--font-bebas);
 }
 
 html {
@@ -50,29 +51,31 @@ body {
   animation: wave 1.4s ease-in-out infinite;
 }
 
-/* Session de mixage de l'accueil : tête de lecture et vumètres */
-@keyframes studio-playhead {
-  from { left: 5rem; }
-  to { left: 100%; }
+/* Colonnes de pochettes de l'accueil : défilement vertical sans fin.
+   Chaque colonne contient deux fois la même liste ; on la décale de la moitié. */
+@keyframes covers-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
 }
 
-.studio-playhead {
-  animation: studio-playhead 16s linear infinite;
+.covers-scroll {
+  animation: covers-up var(--covers-duration, 40s) linear infinite;
 }
 
-@keyframes studio-meter {
-  0%, 100% { transform: scaleY(0.45); }
-  30% { transform: scaleY(0.85); }
-  55% { transform: scaleY(0.6); }
-  80% { transform: scaleY(0.95); }
+.covers-scroll.covers-down {
+  animation-direction: reverse;
 }
 
-.studio-meter {
-  animation: studio-meter 0.9s ease-in-out infinite;
+.covers-column:hover .covers-scroll {
+  animation-play-state: paused;
+}
+
+.covers-fade {
+  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .studio-playhead, .studio-meter { animation: none; }
+  .covers-scroll { animation: none; }
   .wave-bar { animation: none; }
   html { scroll-behavior: auto; }
 }

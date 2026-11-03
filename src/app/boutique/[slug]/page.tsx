@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ProductCover } from "@/components/shop/ProductCard";
@@ -100,13 +101,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
               {product.downloadSize ? ` · ${formatBytes(product.downloadSize)}` : ""}
             </p>
           )}
-          <button
-            type="button"
-            disabled
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black opacity-50"
-          >
-            <Lock size={16} /> Achat bientôt disponible
-          </button>
+          <AddToCartButton productId={product.id} />
           <p className="mt-3 text-xs text-muted">Paiement sécurisé et téléchargement immédiat depuis ton espace, très bientôt.</p>
         </div>
 
