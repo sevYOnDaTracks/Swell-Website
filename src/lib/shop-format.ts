@@ -18,6 +18,26 @@ export function formatPrice(cents: number) {
 
 export const mediaUrl = (file: string) => `/media/${file}`;
 
+export const MAX_GALLERY_PHOTOS = 10;
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+/** Identifiant de la vidéo à partir d'un lien YouTube (watch, youtu.be, shorts, embed, live), sinon null. */
+export function youtubeId(link: string) {
+  try {
+    const url = new URL(/^https?:\/\//i.test(link) ? link : `https://${link}`);
+    const host = url.hostname.replace(/^(www|m|music)\./, "");
+    const [first, second] = url.pathname.split("/").filter(Boolean);
+    let id: string | null | undefined;
+    if (host === "youtu.be") id = first;
+    else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+      id = first === "watch" ? url.searchParams.get("v") : ["shorts", "embed", "live", "v"].includes(first) ? second : null;
+    }
+    return id && /^[\w-]{11}$/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 export const sortOptions = [
   { value: "recent", label: "Nouveautés" },
   { value: "price-asc", label: "Prix croissant" },

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
-import { ProductCover } from "@/components/shop/ProductCard";
+import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { getProductBySlug } from "@/lib/shop";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productTypeLabels } from "@/lib/shop-format";
@@ -44,9 +44,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
         <ArrowLeft size={16} /> {beat ? "Instrumentales" : "Boutique"}
       </Link>
       <article className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/5 bg-surface">
-          <ProductCover product={product} sizes="(min-width: 1024px) 50vw, 100vw" eager />
-        </div>
+        <ProductGallery product={product} />
 
         <div>
           <p className="text-sm text-muted">{productTypeLabels[product.type]}</p>

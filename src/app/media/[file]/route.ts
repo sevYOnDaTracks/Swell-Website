@@ -1,9 +1,9 @@
-import { CONTENT_TYPES, readUpload } from "@/lib/storage";
+import { CONTENT_TYPES, streamUpload, uploadSize } from "@/lib/storage";
 
 export async function GET(request: Request, ctx: RouteContext<"/media/[file]">) {
   const { file } = await ctx.params;
-  const data = await readUpload(file);
-  if (!data) return new Response("Not found", { status: 404 });
+  const size = await uploadSize(file);
+  if (size === null) return new Response("Not found", { status: 404 });
 
   const headers = {
     "Content-Type": CONTENT_TYPES[file.split(".").pop()!],
@@ -12,21 +12,25 @@ export async function GET(request: Request, ctx: RouteContext<"/media/[file]">) 
   };
 
   // En production, Nginx sert /media directement depuis le disque ; cette route
-// sert en développement. Content-Length est indispensable : sans lui, Safari
-// refuse de lire les extraits audio.
-  const range = request.headers.get("range")?.match(/bytes=(\d*)-(\d*)/);
-  if (range) {
-    const start = range[1] ? Number(range[1]) : 0;
-    const end = range[2] ? Math.min(Number(range[2]), data.length - 1) : data.length - 1;
-    return new Response(new Uint8Array(data.subarray(start, end + 1)), {
+  // sert en développement. Content-Length est indispensable : sans lui, Safari
+  // refuse de lire les extraits audio et les vidéos.
+  const range = request.headers.get("range")?.match(/^bytes=(\d*)-(\d*)$/);
+  if (range && (range[1] || range[2])) {
+    // "bytes=-500" désigne les 500 derniers octets.
+    const start = range[1] ? Number(range[1]) : Math.max(size - Number(range[2]), 0);
+    const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+    if (start > end) {
+      return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
+    }
+    return new Response(streamUpload(file, start, end), {
       status: 206,
       headers: {
         ...headers,
-        "Content-Range": `bytes ${start}-${end}/${data.length}`,
+        "Content-Range": `bytes ${start}-${end}/${size}`,
         "Content-Length": String(end - start + 1),
       },
     });
   }
 
-  return new Response(new Uint8Array(data), { headers: { ...headers, "Content-Length": String(data.length) } });
+  return new Response(streamUpload(file, 0, size - 1), { headers: { ...headers, "Content-Length": String(size) } });
 }

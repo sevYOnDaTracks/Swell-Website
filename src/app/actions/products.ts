@@ -5,7 +5,7 @@ import { refresh, updateTag } from "next/cache";
 import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
-import { hasCompatibility, isInstrumental, PLATFORMS, PLUGIN_FORMATS } from "@/lib/shop-format";
+import { hasCompatibility, isInstrumental, MAX_GALLERY_PHOTOS, PLATFORMS, PLUGIN_FORMATS, youtubeId } from "@/lib/shop-format";
 import { PRODUCTS_TAG, slugify } from "@/lib/shop";
 import { deletePrivateFile } from "@/lib/private-storage";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
@@ -41,6 +41,10 @@ export async function saveProduct(formData: FormData): Promise<Result> {
   if (!/^\d+(\.\d{1,2})?$/.test(price)) return { error: "Prix invalide (ex : 29 ou 29,99)." };
   const bpm = isInstrumental(type) ? text(formData, "bpm") : "";
   if (bpm && !/^\d{2,3}$/.test(bpm)) return { error: "BPM invalide (ex : 140)." };
+  // Le champ n'est envoyé que sur l'onglet YouTube : ailleurs, le lien ne bouge pas.
+  const videoLink = formData.has("videoUrl") ? text(formData, "videoUrl") : null;
+  const videoId = videoLink ? youtubeId(videoLink) : null;
+  if (videoLink && !videoId) return { error: "Lien YouTube invalide." };
 
   const [duplicate] = await db
     .select({ id: product.id })
@@ -70,6 +74,10 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     if (!newPreview) previewFile = null;
   }
 
+  const keptPhotos = formData.getAll("gallery");
+  const galleryFiles = (existing?.galleryFiles ?? []).filter((f) => keptPhotos.includes(f));
+  const removedPhotos = (existing?.galleryFiles ?? []).filter((f) => !keptPhotos.includes(f));
+
   const pick = (key: string, allowed: readonly { value: string }[]) =>
     hasCompatibility(type)
       ? allowed.map((a) => a.value).filter((v) => formData.getAll(key).includes(v))
@@ -89,6 +97,10 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     musicalKey: (isInstrumental(type) && text(formData, "musicalKey").slice(0, 12)) || null,
     coverFile,
     previewFile,
+    galleryFiles,
+    videoUrl: videoLink === null ? (existing?.videoUrl ?? null) : videoId && `https://www.youtube.com/watch?v=${videoId}`,
+    // Un lien YouTube remplace la vidéo envoyée.
+    videoFile: videoId ? null : (existing?.videoFile ?? null),
     published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
   };
@@ -97,8 +109,41 @@ export async function saveProduct(formData: FormData): Promise<Result> {
   if (existing) await db.update(product).set(values).where(eq(product.id, existing.id));
   else [{ id: savedId }] = await db.insert(product).values(values).returning({ id: product.id });
 
+  await Promise.all(removedPhotos.map(deleteUpload));
+  if (videoId) await deleteUpload(existing?.videoFile);
+
   updateTag(PRODUCTS_TAG);
   return { ok: true, id: savedId! };
+}
+
+/** Ajoute une photo à la galerie. Envoyées une par une pour rester sous la limite des Server Actions. */
+export async function addProductPhoto(id: string, formData: FormData): Promise<{ error: string } | { file: string }> {
+  await requireAdmin();
+  const [row] = await db.select().from(product).where(eq(product.id, id));
+  if (!row) return { error: "Produit introuvable." };
+  if (row.galleryFiles.length >= MAX_GALLERY_PHOTOS) return { error: `${MAX_GALLERY_PHOTOS} photos maximum.` };
+  const photo = file(formData, "photo");
+  if (!photo) return { error: "Photo manquante." };
+
+  try {
+    const name = await saveUpload(photo, "image");
+    await db.update(product).set({ galleryFiles: [...row.galleryFiles, name] }).where(eq(product.id, id));
+    updateTag(PRODUCTS_TAG);
+    return { file: name };
+  } catch (e) {
+    if (e instanceof UploadError) return { error: e.message };
+    throw e;
+  }
+}
+
+export async function removeProductVideo(id: string) {
+  await requireAdmin();
+  const [row] = await db.select().from(product).where(eq(product.id, id));
+  if (!row?.videoFile) return;
+  await db.update(product).set({ videoFile: null }).where(eq(product.id, id));
+  await deleteUpload(row.videoFile);
+  updateTag(PRODUCTS_TAG);
+  refresh();
 }
 
 export async function setProductPublished(id: string, published: boolean) {
@@ -113,7 +158,13 @@ export async function deleteProduct(id: string) {
   const [row] = await db.select().from(product).where(eq(product.id, id));
   if (!row) return;
   await db.delete(product).where(eq(product.id, id));
-  await Promise.all([deleteUpload(row.coverFile), deleteUpload(row.previewFile), deletePrivateFile(row.downloadFile)]);
+  await Promise.all([
+    deleteUpload(row.coverFile),
+    deleteUpload(row.previewFile),
+    deleteUpload(row.videoFile),
+    ...row.galleryFiles.map(deleteUpload),
+    deletePrivateFile(row.downloadFile),
+  ]);
   updateTag(PRODUCTS_TAG);
   refresh();
 }

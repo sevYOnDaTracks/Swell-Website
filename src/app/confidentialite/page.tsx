@@ -46,6 +46,7 @@ export default function ConfidentialitePage() {
           <li>{legal.host.name} : hébergement du site et des données (serveur situé en France).</li>
           <li>Resend : envoi des emails (peut impliquer un transfert hors UE, encadré par des clauses contractuelles types).</li>
           <li>Google : uniquement si tu choisis la connexion avec Google.</li>
+          <li>YouTube : uniquement si tu lances une vidéo YouTube sur une fiche produit. Rien n&apos;est chargé depuis YouTube avant ce clic.</li>
           <li>Prestataire de paiement (à venir) : traitement sécurisé des paiements, sans accès de {legal.brand} à tes données bancaires.</li>
         </ul>
       </Section>

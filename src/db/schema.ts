@@ -149,6 +149,11 @@ export const product = sqliteTable(
     // Noms de fichiers dans storage/uploads, servis par /media/<fichier>.
     coverFile: text("cover_file"),
     previewFile: text("preview_file"),
+    // Photos de la fiche produit, en plus du visuel principal.
+    galleryFiles: text("gallery_files", { mode: "json" }).$type<string[]>().notNull().default([]),
+    // Vidéo de présentation : lien YouTube ou fichier envoyé, jamais les deux.
+    videoUrl: text("video_url"),
+    videoFile: text("video_file"),
     // Fichier livré à l'acheteur (stockage privé, jamais servi par /media).
     downloadFile: text("download_file"),
     downloadName: text("download_name"),

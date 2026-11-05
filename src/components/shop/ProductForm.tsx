@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { ImagePlus, Loader2, Music } from "lucide-react";
-import { saveProduct } from "@/app/actions/products";
+import { ImagePlus, Loader2, Music, X } from "lucide-react";
+import { addProductPhoto, saveProduct } from "@/app/actions/products";
 import type { ProductType } from "@/db/schema";
-import { hasCompatibility, isInstrumental, mediaUrl, PLATFORMS, PLUGIN_FORMATS, productTypeLabels } from "@/lib/shop-format";
+import {
+  hasCompatibility,
+  isInstrumental,
+  MAX_GALLERY_PHOTOS,
+  MAX_PHOTO_BYTES,
+  mediaUrl,
+  PLATFORMS,
+  PLUGIN_FORMATS,
+  productTypeLabels,
+} from "@/lib/shop-format";
 import { DeliverableUpload } from "./DeliverableUpload";
+import { ProductVideoField } from "./ProductVideoField";
 
 export type ProductFormValues = {
   id: string;
@@ -24,6 +34,9 @@ export type ProductFormValues = {
   musicalKey: string | null;
   coverFile: string | null;
   previewFile: string | null;
+  galleryFiles: string[];
+  videoUrl: string | null;
+  videoFile: string | null;
   downloadFile: string | null;
   downloadName: string | null;
   downloadSize: number | null;
@@ -41,14 +54,56 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
   const [coverPreview, setCoverPreview] = useState(product?.coverFile ? mediaUrl(product.coverFile) : null);
   const [audioName, setAudioName] = useState<string | null>(null);
   const [type, setType] = useState<ProductType>(product?.type ?? "drumkit");
+  // Après un envoi interrompu, le produit existe déjà : un nouvel essai doit le modifier, pas le recréer.
+  const [savedId, setSavedId] = useState(product?.id ?? null);
+  const [gallery, setGallery] = useState(product?.galleryFiles ?? []);
+  const [newPhotos, setNewPhotos] = useState<{ file: File; url: string }[]>([]);
+  const [photoStep, setPhotoStep] = useState<string | null>(null);
+  const photoCount = gallery.length + newPhotos.length;
+
+  function addPhotos(files: File[]) {
+    const tooBig = files.find((f) => f.size > MAX_PHOTO_BYTES);
+    setError(tooBig ? `${tooBig.name} : trop lourde (max 5 Mo).` : null);
+    const added = files.filter((f) => f.size <= MAX_PHOTO_BYTES).slice(0, MAX_GALLERY_PHOTOS - photoCount);
+    setNewPhotos((photos) => [...photos, ...added.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     setError(null);
     start(async () => {
       const result = await saveProduct(formData);
       if ("error" in result) return setError(result.error);
+      setSavedId(result.id);
+
+      // Une photo à la fois : ensemble, elles dépasseraient la limite de 25 Mo des Server Actions.
+      for (const [i, photo] of newPhotos.entries()) {
+        setPhotoStep(`Envoi des photos ${i + 1}/${newPhotos.length}…`);
+        const data = new FormData();
+        data.set("photo", photo.file);
+        const sent = await addProductPhoto(result.id, data);
+        if ("error" in sent) {
+          setPhotoStep(null);
+          return setError(`${photo.file.name} : ${sent.error}`);
+        }
+        setGallery((files) => [...files, sent.file]);
+        setNewPhotos((photos) => photos.filter((p) => p !== photo));
+      }
+      setPhotoStep(null);
+
+      // Next garde les pages quittées en mémoire, état compris : sans ça, le prochain
+      // « Nouveau produit » rouvrirait ce formulaire et modifierait le produit qu'on vient de créer.
+      if (!product) {
+        form.reset();
+        setSavedId(null);
+        setGallery([]);
+        setCoverPreview(null);
+        setAudioName(null);
+        setType("drumkit");
+      }
+
       // Nouveau produit : on ouvre sa fiche pour pouvoir y joindre le fichier à livrer.
       router.push(product ? "/admin/produits" : `/admin/produits/${result.id}?nouveau=1`);
     });
@@ -56,7 +111,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-      {product && <input type="hidden" name="id" value={product.id} />}
+      {savedId && <input type="hidden" name="id" value={savedId} />}
 
       <div className="space-y-5 rounded-2xl border border-white/5 bg-surface p-6">
         <label className="block">
@@ -195,6 +250,44 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         </div>
 
         <div className="rounded-2xl border border-white/5 bg-surface p-5">
+          <p className="text-sm font-medium">Autres photos</p>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {gallery.map((file) => (
+              <PhotoThumb key={file} src={mediaUrl(file)} onRemove={() => setGallery((files) => files.filter((f) => f !== file))}>
+                <input type="hidden" name="gallery" value={file} />
+              </PhotoThumb>
+            ))}
+            {newPhotos.map((photo) => (
+              <PhotoThumb key={photo.url} src={photo.url} onRemove={() => setNewPhotos((photos) => photos.filter((p) => p !== photo))} />
+            ))}
+            {photoCount < MAX_GALLERY_PHOTOS && (
+              <label className="flex aspect-square cursor-pointer items-center justify-center rounded-lg border border-dashed border-white/15 bg-background/40 text-muted transition-colors hover:border-white/40">
+                <ImagePlus size={18} />
+                <span className="sr-only">Ajouter des photos</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(e) => {
+                    addPhotos(Array.from(e.target.files ?? []));
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted">Jusqu&apos;à {MAX_GALLERY_PHOTOS} photos, 5 Mo max chacune. Elles s&apos;affichent dans l&apos;ordre d&apos;ajout.</p>
+        </div>
+
+        <ProductVideoField
+          productId={product?.id}
+          videoUrl={product?.videoUrl ?? null}
+          videoFile={product?.videoFile ?? null}
+          inputClassName={input}
+        />
+
+        <div className="rounded-2xl border border-white/5 bg-surface p-5">
           <p className="text-sm font-medium">Extrait audio</p>
           {product?.previewFile && !audioName && (
             <>
@@ -254,7 +347,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
           >
             {pending && <Loader2 size={16} className="animate-spin" />}
-            {product ? "Enregistrer" : "Créer le produit"}
+            {photoStep ?? (product ? "Enregistrer" : "Créer le produit")}
           </button>
           <Link href="/admin/produits" className="rounded-lg border border-white/10 px-4 py-2.5 text-sm hover:bg-white/5">
             Annuler
@@ -262,6 +355,24 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         </div>
       </aside>
     </form>
+  );
+}
+
+function PhotoThumb({ src, onRemove, children }: { src: string; onRemove: () => void; children?: React.ReactNode }) {
+  return (
+    <div className="relative aspect-square overflow-hidden rounded-lg border border-white/10">
+      {/* eslint-disable-next-line @next/next/no-img-element -- peut être un aperçu local (blob:) */}
+      <img src={src} alt="" className="h-full w-full object-cover" />
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Retirer la photo"
+        className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white hover:bg-black"
+      >
+        <X size={12} />
+      </button>
+      {children}
+    </div>
   );
 }
 
