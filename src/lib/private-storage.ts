@@ -1,9 +1,9 @@
 import "server-only";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, rename, stat, unlink } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat, unlink } from "node:fs/promises";
 import path from "node:path";
-import { Readable, Transform } from "node:stream";
-import { pipeline } from "node:stream/promises";
+import { Readable } from "node:stream";
+import { writeStream } from "./storage";
 
 // Fichiers livrés aux acheteurs (packs, installateurs). Stockés hors de
 // storage/uploads pour ne jamais être accessibles par une adresse publique :
@@ -15,40 +15,14 @@ export const DOWNLOAD_EXTENSIONS = ["zip", "rar", "7z", "dmg", "pkg", "exe", "ms
 
 const FILE_NAME = /^[a-f0-9-]{36}\.(zip|rar|7z|dmg|pkg|exe|msi|wav|mp3)$/;
 
-export class PrivateUploadError extends Error {}
-
 export function extensionOf(originalName: string) {
   const ext = originalName.split(".").pop()?.toLowerCase() ?? "";
   return (DOWNLOAD_EXTENSIONS as readonly string[]).includes(ext) ? ext : null;
 }
 
-/** Écrit le flux sur le disque sans le charger en mémoire, en coupant au-delà de la taille max. */
 export async function savePrivateStream(body: ReadableStream<Uint8Array>, ext: string) {
-  await mkdir(PRIVATE_DIR, { recursive: true });
   const name = `${crypto.randomUUID()}.${ext}`;
-  const target = path.join(PRIVATE_DIR, name);
-  const temp = `${target}.part`;
-
-  let size = 0;
-  const limit = new Transform({
-    transform(chunk: Buffer, _enc, cb) {
-      size += chunk.length;
-      if (size > MAX_DOWNLOAD_BYTES) cb(new PrivateUploadError("Fichier trop lourd (2 Go max)."));
-      else cb(null, chunk);
-    },
-  });
-
-  try {
-    await pipeline(Readable.fromWeb(body as import("node:stream/web").ReadableStream), limit, createWriteStream(temp));
-  } catch (e) {
-    await unlink(temp).catch(() => {});
-    throw e;
-  }
-  if (size === 0) {
-    await unlink(temp).catch(() => {});
-    throw new PrivateUploadError("Fichier vide.");
-  }
-  await rename(temp, target);
+  const size = await writeStream(body, path.join(PRIVATE_DIR, name), MAX_DOWNLOAD_BYTES, "2 Go");
   return { name, size };
 }
 

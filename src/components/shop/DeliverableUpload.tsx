@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useTransition } from "react";
 import { Download, FileArchive, Trash2, Upload } from "lucide-react";
 import { removeProductFile } from "@/app/actions/products";
 import { formatBytes } from "@/lib/shop-format";
+import { useFileUpload } from "./useFileUpload";
 
 const ACCEPT = ".zip,.rar,.7z,.dmg,.pkg,.exe,.msi,.wav,.mp3";
 
@@ -16,34 +16,9 @@ export function DeliverableUpload({
   productId: string;
   current: { name: string; size: number } | null;
 }) {
-  const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { progress, error, upload } = useFileUpload(`/api/admin/products/${productId}/file`);
   const [removing, startRemove] = useTransition();
-
-  function upload(file: File) {
-    setError(null);
-    setProgress(0);
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", `/api/admin/products/${productId}/file`);
-    xhr.setRequestHeader("x-file-name", encodeURIComponent(file.name));
-    xhr.upload.onprogress = (e) => e.lengthComputable && setProgress(Math.round((e.loaded / e.total) * 100));
-    xhr.onload = () => {
-      setProgress(null);
-      if (xhr.status >= 200 && xhr.status < 300) return router.refresh();
-      try {
-        setError(JSON.parse(xhr.responseText).error ?? "L'envoi a échoué.");
-      } catch {
-        setError(xhr.status === 413 ? "Fichier trop lourd." : "L'envoi a échoué.");
-      }
-    };
-    xhr.onerror = () => {
-      setProgress(null);
-      setError("Connexion interrompue pendant l'envoi.");
-    };
-    xhr.send(file);
-  }
 
   return (
     <div className="rounded-2xl border border-white/5 bg-surface p-5">
@@ -105,7 +80,7 @@ export function DeliverableUpload({
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = "";
-          if (f) upload(f);
+          if (f) upload(f, { "x-file-name": encodeURIComponent(f.name) });
         }}
       />
       <p className="mt-2 text-xs text-muted">ZIP, RAR, 7Z, DMG, PKG, EXE, MSI, WAV ou MP3 · 2 Go max.</p>

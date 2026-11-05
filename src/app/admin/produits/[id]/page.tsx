@@ -27,7 +27,7 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
     <DashboardShell user={admin} title={row.name} subtitle="Modifier le produit">
       {nouveau && (
         <p className="mb-6 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm">
-          Produit créé. Ajoute maintenant le fichier à livrer (ZIP, installateur…) dans le bloc à droite.
+          Produit créé. Ajoute maintenant le fichier à livrer (ZIP, installateur…) et, si tu veux, ta vidéo, dans les blocs à droite.
         </p>
       )}
       <ProductForm
@@ -46,6 +46,9 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           musicalKey: row.musicalKey,
           coverFile: row.coverFile,
           previewFile: row.previewFile,
+          galleryFiles: row.galleryFiles,
+          videoUrl: row.videoUrl,
+          videoFile: row.videoFile,
           downloadFile: row.downloadFile,
           downloadName: row.downloadName,
           downloadSize: row.downloadSize,

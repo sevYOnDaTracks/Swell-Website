@@ -9,9 +9,9 @@ import {
   extensionOf,
   MAX_DOWNLOAD_BYTES,
   openPrivateFile,
-  PrivateUploadError,
   savePrivateStream,
 } from "@/lib/private-storage";
+import { UploadError } from "@/lib/storage";
 
 // Envoi (PUT) et téléchargement (GET) du fichier livré d'un produit, réservés à l'admin.
 // Route dédiée plutôt qu'une Server Action : le fichier est écrit en flux, sans limite de 25 Mo.
@@ -50,7 +50,7 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/admin/produc
     revalidateTag(PRODUCTS_TAG, { expire: 0 });
     return Response.json({ ok: true, name: originalName, size });
   } catch (e) {
-    if (e instanceof PrivateUploadError) return Response.json({ error: e.message }, { status: 400 });
+    if (e instanceof UploadError) return Response.json({ error: e.message }, { status: 400 });
     throw e;
   }
 }
