@@ -70,6 +70,13 @@ async function itemsByOrder(orderIds: string[]) {
   return grouped;
 }
 
+/** Historique complet des commandes du client, de la plus récente à la plus ancienne. */
+export async function getOrderHistory(userId: string) {
+  const orders = await db.select().from(shopOrder).where(eq(shopOrder.userId, userId)).orderBy(desc(shopOrder.createdAt));
+  const items = await itemsByOrder(orders.map((o) => o.id));
+  return orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] }));
+}
+
 /** Commandes en attente de paiement du client. */
 export async function getPendingOrders(userId: string) {
   const orders = await db
@@ -90,6 +97,8 @@ export async function getAdminOrders() {
       method: shopOrder.method,
       status: shopOrder.status,
       totalCents: shopOrder.totalCents,
+      promoCode: shopOrder.promoCode,
+      discountCents: shopOrder.discountCents,
       createdAt: shopOrder.createdAt,
       paidAt: shopOrder.paidAt,
       clientName: user.name,

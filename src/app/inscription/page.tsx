@@ -29,6 +29,7 @@ export default function SignUpPage() {
       name: String(form.get("name")).trim(),
       email: String(form.get("email")).trim(),
       password,
+      callbackURL: nextPath("/compte"),
     });
     setPending(false);
 

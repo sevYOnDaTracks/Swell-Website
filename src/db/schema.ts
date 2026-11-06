@@ -239,6 +239,9 @@ export const shopOrder = sqliteTable(
     method: text("method", { enum: orderMethods }).notNull(),
     status: text("status", { enum: orderStatuses }).notNull().default("pending"),
     totalCents: integer("total_cents").notNull(),
+    // Code promo utilisé et remise déjà déduite du total.
+    promoCode: text("promo_code"),
+    discountCents: integer("discount_cents").notNull().default(0),
     // Date du renoncement exprès au droit de rétractation (contenu numérique).
     withdrawalWaivedAt: integer("withdrawal_waived_at", { mode: "timestamp_ms" }),
     paidAt: integer("paid_at", { mode: "timestamp_ms" }),
@@ -263,3 +266,21 @@ export const shopOrderItem = sqliteTable(
   },
   (t) => [index("shop_order_item_order_id_idx").on(t.orderId), index("shop_order_item_product_id_idx").on(t.productId)],
 );
+
+// --- Codes promo (gérés depuis /admin/promos) ------------------------------
+
+export const promoKinds = ["percent", "amount"] as const;
+
+export const promoCode = sqliteTable("promo_code", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  code: text("code").notNull().unique(),
+  kind: text("kind", { enum: promoKinds }).notNull(),
+  // Pourcentage de 1 à 100, ou montant en centimes.
+  value: integer("value").notNull(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  maxUses: integer("max_uses"),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+  ...timestamps,
+});

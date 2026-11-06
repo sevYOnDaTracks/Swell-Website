@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { claimFreeProduct } from "@/app/actions/orders";
+import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 
 /** Téléchargement d'un produit gratuit : sans compte, on passe d'abord par l'inscription. */
 export function FreeDownloadButton({ productId, slug }: { productId: string; slug: string }) {
@@ -17,6 +18,11 @@ export function FreeDownloadButton({ productId, slug }: { productId: string; slu
       const result = await claimFreeProduct(productId);
       if ("needsAccount" in result) {
         router.push(`/inscription?next=${encodeURIComponent(`/boutique/${slug}`)}`);
+        return;
+      }
+      if ("needsVerification" in result) {
+        setError("Confirme d'abord ton adresse email pour télécharger.");
+        askEmailVerification();
         return;
       }
       if ("error" in result) {
