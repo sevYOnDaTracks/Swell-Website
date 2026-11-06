@@ -8,7 +8,7 @@ import { availability, booking, bookingStatuses, type BookingStatus } from "@/db
 import { fromMinutes, getAvailableSlots, parisNow, toMinutes } from "@/lib/booking";
 import { sendBookingEmails } from "@/lib/booking-emails";
 import { getServiceById } from "@/lib/offers";
-import { requireAdmin, requireUser } from "@/lib/session";
+import { hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 // Chaque action revérifie la session : on ne fait jamais confiance au client.
 
@@ -22,8 +22,9 @@ export async function createBooking(input: {
   date: string;
   startTime: string;
   notes: string;
-}): Promise<{ error: string } | { ok: true }> {
+}): Promise<{ error: string; needsVerification?: true } | { ok: true }> {
   const user = await requireUser();
+  if (!hasConfirmedEmail(user)) return { error: "Confirme d'abord ton adresse email pour réserver.", needsVerification: true };
   const service = await getServiceById(input.serviceId);
   if (!service?.bookable) return { error: "Service inconnu." };
 

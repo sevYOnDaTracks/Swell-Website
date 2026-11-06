@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Geist, Geist_Mono, Unbounded } from "next/font/google";
+import { EmailVerificationPrompt } from "@/components/auth/EmailVerificationPrompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +38,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${condensed.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <EmailVerificationPrompt />
+      </body>
     </html>
   );
 }

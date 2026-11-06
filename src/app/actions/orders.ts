@@ -7,16 +7,18 @@ import { db } from "@/db";
 import { product, shopOrder, shopOrderItem } from "@/db/schema";
 import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaypalEmail, getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
-import { getCurrentUser, requireAdmin } from "@/lib/session";
+import { resolvePromo } from "@/lib/promos";
+import { getCurrentUser, hasConfirmedEmail, requireAdmin } from "@/lib/session";
 
 const MAX_PENDING_ORDERS = 5;
 
-type ClaimResult = { ok: true } | { needsAccount: true } | { error: string };
+type ClaimResult = { ok: true } | { needsAccount: true } | { needsVerification: true } | { error: string };
 
 /** Ajoute un produit gratuit à « Mes achats » : le téléchargement passe ensuite par le contrôle habituel. */
 export async function claimFreeProduct(productId: string): Promise<ClaimResult> {
   const user = await getCurrentUser();
   if (!user) return { needsAccount: true };
+  if (!hasConfirmedEmail(user)) return { needsVerification: true };
 
   const [row] = await db.select().from(product).where(and(eq(product.id, productId), eq(product.published, true)));
   if (!row || row.priceCents !== 0) return { error: "Ce produit n'est pas gratuit." };
@@ -33,14 +35,18 @@ export async function claimFreeProduct(productId: string): Promise<ClaimResult> 
   return { ok: true };
 }
 
-type CheckoutResult = { ok: true; paidIds: string[] } | { needsAccount: true } | { error: string };
+type CheckoutResult = { ok: true; paidIds: string[] } | { needsAccount: true } | { needsVerification: true } | { error: string };
 
 /** Crée une commande en attente de paiement. Les prix sont relus en base, jamais repris du navigateur. */
-export async function createOrder(productIds: string[], waivedWithdrawal: boolean, method: "transfer" | "paypal"): Promise<CheckoutResult> {
+export async function createOrder(
+  productIds: string[],
+  waivedWithdrawal: boolean,
+  method: "transfer" | "paypal",
+  rawPromoCode?: string,
+): Promise<CheckoutResult> {
   const user = await getCurrentUser();
   if (!user) return { needsAccount: true };
-  const open = method === "paypal" ? !!getPaypalEmail() : method === "transfer" && !!getTransferDetails();
-  if (!open) return { error: "Ce moyen de paiement n'est pas encore ouvert." };
+  if (!hasConfirmedEmail(user)) return { needsVerification: true };
   if (!waivedWithdrawal) return { error: "Coche la case pour continuer." };
 
   const wanted = [...new Set(productIds.filter((id) => typeof id === "string"))].slice(0, 50);
@@ -63,6 +69,17 @@ export async function createOrder(productIds: string[], waivedWithdrawal: boolea
     .where(and(eq(shopOrder.userId, user.id), eq(shopOrder.status, "pending")));
   if (pending.total >= MAX_PENDING_ORDERS) return { error: "Tu as déjà plusieurs commandes en attente : règle-les d'abord." };
 
+  const subtotal = payable.reduce((sum, p) => sum + p.priceCents, 0);
+  const promo = rawPromoCode?.trim() ? await resolvePromo(rawPromoCode, subtotal, user.id) : null;
+  if (promo && "error" in promo) return { error: promo.error ?? "Ce code promo n'est pas valable." };
+  const discountCents = promo?.discountCents ?? 0;
+  const total = subtotal - discountCents;
+
+  // Une remise de 100 % ne demande aucun paiement : la commande est validée tout de suite.
+  const coveredByPromo = total === 0;
+  const open = method === "paypal" ? !!getPaypalEmail() : method === "transfer" && !!getTransferDetails();
+  if (!coveredByPromo && !open) return { error: "Ce moyen de paiement n'est pas encore ouvert." };
+
   const orderId = crypto.randomUUID();
   db.transaction((tx) => {
     tx.insert(shopOrder)
@@ -70,9 +87,12 @@ export async function createOrder(productIds: string[], waivedWithdrawal: boolea
         id: orderId,
         userId: user.id,
         reference: newOrderReference(),
-        method,
-        status: "pending",
-        totalCents: payable.reduce((sum, p) => sum + p.priceCents, 0),
+        method: coveredByPromo ? "free" : method,
+        status: coveredByPromo ? "paid" : "pending",
+        paidAt: coveredByPromo ? new Date() : null,
+        totalCents: total,
+        promoCode: promo?.code ?? null,
+        discountCents,
         withdrawalWaivedAt: new Date(),
       })
       .run();
@@ -81,7 +101,7 @@ export async function createOrder(productIds: string[], waivedWithdrawal: boolea
     }
   });
 
-  after(() => sendOrderEmails(orderId, "created"));
+  after(() => sendOrderEmails(orderId, coveredByPromo ? "paid" : "created"));
   return { ok: true, paidIds: payable.map((p) => p.id) };
 }
 

@@ -9,7 +9,7 @@ import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/Book
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
-import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
+import { getOrderHistory, getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
 import { formatBytes, formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
@@ -23,6 +23,8 @@ const ANYDESK_DOWNLOADS = [
   { label: "macOS", href: "https://download.anydesk.com/anydesk.dmg" },
 ];
 const REMOTE_SERVICES = new Set(["plugins"]);
+const orderDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+const ORDER_STATUS = { pending: "En attente de paiement", paid: "Validée", cancelled: "Annulée" } as const;
 
 export default function AccountPage({ searchParams }: PageProps<"/compte">) {
   return (
@@ -41,7 +43,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
   const transfer = getTransferDetails();
   const paypalEmail = getPaypalEmail();
-  const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders] = await Promise.all([
+  const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory] = await Promise.all([
     db
       .select()
       .from(booking)
@@ -58,6 +60,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     db.select({ onboardedAt: userTable.onboardedAt }).from(userTable).where(eq(userTable.id, user.id)),
     getPurchases(user.id),
     getPendingOrders(user.id),
+    getOrderHistory(user.id),
   ]);
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
@@ -264,6 +267,28 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               )
             )}
           </Card>
+
+          {orderHistory.length > 0 && (
+            <Card title="Historique des commandes">
+              <ul className="divide-y divide-white/5">
+                {orderHistory.map((o) => (
+                  <li key={o.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <p className="font-medium">{o.items.map((i) => i.name).join(", ")}</p>
+                      <p className="text-xs text-muted">
+                        {orderDate.format(o.createdAt)} · {o.reference}
+                        {o.promoCode && ` · code ${o.promoCode}`}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-right">
+                      <span className="font-semibold">{o.totalCents === 0 ? "Gratuit" : formatPrice(o.totalCents)}</span>
+                      <span className="block text-xs text-muted">{ORDER_STATUS[o.status]}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-4">

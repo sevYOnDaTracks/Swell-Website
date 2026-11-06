@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Check, Clock, Loader2 } from "lucide-react";
 import { createBooking, fetchSlots } from "@/app/actions/booking";
+import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 
 type Service = { id: string; label: string; duration: number; description: string };
 type Day = { date: string; open: boolean };
@@ -52,6 +53,7 @@ export function BookingForm({
       const result = await createBooking({ serviceId, date, startTime: time, notes });
       if ("error" in result) {
         setError(result.error);
+        if (result.needsVerification) askEmailVerification();
         setSlots(await fetchSlots(serviceId, date));
         setTime(null);
         return;

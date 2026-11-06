@@ -7,6 +7,8 @@ import { useEffect, useState, useTransition } from "react";
 import { ArrowLeft, Landmark, Loader2, Lock, ShoppingCart, Wallet, X } from "lucide-react";
 import { getCartProducts } from "@/app/actions/cart";
 import { createOrder } from "@/app/actions/orders";
+import { checkPromo } from "@/app/actions/promos";
+import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 import { useCart } from "@/lib/cart";
 import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
 
@@ -18,13 +20,20 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
   const [waived, setWaived] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ordering, startOrder] = useTransition();
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discountCents: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [checkingPromo, startPromo] = useTransition();
   const [products, setProducts] = useState<CartProduct[] | null>(null);
   const key = cart.ids.join(",");
 
   useEffect(() => {
     let active = true;
     getCartProducts(key ? key.split(",") : []).then((rows) => {
-      if (active) setProducts(rows);
+      if (!active) return;
+      setProducts(rows);
+      // Le panier a changé : la remise affichée n'est plus forcément la bonne.
+      setPromo(null);
     });
     return () => {
       active = false;
@@ -39,13 +48,31 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
   const items = cart.ids.flatMap((id) => products.filter((p) => p.id === id));
   const total = items.reduce((sum, p) => sum + p.priceCents, 0);
   const hasFreeItems = items.some((p) => p.priceCents === 0);
+  const finalTotal = total - (promo?.discountCents ?? 0);
+
+  function applyPromo() {
+    setPromoError(null);
+    startPromo(async () => {
+      const result = await checkPromo(promoInput, items.map((p) => p.id));
+      if (!("code" in result) || !result.code) {
+        setPromo(null);
+        return setPromoError(result.error ?? "Ce code promo n'est pas valable.");
+      }
+      setPromo({ code: result.code, discountCents: result.discountCents });
+    });
+  }
 
   function order(method: "transfer" | "paypal") {
     setError(null);
     startOrder(async () => {
-      const result = await createOrder(items.map((p) => p.id), waived, method);
+      const result = await createOrder(items.map((p) => p.id), waived, method, promo?.code);
       if ("needsAccount" in result) {
         router.push("/inscription?next=%2Fpanier");
+        return;
+      }
+      if ("needsVerification" in result) {
+        setError("Confirme d'abord ton adresse email pour commander.");
+        askEmailVerification();
         return;
       }
       if ("error" in result) {
@@ -111,10 +138,48 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
         </div>
         <p className="mt-4 flex items-baseline justify-between">
           <span className="text-sm text-muted">Total</span>
-          <span className="text-2xl font-bold tracking-tight">{formatPrice(total)}</span>
+          <span className="text-2xl font-bold tracking-tight">{formatPrice(finalTotal)}</span>
         </p>
+        {promo && (
+          <p className="mt-1 flex items-center justify-between text-sm text-muted">
+            <span>
+              Code {promo.code} : -{formatPrice(promo.discountCents)}
+            </span>
+            <button type="button" onClick={() => setPromo(null)} className="underline underline-offset-2 hover:text-foreground">
+              Retirer
+            </button>
+          </p>
+        )}
+        {total > 0 && !promo && (
+          <div className="mt-4">
+            <div className="flex gap-2">
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">Code promo</span>
+                <input
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value)}
+                  placeholder="Code promo"
+                  className="block w-full rounded-lg border border-white/10 bg-background/60 px-3 py-2 text-sm uppercase outline-none placeholder:normal-case focus:border-white/50"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={applyPromo}
+                disabled={!promoInput.trim() || checkingPromo}
+                className="rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/5 disabled:opacity-50"
+              >
+                Appliquer
+              </button>
+            </div>
+            {promoError && (
+              <p role="alert" className="mt-2 text-xs text-red-300">
+                {promoError}
+              </p>
+            )}
+          </div>
+        )}
         {hasFreeItems && <p className="mt-3 text-xs text-muted">Les produits gratuits se téléchargent directement depuis leur fiche.</p>}
-        {(transferOpen || paypalOpen) && total > 0 ? (
+        {total > 0 && (finalTotal === 0 || transferOpen || paypalOpen) ? (
           <>
             <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-foreground/85">
               <input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-white" />
@@ -131,7 +196,17 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
                 {error}
               </p>
             )}
-            {paypalOpen && (
+            {finalTotal === 0 && (
+              <button
+                type="button"
+                onClick={() => order("paypal")}
+                disabled={!waived || ordering}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
+              >
+                {ordering && <Loader2 size={16} className="animate-spin" />} Valider ma commande
+              </button>
+            )}
+            {finalTotal > 0 && paypalOpen && (
               <button
                 type="button"
                 onClick={() => order("paypal")}
@@ -141,7 +216,7 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
                 {ordering ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />} Commander et payer par PayPal
               </button>
             )}
-            {transferOpen && (
+            {finalTotal > 0 && transferOpen && (
               <button
                 type="button"
                 onClick={() => order("transfer")}

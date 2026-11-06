@@ -1,12 +1,11 @@
 import { Suspense } from "react";
-import { and, asc, desc, eq, gte, ne } from "drizzle-orm";
+import { and, asc, count, eq, gte, ne } from "drizzle-orm";
 import { CalendarCheck, Hourglass, ShoppingBag, Users } from "lucide-react";
-import { Avatar } from "@/components/dashboard/Avatar";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { AdminBookingActions } from "@/components/booking/BookingActions";
 import { db } from "@/db";
-import { booking, user as userTable } from "@/db/schema";
+import { booking, shopOrder, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getServiceNames } from "@/lib/offers";
 import { formatPhone, phoneHref } from "@/lib/phone";
@@ -22,25 +21,12 @@ export default function AdminPage() {
   );
 }
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
-
 async function AdminContent() {
   const admin = await requireAdmin();
   const today = parisNow().date;
 
-  const [users, bookings, serviceName] = await Promise.all([
-    db
-      .select({
-        id: userTable.id,
-        name: userTable.name,
-        email: userTable.email,
-        image: userTable.image,
-        phone: userTable.phone,
-        role: userTable.role,
-        createdAt: userTable.createdAt,
-      })
-      .from(userTable)
-      .orderBy(desc(userTable.createdAt)),
+  const [users, bookings, serviceName, [sales]] = await Promise.all([
+    db.select({ role: userTable.role }).from(userTable),
     db
       .select({
         id: booking.id,
@@ -62,6 +48,7 @@ async function AdminContent() {
       .where(and(gte(booking.date, today), ne(booking.status, "cancelled")))
       .orderBy(asc(booking.date), asc(booking.startTime)),
     getServiceNames(),
+    db.select({ total: count() }).from(shopOrder).where(and(eq(shopOrder.status, "paid"), ne(shopOrder.method, "free"))),
   ]);
 
   const clients = users.filter((u) => u.role !== "admin");
@@ -71,7 +58,7 @@ async function AdminContent() {
     { label: "Clients inscrits", value: clients.length, icon: Users },
     { label: "Sessions à venir", value: bookings.length, icon: CalendarCheck },
     { label: "À confirmer", value: pendingCount, icon: Hourglass },
-    { label: "Ventes boutique", value: 0, icon: ShoppingBag },
+    { label: "Ventes boutique", value: sales.total, icon: ShoppingBag },
   ];
 
   return (
@@ -131,57 +118,6 @@ async function AdminContent() {
           )}
         </Card>
 
-        <Card title="Utilisateurs">
-          {users.length === 0 ? (
-            <EmptyState>Aucun utilisateur.</EmptyState>
-          ) : (
-            <div className="-mx-6 overflow-x-auto">
-              <table className="w-full min-w-[680px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-wider text-muted">
-                  <tr className="border-b border-white/5">
-                    <th className="px-6 py-3 font-medium">Nom</th>
-                    <th className="px-6 py-3 font-medium">Email</th>
-                    <th className="px-6 py-3 font-medium">Téléphone</th>
-                    <th className="px-6 py-3 font-medium">Rôle</th>
-                    <th className="px-6 py-3 font-medium">Inscrit le</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-white/[0.02]">
-                      <td className="px-6 py-3 font-medium">
-                        <span className="flex items-center gap-2.5">
-                          <Avatar name={u.name} image={u.image} size={28} />
-                          {u.name}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-muted">{u.email}</td>
-                      <td className="px-6 py-3 whitespace-nowrap text-muted">
-                        {u.phone ? (
-                          <a href={phoneHref(u.phone)} className="hover:text-foreground hover:underline">
-                            {formatPhone(u.phone)}
-                          </a>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-6 py-3">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs ${
-                            u.role === "admin" ? "bg-white text-black" : "bg-white/5 text-neutral-300"
-                          }`}
-                        >
-                          {u.role === "admin" ? "Admin" : "Client"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-muted">{dateFormat.format(u.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
       </div>
     </DashboardShell>
   );

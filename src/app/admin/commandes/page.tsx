@@ -46,7 +46,10 @@ async function OrdersContent() {
                   <p className="text-sm text-muted">
                     {o.clientName} ({o.clientEmail})
                   </p>
-                  <p className="text-sm text-muted">{o.items.map((i) => i.name).join(", ")}</p>
+                  <p className="text-sm text-muted">
+                    {o.items.map((i) => i.name).join(", ")}
+                    {o.promoCode && ` · code ${o.promoCode} (-${formatPrice(o.discountCents)})`}
+                  </p>
                 </div>
                 {o.status === "pending" && <OrderActions orderId={o.id} reference={o.reference} />}
               </li>

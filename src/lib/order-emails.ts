@@ -62,9 +62,9 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
   if (event === "paid") {
     await sendEmail({
       to: order.clientEmail,
-      subject: `Paiement reçu : ta commande ${order.reference} est prête`,
+      subject: `Ta commande ${order.reference} est prête`,
       title: "Tes fichiers sont disponibles",
-      paragraphs: [`Merci ! Ton paiement de ${total} est bien reçu.`, `Tu peux télécharger ${names} depuis ton espace.`],
+      paragraphs: [order.totalCents === 0 ? "Ta commande est validée." : `Merci ! Ton paiement de ${total} est bien reçu.`, `Tu peux télécharger ${names} depuis ton espace.`],
       cta: account,
     });
   }

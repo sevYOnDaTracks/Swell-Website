@@ -40,6 +40,26 @@ export const auth = betterAuth({
       });
     },
   },
+  // Les comptes Google arrivent déjà confirmés par Google. La connexion reste possible avant
+  // confirmation : ce sont les actions (commander, télécharger, réserver) qui l'exigent.
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Confirme ton adresse email Swell",
+        title: "Confirme ton adresse email",
+        paragraphs: [
+          `Salut ${user.name.split(" ")[0]},`,
+          "Clique sur le bouton ci-dessous pour confirmer ton adresse. Tu pourras ensuite commander, télécharger et réserver. Le lien est valable 24 heures.",
+          "Si tu n'as pas créé de compte Swell, ignore simplement cet email.",
+        ],
+        cta: { label: "Confirmer mon adresse", href: url },
+      });
+    },
+  },
   // Google n'est activé que si les identifiants sont présents dans .env.local.
   socialProviders: google ? { google } : {},
   account: {
