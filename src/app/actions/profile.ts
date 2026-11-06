@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/schema";
-import { normalizeCode, normalizeNumber } from "@/lib/phone";
+import { parsePhoneInput } from "@/lib/phone";
 import { requireUser } from "@/lib/session";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
 
@@ -29,14 +29,9 @@ export async function updateProfile(formData: FormData): Promise<Result> {
   const name = text(formData, "name");
   if (name.length < 2) return { error: "Indique ton nom (2 caractères minimum)." };
 
-  const code = normalizeCode(text(formData, "phoneCode"));
-  const digits = code ? normalizeNumber(code, text(formData, "phone")) : text(formData, "phone");
-  let phone: string | null = null;
-  if (digits) {
-    if (!code) return { error: "Indicatif invalide : par exemple +33, +225 ou +1." };
-    if (!/^\d{6,14}$/.test(digits)) return { error: "Numéro de téléphone invalide (chiffres uniquement)." };
-    phone = `${code} ${digits}`;
-  }
+  const parsedPhone = parsePhoneInput(text(formData, "phoneCode"), text(formData, "phone"));
+  if ("error" in parsedPhone) return { error: parsedPhone.error };
+  const { phone } = parsedPhone;
 
   const birthDate = text(formData, "birthDate") || null;
   if (birthDate) {

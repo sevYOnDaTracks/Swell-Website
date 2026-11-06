@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { parsePhoneInput } from "@/lib/phone";
 import { requireAdmin } from "@/lib/session";
 
 type Result = { error: string } | { ok: true };
@@ -13,12 +14,14 @@ type Result = { error: string } | { ok: true };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const cleanRole = (role: string) => (role === "admin" ? "admin" : "user");
 
-export async function createUserByAdmin(input: { name: string; email: string; role: string }): Promise<Result> {
+export async function createUserByAdmin(input: { name: string; email: string; role: string; phoneCode: string; phone: string }): Promise<Result> {
   await requireAdmin();
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (!name) return { error: "Le nom est obligatoire." };
   if (!EMAIL.test(email)) return { error: "Adresse email invalide." };
+  const parsedPhone = parsePhoneInput(input.phoneCode, input.phone);
+  if ("error" in parsedPhone) return { error: parsedPhone.error };
 
   const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, email));
   if (existing) return { error: "Un compte existe déjà avec cet email." };
@@ -29,7 +32,7 @@ export async function createUserByAdmin(input: { name: string; email: string; ro
     body: { name, email, password: `${crypto.randomUUID()}-${crypto.randomUUID()}`, data: { emailVerified: true } },
   });
   // Le rôle est réglé après coup : l'inscription l'impose d'après ADMIN_EMAILS.
-  await db.update(user).set({ role: cleanRole(input.role), emailVerified: true }).where(eq(user.id, created.user.id));
+  await db.update(user).set({ role: cleanRole(input.role), emailVerified: true, phone: parsedPhone.phone }).where(eq(user.id, created.user.id));
   await auth.api.requestPasswordReset({ body: { email, redirectTo: "/reinitialiser" } });
   refresh();
   return { ok: true };
@@ -37,19 +40,21 @@ export async function createUserByAdmin(input: { name: string; email: string; ro
 
 export async function updateUserByAdmin(
   id: string,
-  input: { name: string; email: string; role: string; emailVerified: boolean },
+  input: { name: string; email: string; role: string; emailVerified: boolean; phoneCode: string; phone: string },
 ): Promise<Result> {
   const admin = await requireAdmin();
   const name = input.name.trim();
   const email = input.email.trim().toLowerCase();
   if (!name) return { error: "Le nom est obligatoire." };
   if (!EMAIL.test(email)) return { error: "Adresse email invalide." };
+  const parsedPhone = parsePhoneInput(input.phoneCode, input.phone);
+  if ("error" in parsedPhone) return { error: parsedPhone.error };
   if (id === admin.id && cleanRole(input.role) !== "admin") return { error: "Tu ne peux pas retirer ton propre rôle d'administrateur." };
 
   const [taken] = await db.select({ id: user.id }).from(user).where(and(eq(user.email, email), ne(user.id, id)));
   if (taken) return { error: "Un autre compte utilise déjà cet email." };
 
-  await db.update(user).set({ name, email, role: cleanRole(input.role), emailVerified: input.emailVerified }).where(eq(user.id, id));
+  await db.update(user).set({ name, email, phone: parsedPhone.phone, role: cleanRole(input.role), emailVerified: input.emailVerified }).where(eq(user.id, id));
   refresh();
   return { ok: true };
 }

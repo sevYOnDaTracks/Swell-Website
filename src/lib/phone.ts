@@ -18,6 +18,16 @@ export function normalizeNumber(code: string, raw: string) {
   return TRUNK_ZERO_CODES.has(code) ? digits.replace(/^0/, "") : digits;
 }
 
+/** Valide l'indicatif et le numéro saisis. Un numéro vide donne null : le téléphone reste facultatif. */
+export function parsePhoneInput(rawCode: string, rawNumber: string): { phone: string | null } | { error: string } {
+  const code = normalizeCode(rawCode);
+  const digits = code ? normalizeNumber(code, rawNumber) : rawNumber.trim();
+  if (!digits) return { phone: null };
+  if (!code) return { error: "Indicatif invalide : par exemple +33, +225 ou +1." };
+  if (!/^\d{6,14}$/.test(digits)) return { error: "Numéro de téléphone invalide (chiffres uniquement)." };
+  return { phone: `${code} ${digits}` };
+}
+
 /** Sépare "+33 612345678" en indicatif et numéro, pour pré-remplir le formulaire. */
 export function splitPhone(phone: string | null | undefined) {
   const match = phone?.match(/^(\+\d{1,4}) (\d+)$/);

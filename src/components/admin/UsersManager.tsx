@@ -4,11 +4,13 @@ import { useState, useTransition } from "react";
 import { BadgeCheck, Ban, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { createUserByAdmin, deleteUserByAdmin, sendPasswordLinkToUser, setUserDisabled, updateUserByAdmin } from "@/app/actions/users";
 import { Avatar } from "@/components/dashboard/Avatar";
+import { DEFAULT_COUNTRY_CODE, formatPhone, phoneHref, splitPhone } from "@/lib/phone";
 
 export type AdminUser = {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
   image: string | null;
   role: string;
   banned: boolean;
@@ -32,7 +34,7 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
 
   const q = query.trim().toLowerCase();
   const shown = users.filter((u) => {
-    if (q && !`${u.name} ${u.email}`.toLowerCase().includes(q)) return false;
+    if (q && !`${u.name} ${u.email} ${u.phone ?? ""}`.toLowerCase().includes(q)) return false;
     if (filter === "admin") return u.role === "admin";
     if (filter === "disabled") return u.banned;
     if (filter === "unverified") return !u.emailVerified;
@@ -55,7 +57,7 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
         <label className="relative flex-1">
           <span className="sr-only">Rechercher un utilisateur</span>
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nom ou email" className={`${input} mt-0 pl-9`} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nom, email ou téléphone" className={`${input} mt-0 pl-9`} />
         </label>
         <label>
           <span className="sr-only">Filtrer</span>
@@ -84,13 +86,19 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
 
       {adding && (
         <form
-          className="grid gap-3 rounded-2xl border border-white/10 bg-surface p-5 sm:grid-cols-[1fr_1fr_140px_auto] sm:items-end"
+          className="grid gap-3 rounded-2xl border border-white/10 bg-surface p-5 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_1fr_1fr_130px_auto]"
           onSubmit={(e) => {
             e.preventDefault();
             const form = e.currentTarget;
             const data = new FormData(form);
             run(
-              () => createUserByAdmin({ name: String(data.get("name")), email: String(data.get("email")), role: String(data.get("role")) }),
+              () => createUserByAdmin({
+                  name: String(data.get("name")),
+                  email: String(data.get("email")),
+                  role: String(data.get("role")),
+                  phoneCode: String(data.get("phoneCode")),
+                  phone: String(data.get("phone")),
+                }),
               "Compte créé. Un lien pour choisir son mot de passe lui a été envoyé par email.",
               () => {
                 form.reset();
@@ -107,6 +115,7 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
             Email
             <input name="email" type="email" required className={input} />
           </label>
+          <PhoneFields />
           <label className="text-sm">
             Rôle
             <select name="role" className={input}>
@@ -139,6 +148,11 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
                     {!u.emailVerified && <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs font-normal text-muted">Email non confirmé</span>}
                   </p>
                   <p className="truncate text-sm text-muted">{u.email}</p>
+                  {u.phone && (
+                    <a href={phoneHref(u.phone)} className="block text-sm whitespace-nowrap text-muted hover:text-foreground hover:underline">
+                      {formatPhone(u.phone)}
+                    </a>
+                  )}
                   <p className="text-xs text-muted">
                     Inscrit le {u.createdLabel} · {u.orders} commande{u.orders > 1 ? "s" : ""} · {u.bookings} réservation{u.bookings > 1 ? "s" : ""}
                   </p>
@@ -201,6 +215,8 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
                           email: String(data.get("email")),
                           role: String(data.get("role")),
                           emailVerified: data.get("emailVerified") === "on",
+                          phoneCode: String(data.get("phoneCode")),
+                          phone: String(data.get("phone")),
                         }),
                       "Compte modifié.",
                       () => setEditing(null),
@@ -215,6 +231,7 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
                     Email
                     <input name="email" type="email" required defaultValue={u.email} className={input} />
                   </label>
+                  <PhoneFields phone={u.phone} />
                   <label className="text-sm">
                     Rôle
                     <select name="role" defaultValue={u.role === "admin" ? "admin" : "user"} disabled={self} className={input}>
@@ -241,6 +258,20 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Indicatif et numéro, enregistrés comme dans le profil client. */
+function PhoneFields({ phone }: { phone?: string | null }) {
+  const parts = splitPhone(phone);
+  return (
+    <div className="text-sm">
+      Téléphone
+      <div className="mt-1 flex gap-2">
+        <input name="phoneCode" aria-label="Indicatif" defaultValue={parts.code || DEFAULT_COUNTRY_CODE} className={`${input} mt-0 w-20 shrink-0`} />
+        <input name="phone" aria-label="Numéro de téléphone" type="tel" inputMode="tel" defaultValue={parts.number} placeholder="Facultatif" className={`${input} mt-0 min-w-0`} />
+      </div>
     </div>
   );
 }
