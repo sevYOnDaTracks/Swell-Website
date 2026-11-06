@@ -9,6 +9,8 @@ import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/Book
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
+import { getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
+import { formatBytes, formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
 
@@ -37,7 +39,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
 
-  const [upcoming, past, serviceName, bookingServices, [me]] = await Promise.all([
+  const transfer = getTransferDetails();
+  const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders] = await Promise.all([
     db
       .select()
       .from(booking)
@@ -52,6 +55,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     getServiceNames(),
     getBookableServices(),
     db.select({ onboardedAt: userTable.onboardedAt }).from(userTable).where(eq(userTable.id, user.id)),
+    getPurchases(user.id),
+    getPendingOrders(user.id),
   ]);
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
@@ -174,12 +179,62 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               </span>
             }
           >
-            <EmptyState>
-              Tes VST et drum kits achetés apparaîtront ici.{" "}
-              <Link href="/boutique" className="text-foreground underline underline-offset-4">
-                Voir la boutique
-              </Link>
-            </EmptyState>
+            {pendingOrders.map((o) => (
+              <div key={o.id} className="mb-3 rounded-xl border border-white/15 bg-white/[0.04] p-4 text-sm">
+                <p className="font-semibold">
+                  Commande {o.reference} · {formatPrice(o.totalCents)}
+                </p>
+                <p className="mt-1 text-muted">{o.items.map((i) => i.name).join(", ")}</p>
+                {transfer && (
+                  <dl className="mt-3 space-y-1">
+                    <div>
+                      <dt className="inline text-muted">Bénéficiaire : </dt>
+                      <dd className="inline">{transfer.holder}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline text-muted">IBAN : </dt>
+                      <dd className="inline break-all font-mono">{transfer.iban}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline text-muted">Libellé à indiquer : </dt>
+                      <dd className="inline font-mono font-semibold">{o.reference}</dd>
+                    </div>
+                  </dl>
+                )}
+                <p className="mt-3 text-xs text-muted">Tes fichiers apparaîtront ici dès réception du virement.</p>
+              </div>
+            ))}
+            {purchases.length > 0 ? (
+              <ul className="space-y-2">
+                {purchases.map((p) => (
+                  <li key={p.itemId} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-background/40 p-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{p.name}</p>
+                      {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
+                    </div>
+                    {p.productId && p.available ? (
+                      <a
+                        href={`/api/downloads/${p.productId}`}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                      >
+                        <Download size={15} /> Télécharger
+                      </a>
+                    ) : (
+                      <span className="shrink-0 text-xs text-muted">Indisponible</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              pendingOrders.length === 0 && (
+                <EmptyState>
+                  Tes VST et drum kits apparaîtront ici.{" "}
+                  <Link href="/boutique" className="text-foreground underline underline-offset-4">
+                    Voir la boutique
+                  </Link>
+                </EmptyState>
+              )
+            )}
           </Card>
         </div>
 

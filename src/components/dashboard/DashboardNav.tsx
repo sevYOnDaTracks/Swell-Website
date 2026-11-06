@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarPlus, Clock, Disc3, Gauge, Settings, ShoppingBag, Tags, UserRound } from "lucide-react";
+import { CalendarPlus, Clock, Disc3, Gauge, Receipt, Settings, ShoppingBag, Tags, UserRound } from "lucide-react";
 
 const CLIENT_LINKS = [
   { href: "/compte", label: "Mon espace", Icon: UserRound },
@@ -15,6 +15,7 @@ const ADMIN_LINKS = [
   { href: "/admin/disponibilites", label: "Disponibilités", Icon: Clock },
   { href: "/admin/productions", label: "Productions", Icon: Disc3 },
   { href: "/admin/produits", label: "Boutique", Icon: ShoppingBag },
+  { href: "/admin/commandes", label: "Commandes", Icon: Receipt },
   { href: "/admin/offres", label: "Services & tarifs", Icon: Tags },
 ];
 

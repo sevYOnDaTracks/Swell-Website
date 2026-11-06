@@ -23,7 +23,7 @@ export const legal = {
   cancellationNotice: "24 heures",
   // Médiateur de la consommation (obligatoire pour vendre à des particuliers).
   mediator: "TODO Nom et site du médiateur de la consommation",
-  lastUpdate: "2 novembre 2026",
+  lastUpdate: "6 novembre 2026",
 };
 
 export const isTodo = (value: string) => value.startsWith("TODO");

@@ -219,3 +219,47 @@ export const production = sqliteTable("production", {
   position: integer("position").notNull().default(0),
   ...timestamps,
 });
+
+// --- Commandes de la boutique ----------------------------------------------
+
+export const orderStatuses = ["pending", "paid", "cancelled"] as const;
+export const orderMethods = ["free", "transfer"] as const;
+
+export const shopOrder = sqliteTable(
+  "shop_order",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // Référence à recopier dans le libellé du virement.
+    reference: text("reference").notNull().unique(),
+    method: text("method", { enum: orderMethods }).notNull(),
+    status: text("status", { enum: orderStatuses }).notNull().default("pending"),
+    totalCents: integer("total_cents").notNull(),
+    // Date du renoncement exprès au droit de rétractation (contenu numérique).
+    withdrawalWaivedAt: integer("withdrawal_waived_at", { mode: "timestamp_ms" }),
+    paidAt: integer("paid_at", { mode: "timestamp_ms" }),
+    ...timestamps,
+  },
+  (t) => [index("shop_order_user_id_idx").on(t.userId), index("shop_order_status_idx").on(t.status)],
+);
+
+export const shopOrderItem = sqliteTable(
+  "shop_order_item",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => shopOrder.id, { onDelete: "cascade" }),
+    // Le nom et le prix restent sur la commande même si le produit change ou disparaît.
+    productId: text("product_id").references(() => product.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    priceCents: integer("price_cents").notNull(),
+  },
+  (t) => [index("shop_order_item_order_id_idx").on(t.orderId), index("shop_order_item_product_id_idx").on(t.productId)],
+);

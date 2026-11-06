@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { FreeDownloadButton } from "@/components/shop/FreeDownloadButton";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ProductGallery } from "@/components/shop/ProductGallery";
@@ -121,8 +122,21 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
                 {product.downloadSize ? ` · ${formatBytes(product.downloadSize)}` : ""}
               </p>
             )}
-            <AddToCartButton productId={product.id} />
-            <p className="mt-3 text-xs text-muted">Paiement sécurisé et téléchargement immédiat depuis ton espace, très bientôt.</p>
+            {product.priceCents === 0 ? (
+              <>
+                {product.downloadFile ? (
+                  <FreeDownloadButton productId={product.id} slug={product.slug} />
+                ) : (
+                  <p className="mt-4 rounded-lg border border-white/10 px-4 py-3 text-center text-sm text-muted">Bientôt disponible</p>
+                )}
+                <p className="mt-3 text-xs text-muted">Avec un compte gratuit. Ton fichier reste ensuite disponible dans ton espace.</p>
+              </>
+            ) : (
+              <>
+                <AddToCartButton productId={product.id} />
+                <p className="mt-3 text-xs text-muted">Téléchargement depuis ton espace après réception du paiement.</p>
+              </>
+            )}
           </div>
 
           {product.description && (
