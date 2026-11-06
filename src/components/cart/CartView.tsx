@@ -2,16 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Lock, ShoppingCart, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { ArrowLeft, Landmark, Loader2, Lock, ShoppingCart, X } from "lucide-react";
 import { getCartProducts } from "@/app/actions/cart";
+import { createTransferOrder } from "@/app/actions/orders";
 import { useCart } from "@/lib/cart";
 import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
 
 type CartProduct = Awaited<ReturnType<typeof getCartProducts>>[number];
 
-export function CartView() {
+export function CartView({ transferOpen }: { transferOpen: boolean }) {
+  const router = useRouter();
   const cart = useCart();
+  const [waived, setWaived] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [ordering, startOrder] = useTransition();
   const [products, setProducts] = useState<CartProduct[] | null>(null);
   const key = cart.ids.join(",");
 
@@ -32,6 +38,24 @@ export function CartView() {
   // Dans l'ordre d'ajout ; un produit retiré de la boutique disparaît du panier.
   const items = cart.ids.flatMap((id) => products.filter((p) => p.id === id));
   const total = items.reduce((sum, p) => sum + p.priceCents, 0);
+  const hasFreeItems = items.some((p) => p.priceCents === 0);
+
+  function order() {
+    setError(null);
+    startOrder(async () => {
+      const result = await createTransferOrder(items.map((p) => p.id), waived);
+      if ("needsAccount" in result) {
+        router.push("/inscription?next=%2Fpanier");
+        return;
+      }
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+      result.paidIds.forEach(cart.remove);
+      router.push("/compte");
+    });
+  }
 
   if (items.length === 0) {
     return (
@@ -89,14 +113,46 @@ export function CartView() {
           <span className="text-sm text-muted">Total</span>
           <span className="text-2xl font-bold tracking-tight">{formatPrice(total)}</span>
         </p>
-        <button
-          type="button"
-          disabled
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black opacity-50"
-        >
-          <Lock size={16} /> Paiement bientôt disponible
-        </button>
-        <p className="mt-3 text-xs text-muted">Ton panier est gardé sur cet appareil en attendant l&apos;ouverture des paiements.</p>
+        {hasFreeItems && <p className="mt-3 text-xs text-muted">Les produits gratuits se téléchargent directement depuis leur fiche.</p>}
+        {transferOpen && total > 0 ? (
+          <>
+            <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-foreground/85">
+              <input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-white" />
+              <span>
+                J&apos;accepte les{" "}
+                <Link href="/cgv" className="underline underline-offset-2">
+                  CGV
+                </Link>
+                , je demande l&apos;accès au téléchargement dès réception du paiement et je renonce à mon droit de rétractation une fois le téléchargement commencé.
+              </span>
+            </label>
+            {error && (
+              <p role="alert" className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={order}
+              disabled={!waived || ordering}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
+            >
+              {ordering ? <Loader2 size={16} className="animate-spin" /> : <Landmark size={16} />} Commander par virement
+            </button>
+            <p className="mt-3 text-xs text-muted">Tu reçois l&apos;IBAN et une référence. Tes fichiers arrivent dans ton espace dès réception du virement.</p>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black opacity-50"
+            >
+              <Lock size={16} /> Paiement bientôt disponible
+            </button>
+            <p className="mt-3 text-xs text-muted">Ton panier est gardé sur cet appareil en attendant l&apos;ouverture des paiements.</p>
+          </>
+        )}
         <Link href="/boutique" className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowLeft size={14} /> Continuer mes achats
         </Link>
