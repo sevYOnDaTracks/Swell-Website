@@ -41,8 +41,8 @@ export default function CgvPage() {
           d&apos;une proposition écrite avant tout engagement.
         </p>
         <p>
-          Les produits numériques se règlent par virement bancaire aux coordonnées communiquées lors de la commande, avec la
-          référence indiquée. Ils sont mis à disposition dans l&apos;espace client après réception du paiement. Les modalités
+          Les produits numériques se règlent par PayPal ou par virement bancaire, selon les moyens proposés lors de la
+          commande, avec la référence indiquée. Ils sont mis à disposition dans l&apos;espace client après réception du paiement. Les modalités
           de paiement des sessions sont précisées lors de la confirmation.
         </p>
       </Section>

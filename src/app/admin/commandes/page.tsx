@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OrderActions } from "@/components/orders/OrderActions";
-import { getAdminOrders, getTransferDetails } from "@/lib/orders";
+import { getAdminOrders, getPaypalEmail, getTransferDetails } from "@/lib/orders";
 import { requireAdmin } from "@/lib/session";
 import { formatPrice } from "@/lib/shop-format";
 
@@ -20,16 +20,16 @@ export default function OrdersPage() {
 async function OrdersContent() {
   const admin = await requireAdmin();
   const orders = await getAdminOrders();
-  const transferOpen = !!getTransferDetails();
+  const paymentsOpen = !!getTransferDetails() || !!getPaypalEmail();
 
   return (
-    <DashboardShell user={admin} title="Commandes" subtitle="Vérifie la référence et le montant sur ton compte, puis valide le virement.">
-      {!transferOpen && (
+    <DashboardShell user={admin} title="Commandes" subtitle="Vérifie la référence et le montant sur ton compte, puis valide le paiement.">
+      {!paymentsOpen && (
         <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm">
-          Le paiement par virement est fermé : les clients ne peuvent pas commander tant que BANK_TRANSFER_IBAN et BANK_TRANSFER_HOLDER ne sont pas réglés sur le serveur.
+          Les paiements sont fermés : les clients ne peuvent pas commander tant que PAYPAL_EMAIL, ou BANK_TRANSFER_IBAN et BANK_TRANSFER_HOLDER, ne sont pas réglés sur le serveur.
         </p>
       )}
-      <Card title="Virements">
+      <Card title="Paiements">
         {orders.length === 0 ? (
           <EmptyState>Aucune commande pour l&apos;instant.</EmptyState>
         ) : (
@@ -39,7 +39,9 @@ async function OrdersContent() {
                 <div className="min-w-0">
                   <p className="font-semibold">
                     {o.reference} · {formatPrice(o.totalCents)}
-                    <span className="ml-2 text-xs font-normal text-muted">{STATUS_LABELS[o.status]}</span>
+                    <span className="ml-2 text-xs font-normal text-muted">
+                      {STATUS_LABELS[o.status]} · {o.method === "paypal" ? "PayPal" : "Virement"}
+                    </span>
                   </p>
                   <p className="text-sm text-muted">
                     {o.clientName} ({o.clientEmail})

@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { CartView } from "@/components/cart/CartView";
-import { getTransferDetails } from "@/lib/orders";
+import { getPaypalEmail, getTransferDetails } from "@/lib/orders";
 
 export const metadata = { title: "Panier — Swell" };
 
@@ -25,7 +25,7 @@ export default function CartPage() {
 }
 
 async function CartContent() {
-  // Lu à chaque visite : le virement s'ouvre en réglant l'IBAN sur le serveur, sans nouveau build.
+  // Lu à chaque visite : les paiements s'ouvrent en réglant le serveur, sans nouveau build.
   await connection();
-  return <CartView transferOpen={!!getTransferDetails()} />;
+  return <CartView transferOpen={!!getTransferDetails()} paypalOpen={!!getPaypalEmail()} />;
 }

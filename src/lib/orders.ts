@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { product, shopOrder, shopOrderItem, user } from "@/db/schema";
 
@@ -8,6 +8,11 @@ export function getTransferDetails() {
   const iban = process.env.BANK_TRANSFER_IBAN?.trim();
   const holder = process.env.BANK_TRANSFER_HOLDER?.trim();
   return iban && holder ? { iban, holder } : null;
+}
+
+/** Adresse PayPal qui reçoit les paiements. Sans elle, PayPal n'est pas proposé. */
+export function getPaypalEmail() {
+  return process.env.PAYPAL_EMAIL?.trim() || null;
 }
 
 // Sans O, 0, I ni 1 : la référence se recopie sans erreur dans un libellé de virement.
@@ -65,7 +70,7 @@ async function itemsByOrder(orderIds: string[]) {
   return grouped;
 }
 
-/** Commandes en attente de virement du client. */
+/** Commandes en attente de paiement du client. */
 export async function getPendingOrders(userId: string) {
   const orders = await db
     .select()
@@ -82,6 +87,7 @@ export async function getAdminOrders() {
     .select({
       id: shopOrder.id,
       reference: shopOrder.reference,
+      method: shopOrder.method,
       status: shopOrder.status,
       totalCents: shopOrder.totalCents,
       createdAt: shopOrder.createdAt,
@@ -91,7 +97,7 @@ export async function getAdminOrders() {
     })
     .from(shopOrder)
     .innerJoin(user, eq(shopOrder.userId, user.id))
-    .where(eq(shopOrder.method, "transfer"))
+    .where(ne(shopOrder.method, "free"))
     .orderBy(desc(shopOrder.createdAt))
     .limit(100);
   const items = await itemsByOrder(orders.map((o) => o.id));

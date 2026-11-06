@@ -6,7 +6,7 @@ import { after } from "next/server";
 import { db } from "@/db";
 import { product, shopOrder, shopOrderItem } from "@/db/schema";
 import { sendOrderEmails } from "@/lib/order-emails";
-import { getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
+import { getPaypalEmail, getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
 import { getCurrentUser, requireAdmin } from "@/lib/session";
 
 const MAX_PENDING_ORDERS = 5;
@@ -35,11 +35,12 @@ export async function claimFreeProduct(productId: string): Promise<ClaimResult> 
 
 type CheckoutResult = { ok: true; paidIds: string[] } | { needsAccount: true } | { error: string };
 
-/** Crée une commande en attente de virement. Les prix sont relus en base, jamais repris du navigateur. */
-export async function createTransferOrder(productIds: string[], waivedWithdrawal: boolean): Promise<CheckoutResult> {
+/** Crée une commande en attente de paiement. Les prix sont relus en base, jamais repris du navigateur. */
+export async function createOrder(productIds: string[], waivedWithdrawal: boolean, method: "transfer" | "paypal"): Promise<CheckoutResult> {
   const user = await getCurrentUser();
   if (!user) return { needsAccount: true };
-  if (!getTransferDetails()) return { error: "Le paiement n'est pas encore ouvert." };
+  const open = method === "paypal" ? !!getPaypalEmail() : method === "transfer" && !!getTransferDetails();
+  if (!open) return { error: "Ce moyen de paiement n'est pas encore ouvert." };
   if (!waivedWithdrawal) return { error: "Coche la case pour continuer." };
 
   const wanted = [...new Set(productIds.filter((id) => typeof id === "string"))].slice(0, 50);
@@ -69,7 +70,7 @@ export async function createTransferOrder(productIds: string[], waivedWithdrawal
         id: orderId,
         userId: user.id,
         reference: newOrderReference(),
-        method: "transfer",
+        method,
         status: "pending",
         totalCents: payable.reduce((sum, p) => sum + p.priceCents, 0),
         withdrawalWaivedAt: new Date(),

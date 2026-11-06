@@ -9,7 +9,7 @@ import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/Book
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
-import { getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
+import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
 import { formatBytes, formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
@@ -40,6 +40,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const firstName = user.name.split(" ")[0];
 
   const transfer = getTransferDetails();
+  const paypalEmail = getPaypalEmail();
   const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders] = await Promise.all([
     db
       .select()
@@ -185,7 +186,34 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                   Commande {o.reference} · {formatPrice(o.totalCents)}
                 </p>
                 <p className="mt-1 text-muted">{o.items.map((i) => i.name).join(", ")}</p>
-                {transfer && (
+                {o.method === "paypal" && paypalEmail && (
+                  <>
+                    <dl className="mt-3 space-y-1">
+                      <div>
+                        <dt className="inline text-muted">Adresse PayPal : </dt>
+                        <dd className="inline break-all font-mono">{paypalEmail}</dd>
+                      </div>
+                      <div>
+                        <dt className="inline text-muted">Montant : </dt>
+                        <dd className="inline font-semibold">{formatPrice(o.totalCents)}</dd>
+                      </div>
+                      <div>
+                        <dt className="inline text-muted">Message à indiquer : </dt>
+                        <dd className="inline font-mono font-semibold">{o.reference}</dd>
+                      </div>
+                    </dl>
+                    <p className="mt-2 text-xs text-muted">Choisis le paiement de biens ou services s&apos;il t&apos;est proposé.</p>
+                    <a
+                      href="https://www.paypal.com/myaccount/transfer/homepage/pay"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                    >
+                      Ouvrir PayPal
+                    </a>
+                  </>
+                )}
+                {o.method === "transfer" && transfer && (
                   <dl className="mt-3 space-y-1">
                     <div>
                       <dt className="inline text-muted">Bénéficiaire : </dt>
@@ -201,7 +229,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                     </div>
                   </dl>
                 )}
-                <p className="mt-3 text-xs text-muted">Tes fichiers apparaîtront ici dès réception du virement.</p>
+                <p className="mt-3 text-xs text-muted">Tes fichiers apparaîtront ici dès que le paiement sera vérifié.</p>
               </div>
             ))}
             {purchases.length > 0 ? (
