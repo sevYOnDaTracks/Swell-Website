@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { product } from "@/db/schema";
 import { hasPurchased } from "@/lib/orders";
@@ -7,12 +6,11 @@ import { openPrivateFile } from "@/lib/private-storage";
 import { getCurrentUser } from "@/lib/session";
 
 // Téléchargement du fichier d'un produit : le droit est vérifié à chaque demande.
-export async function GET(request: Request, ctx: RouteContext<"/api/downloads/[productId]">) {
+export async function GET(_request: Request, ctx: RouteContext<"/api/downloads/[productId]">) {
   const user = await getCurrentUser();
   if (!user) {
-    const url = new URL("/connexion", request.url);
-    url.searchParams.set("next", "/compte");
-    return NextResponse.redirect(url);
+    // Adresse relative : derrière Nginx, request.url pointe vers le serveur interne.
+    return new Response(null, { status: 307, headers: { Location: "/connexion?next=%2Fcompte" } });
   }
 
   const { productId } = await ctx.params;
