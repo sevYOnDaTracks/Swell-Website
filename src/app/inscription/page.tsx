@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { AuthShell, Field, FormError, SubmitButton } from "@/components/auth/AuthShell";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
@@ -11,6 +11,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const booking = useBookingIntent();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,12 +39,18 @@ export default function SignUpPage() {
 
   return (
     <AuthShell
-      title="Créer un compte"
-      subtitle="Réserve tes sessions et retrouve tes achats."
+      title={booking ? "Crée ton compte pour réserver" : "Créer un compte"}
+      subtitle={booking ? "30 secondes, puis tu choisis ton créneau." : "Réserve tes sessions et retrouve tes achats."}
       footer={
         <>
           Déjà un compte ?{" "}
-          <Link href="/connexion" className="font-medium text-foreground underline-offset-4 hover:underline hover:text-white">
+          <Link
+            href="/connexion"
+            onClick={(e) => {
+              e.preventDefault();
+              router.push(`/connexion${window.location.search}`);
+            }}
+            className="font-medium text-foreground underline-offset-4 hover:underline hover:text-white">
             Se connecter
           </Link>
         </>
@@ -70,5 +77,16 @@ export default function SignUpPage() {
         </p>
       </form>
     </AuthShell>
+  );
+}
+
+const noopSubscribe = () => () => {};
+
+/** Vrai quand le visiteur arrive ici en voulant réserver (?next=/reserver...). */
+function useBookingIntent() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => new URLSearchParams(window.location.search).get("next")?.startsWith("/reserver") ?? false,
+    () => false,
   );
 }
