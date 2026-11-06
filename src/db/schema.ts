@@ -223,7 +223,7 @@ export const production = sqliteTable("production", {
 // --- Commandes de la boutique ----------------------------------------------
 
 export const orderStatuses = ["pending", "paid", "cancelled"] as const;
-export const orderMethods = ["free", "transfer"] as const;
+export const orderMethods = ["free", "transfer", "paypal"] as const;
 
 export const shopOrder = sqliteTable(
   "shop_order",

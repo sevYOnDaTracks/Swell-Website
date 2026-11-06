@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { cancelOrder, markOrderPaid } from "@/app/actions/orders";
 
-/** Boutons de l'admin sur une commande en attente de virement. */
+/** Boutons de l'admin sur une commande en attente de paiement. */
 export function OrderActions({ orderId, reference }: { orderId: string; reference: string }) {
   const [pending, start] = useTransition();
 
@@ -13,11 +13,11 @@ export function OrderActions({ orderId, reference }: { orderId: string; referenc
         type="button"
         disabled={pending}
         onClick={() => {
-          if (confirm(`Confirmer la réception du virement ${reference} ? Le client aura accès à ses fichiers.`)) start(() => markOrderPaid(orderId));
+          if (confirm(`Confirmer la réception du paiement ${reference} ? Le client aura accès à ses fichiers.`)) start(() => markOrderPaid(orderId));
         }}
         className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
       >
-        Virement reçu
+        Paiement reçu
       </button>
       <button
         type="button"
