@@ -36,6 +36,7 @@ async function UsersContent() {
           id: u.id,
           name: u.name,
           email: u.email,
+          phone: u.phone,
           image: u.image,
           role: u.role ?? "user",
           banned: !!u.banned,
