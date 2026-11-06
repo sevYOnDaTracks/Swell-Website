@@ -14,7 +14,7 @@ export const navLinks = [
 // "icon" : petit logo suivi du nom ; sans logo : nom seul.
 // Les logos (public/daws) viennent de Wikimedia Commons et Simple Icons.
 export const daws: { name: string; logo?: string; kind?: "wordmark" | "icon"; ratio?: number; image?: boolean }[] = [
-  { name: "FL Studio", logo: "/daws/fl-studio.svg", kind: "wordmark", ratio: 1493 / 253 },
+  { name: "FL Studio", logo: "/daws/fl-studio-icon.png", kind: "icon", image: true },
   { name: "Ableton Live", logo: "/daws/ableton.svg", kind: "wordmark", ratio: 160 / 28 },
   { name: "Logic Pro", logo: "/daws/logic-pro.png", kind: "icon", image: true },
   { name: "Pro Tools", logo: "/daws/pro-tools.svg", kind: "icon" },

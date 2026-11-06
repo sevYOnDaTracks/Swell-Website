@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck } from "lucide-react";
+import { ArrowRight, CalendarCheck, Check } from "lucide-react";
 import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getPublishedProductions } from "@/lib/productions";
@@ -7,7 +7,6 @@ import { mediaUrl } from "@/lib/shop-format";
 import { getShopProducts } from "@/lib/shop";
 import { CoverColumns, type CoverItem } from "./CoverColumns";
 import { HeroAB } from "./HeroAB";
-import { SignupButton } from "./SignupButton";
 
 // Hauteurs pseudo-aléatoires mais fixes pour éviter un mismatch serveur/client.
 const BARS = Array.from(
@@ -19,18 +18,25 @@ const BARS = Array.from(
 // Logiciels affichés sous l'accroche, dans cet ordre.
 const HERO_DAWS = ["FL Studio", "Logic Pro", "Ableton Live", "Studio One"];
 
-// Prix le plus bas des formules visibles, pour l'accroche « à partir de ».
-function cheapest<T extends { price: string; visible: boolean }>(plans: T[]) {
-  const priced = plans
-    .filter((p) => p.visible)
+// Offre mise en avant : la formule « le plus demandé », sinon la moins chère.
+function featuredPlan<T extends { price: string; visible: boolean; highlighted: boolean }>(plans: T[]) {
+  const visible = plans.filter((p) => p.visible);
+  const highlighted = visible.find((p) => p.highlighted);
+  if (highlighted) return highlighted;
+  const priced = visible
     .map((p) => ({
-      ...p,
-      value: Number.parseFloat(
-        p.price.replace(",", ".").replace(/[^\d.]/g, ""),
-      ),
+      plan: p,
+      value: Number.parseFloat(p.price.replace(",", ".").replace(/[^\d.]/g, "")),
     }))
     .filter((p) => Number.isFinite(p.value));
-  return priced.sort((a, b) => a.value - b.value)[0] ?? null;
+  return priced.sort((a, b) => a.value - b.value)[0]?.plan ?? null;
+}
+
+// Délai et révisions repris des points de la formule : ils suivent ce qui est réglé dans /admin/offres.
+function planFacts(features: string[]) {
+  const delay = features.find((f) => /livraison/i.test(f))?.replace(/livraison/i, "Livré");
+  const revisions = features.find((f) => /révision/i.test(f));
+  return [delay, revisions && `${revisions} incluses`].filter((f): f is string => !!f);
 }
 
 export async function Hero() {
@@ -39,7 +45,10 @@ export async function Hero() {
     getShopProducts({}),
     getPublishedProductions(),
   ]);
-  const fromPlan = cheapest(plans);
+  const plan = featuredPlan(plans);
+  const facts = plan ? planFacts(plan.features) : [];
+  const plugins = shop.items.filter((p) => p.type === "vst");
+  const freePlugins = plugins.filter((p) => p.priceCents === 0).length;
   const logos = HERO_DAWS.flatMap((name) =>
     daws.filter((d) => d.name === name),
   );
@@ -79,79 +88,100 @@ export async function Hero() {
                 prêt à sortir.
               </h1>
 
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/85">
-                Mix, prod et prise de voix à distance par sevyondatracks, et les
-                plugins Swell pour ton DAW.
+              <p className="mt-6 max-w-lg text-lg leading-relaxed text-foreground/85">
+                Envoie tes pistes, je mixe et je masterise ton titre à distance.
               </p>
 
-              <ul
-                className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-4 text-foreground sm:gap-x-6"
-                aria-label="Logiciels utilisés"
-              >
-                {logos.map((d) => (
-                  <li
-                    key={d.name}
-                    title={d.name}
-                    className="flex h-7 items-center gap-2 opacity-80"
-                  >
-                    {d.logo && d.image && (
-                      // eslint-disable-next-line @next/next/no-img-element -- petite icône statique
-                      <img src={d.logo} alt="" className="h-6 w-6" />
-                    )}
-                    {d.logo && !d.image && (
-                      // Logo passé en couleur unie via un masque CSS (s'adapte au thème noir et blanc).
-                      <span
-                        aria-hidden
-                        className="block h-full bg-current"
-                        style={{
-                          aspectRatio: d.ratio ?? 1,
-                          height: d.kind === "wordmark" ? "1rem" : "1.4rem",
-                          mask: `url(${d.logo}) center / contain no-repeat`,
-                          WebkitMask: `url(${d.logo}) center / contain no-repeat`,
-                        }}
-                      />
-                    )}
-                    <span
-                      className={
-                        d.kind === "wordmark"
-                          ? "sr-only"
-                          : "text-sm font-semibold tracking-tight"
-                      }
-                    >
-                      {d.name}
-                    </span>
+              {plan && (
+                <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-foreground/90">
+                  <li className="text-base">
+                    <span className="text-2xl font-bold tracking-tight text-foreground">{plan.price}</span>{" "}
+                    <span className="text-muted">{plan.unit}</span>
                   </li>
-                ))}
-              </ul>
+                  {facts.map((fact) => (
+                    <li key={fact} className="flex items-center gap-1.5">
+                      <Check size={15} className="shrink-0 text-accent" />
+                      {fact}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-              <div className="mt-9 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:items-center">
                 <Link
-                  href="/reserver"
+                  href={plan?.serviceId ? `/reserver?service=${plan.serviceId}` : "/reserver"}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3.5 font-medium whitespace-nowrap text-black transition-colors hover:bg-neutral-200"
                 >
                   <CalendarCheck size={18} />
-                  Réserver ta session
+                  Réserver mon mix
                 </Link>
-                <SignupButton className="inline-flex items-center justify-center rounded-md border border-white/20 bg-white/[0.03] px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/10" />
                 <Link
-                  href="/boutique"
-                  className="inline-flex items-center justify-center gap-2 rounded-md px-3 py-3.5 font-medium whitespace-nowrap text-muted transition-colors hover:text-foreground"
+                  href="/#tarifs"
+                  className="inline-flex items-center justify-center rounded-md border border-white/20 bg-white/[0.03] px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/10"
                 >
-                  Boutique
-                  <ArrowRight size={18} />
+                  Voir les offres
                 </Link>
               </div>
 
-              {fromPlan && (
-                <p className="mt-5 text-sm text-muted">
-                  {fromPlan.name} à partir de{" "}
-                  <span className="font-semibold text-foreground">
-                    {fromPlan.price}
-                  </span>{" "}
-                  {fromPlan.unit}
-                </p>
-              )}
-              <p className={`${fromPlan ? "mt-1" : "mt-5"} text-sm text-muted`}>par @sevyondatracks</p>
+              <p className="mt-4 text-sm text-muted">
+                Par @sevyondatracks. Aussi :{" "}
+                <Link href="/#services" className="underline-offset-4 hover:text-foreground hover:underline">
+                  prod sur mesure et prise de voix guidée
+                </Link>
+                .
+              </p>
+
+              <div className="mt-7 border-t border-white/10 pt-5">
+                {plugins.length > 0 && (
+                  <Link
+                    href="/boutique"
+                    className="group inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-foreground/80"
+                  >
+                    Beatmaker ? {plugins.length} plugins Swell pour ton DAW
+                    {freePlugins > 0 && `, dont ${freePlugins} gratuit${freePlugins > 1 ? "s" : ""}`}
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                )}
+                <ul
+                  className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 text-foreground sm:gap-x-6"
+                  aria-label="Logiciels compatibles"
+                >
+                  {logos.map((d) => (
+                    <li
+                      key={d.name}
+                      title={d.name}
+                      className="flex h-7 items-center gap-2"
+                    >
+                      {d.logo && d.image && (
+                        // eslint-disable-next-line @next/next/no-img-element -- petite icône statique
+                        <img src={d.logo} alt="" className="h-6 w-6" />
+                      )}
+                      {d.logo && !d.image && (
+                        // Logo passé en couleur unie via un masque CSS (s'adapte au thème noir et blanc).
+                        <span
+                          aria-hidden
+                          className="block h-full bg-current"
+                          style={{
+                            aspectRatio: d.ratio ?? 1,
+                            height: d.kind === "wordmark" ? "1rem" : "1.4rem",
+                            mask: `url(${d.logo}) center / contain no-repeat`,
+                            WebkitMask: `url(${d.logo}) center / contain no-repeat`,
+                          }}
+                        />
+                      )}
+                      <span
+                        className={
+                          d.kind === "wordmark"
+                            ? "sr-only"
+                            : "text-sm font-semibold tracking-tight"
+                        }
+                      >
+                        {d.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             {/* Pas de pochettes sur téléphone : la hero reste courte et lisible. */}
