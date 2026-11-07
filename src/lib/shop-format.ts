@@ -63,6 +63,12 @@ export const hasCompatibility = (type: string) => type === "vst";
 export const isInstrumental = (type: string) => type === "instrumental";
 
 export const platformLabel = (v: string) => PLATFORMS.find((p) => p.value === v)?.label ?? v;
+
+/** « Mac uniquement » / « Windows uniquement » quand un produit ne tourne que sur une plateforme, sinon null. */
+export function singlePlatformLabel(platforms: readonly string[] | undefined): string | null {
+  const known = PLATFORMS.filter((p) => platforms?.includes(p.value));
+  return known.length === 1 ? `${known[0].short} uniquement` : null;
+}
 export const formatLabel = (v: string) => PLUGIN_FORMATS.find((f) => f.value === v)?.label ?? v;
 
 export const priceOptions = [

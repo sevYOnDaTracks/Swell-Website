@@ -59,6 +59,7 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
                 {product.platforms.length > 0 && (
                   <p>
                     <span className="text-muted">Compatible :</span> {product.platforms.map(platformLabel).join(" · ")}
+                    {product.platforms.length === 1 && " uniquement"}
                   </p>
                 )}
                 {product.formats.length > 0 && (
