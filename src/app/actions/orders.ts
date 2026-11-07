@@ -25,19 +25,17 @@ export async function claimFreeProduct(productId: string): Promise<ClaimResult> 
   if (!row.downloadFile) return { error: "Le fichier n'est pas encore disponible." };
   if (await hasPurchased(user.id, row.id)) return { ok: true };
 
-  db.transaction((tx) => {
-    const orderId = crypto.randomUUID();
-    tx.insert(shopOrder)
-      .values({ id: orderId, userId: user.id, reference: newOrderReference(), method: "free", status: "paid", totalCents: 0, paidAt: new Date() })
-      .run();
-    tx.insert(shopOrderItem).values({ orderId, productId: row.id, name: row.name, priceCents: 0 }).run();
-  });
+  db.transaction((tx) => insertFreeOrder(tx, user.id, [row]));
   return { ok: true };
 }
 
-type CheckoutResult = { ok: true; paidIds: string[] } | { needsAccount: true } | { needsVerification: true } | { error: string };
+// doneIds : produits à retirer du panier (payants commandés, gratuits ajoutés ou déjà possédés).
+type CheckoutResult = { ok: true; doneIds: string[] } | { needsAccount: true } | { needsVerification: true } | { error: string };
 
-/** Crée une commande en attente de paiement. Les prix sont relus en base, jamais repris du navigateur. */
+/**
+ * Valide le panier. Les produits gratuits vont tout de suite dans « Mes achats » ;
+ * les payants forment une commande en attente de paiement. Les prix sont relus en base, jamais repris du navigateur.
+ */
 export async function createOrder(
   productIds: string[],
   waivedWithdrawal: boolean,
@@ -47,14 +45,32 @@ export async function createOrder(
   const user = await getCurrentUser();
   if (!user) return { needsAccount: true };
   if (!hasConfirmedEmail(user)) return { needsVerification: true };
-  if (!waivedWithdrawal) return { error: "Coche la case pour continuer." };
 
   const wanted = [...new Set(productIds.filter((id) => typeof id === "string"))].slice(0, 50);
   if (wanted.length === 0) return { error: "Ton panier est vide." };
 
   const rows = await db.select().from(product).where(and(inArray(product.id, wanted), eq(product.published, true)));
   const payable = rows.filter((p) => p.priceCents > 0);
-  if (payable.length === 0) return { error: "Aucun article payant dans ton panier." };
+
+  // Gratuits : ceux déjà possédés sont simplement retirés du panier, ceux sans fichier y restent.
+  const freeRows = rows.filter((p) => p.priceCents === 0 && p.downloadFile);
+  const owned = new Set<string>();
+  for (const p of freeRows) {
+    if (await hasPurchased(user.id, p.id)) owned.add(p.id);
+  }
+  const freeToClaim = freeRows.filter((p) => !owned.has(p.id));
+  const freeDoneIds = freeRows.map((p) => p.id);
+
+  if (payable.length === 0) {
+    if (freeRows.length === 0) {
+      const unavailableFree = rows.find((p) => p.priceCents === 0);
+      return { error: unavailableFree ? `${unavailableFree.name} n'est pas encore disponible.` : "Ton panier est vide." };
+    }
+    if (freeToClaim.length > 0) db.transaction((tx) => insertFreeOrder(tx, user.id, freeToClaim));
+    return { ok: true, doneIds: freeDoneIds };
+  }
+
+  if (!waivedWithdrawal) return { error: "Coche la case pour continuer." };
 
   const unavailable = payable.find((p) => !p.downloadFile);
   if (unavailable) return { error: `${unavailable.name} n'est pas encore disponible : retire-le du panier.` };
@@ -82,6 +98,7 @@ export async function createOrder(
 
   const orderId = crypto.randomUUID();
   db.transaction((tx) => {
+    if (freeToClaim.length > 0) insertFreeOrder(tx, user.id, freeToClaim);
     tx.insert(shopOrder)
       .values({
         id: orderId,
@@ -102,7 +119,20 @@ export async function createOrder(
   });
 
   after(() => sendOrderEmails(orderId, coveredByPromo ? "paid" : "created"));
-  return { ok: true, paidIds: payable.map((p) => p.id) };
+  return { ok: true, doneIds: [...payable.map((p) => p.id), ...freeDoneIds] };
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Une commande gratuite, validée d'office, comme claimFreeProduct. */
+function insertFreeOrder(tx: Tx, userId: string, items: { id: string; name: string }[]) {
+  const orderId = crypto.randomUUID();
+  tx.insert(shopOrder)
+    .values({ id: orderId, userId, reference: newOrderReference(), method: "free", status: "paid", totalCents: 0, paidAt: new Date() })
+    .run();
+  for (const p of items) {
+    tx.insert(shopOrderItem).values({ orderId, productId: p.id, name: p.name, priceCents: 0 }).run();
+  }
 }
 
 /** Passe une commande en attente à un nouvel état : seul un état « en attente » peut changer. */
