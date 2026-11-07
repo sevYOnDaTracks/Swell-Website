@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AudioLines, Drum, Package, Piano, SlidersVertical } from "lucide-react";
 import type { ProductType } from "@/db/schema";
-import { formatPrice, mediaUrl, PLATFORMS, productTypeLabels } from "@/lib/shop-format";
+import { formatPrice, mediaUrl, productTypeLabels, singlePlatformLabel } from "@/lib/shop-format";
 import { PreviewButton } from "./PreviewButton";
 
 export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
@@ -36,6 +36,8 @@ export function ProductCover({ product, sizes, eager }: { product: CardProduct; 
 }
 
 export function ProductCard({ product }: { product: CardProduct }) {
+  // Un badge de plateforme seulement quand il apprend quelque chose : un produit Windows et Mac n'en a pas.
+  const onlyOn = singlePlatformLabel(product.platforms);
   return (
     <Link
       href={`/boutique/${product.slug}`}
@@ -49,11 +51,11 @@ export function ProductCard({ product }: { product: CardProduct }) {
           <span className="rounded-full bg-black/60 px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs text-white/90 backdrop-blur">
             {productTypeLabels[product.type]}
           </span>
-          {PLATFORMS.filter((p) => product.platforms?.includes(p.value)).map((p) => (
-            <span key={p.value} title={`Compatible ${p.label}`} className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-medium sm:px-2 sm:py-1 sm:text-xs text-black">
-              {p.short}
+          {onlyOn && (
+            <span className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-medium sm:px-2 sm:py-1 sm:text-xs text-black">
+              {onlyOn}
             </span>
-          ))}
+          )}
         </div>
         {product.previewFile && (
           <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3">
