@@ -9,7 +9,7 @@ import { formatPrice } from "./shop-format";
 // Emails des commandes. Appelés via after() : ils partent une fois la réponse
 // envoyée, sans ralentir ni bloquer l'action.
 
-export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "cancelled") {
+export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "cancelled" | "cancelled_by_client") {
   const [order] = await db
     .select({
       reference: shopOrder.reference,
@@ -77,5 +77,27 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
       paragraphs: [`Ta commande ${order.reference} (${names}) a été annulée.`, "Si tu as déjà payé, réponds à cet email pour que nous réglions ça."],
       cta: account,
     });
+  }
+
+  if (event === "cancelled_by_client") {
+    await Promise.all([
+      sendEmail({
+        to: order.clientEmail,
+        subject: `Ta commande ${order.reference} est annulée`,
+        title: "Commande annulée",
+        paragraphs: [
+          `Tu as annulé ta commande ${order.reference} (${names}, ${total}). Aucun paiement n'est attendu.`,
+          "Si tu avais déjà envoyé le paiement, réponds à cet email pour que nous réglions ça.",
+        ],
+        cta: account,
+      }),
+      sendEmail({
+        to: ADMIN_NOTIFY_EMAIL,
+        subject: `Commande ${order.reference} annulée par le client`,
+        title: "Commande annulée par le client",
+        paragraphs: [`${order.clientName} (${order.clientEmail})`, `Articles : ${names}. Total : ${total}.`, "Aucun paiement n'est plus attendu pour cette référence."],
+        cta: { label: "Voir les commandes", href: `${SITE_URL}/admin/commandes` },
+      }),
+    ]);
   }
 }
