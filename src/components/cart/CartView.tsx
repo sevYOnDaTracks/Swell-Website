@@ -79,8 +79,8 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
         setError(result.error);
         return;
       }
-      result.paidIds.forEach(cart.remove);
-      router.push("/compte");
+      result.doneIds.forEach(cart.remove);
+      router.push("/compte#achats");
     });
   }
 
@@ -178,8 +178,27 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
             )}
           </div>
         )}
-        {hasFreeItems && <p className="mt-3 text-xs text-muted">Les produits gratuits se téléchargent directement depuis leur fiche.</p>}
-        {total > 0 && (finalTotal === 0 || transferOpen || paypalOpen) ? (
+        {hasFreeItems && total > 0 && (
+          <p className="mt-3 text-xs text-muted">Les produits gratuits sont ajoutés à « Mes achats » dès la validation, sans attendre le paiement.</p>
+        )}
+        {total === 0 ? (
+          <>
+            {error && (
+              <p role="alert" className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => order("paypal")}
+              disabled={ordering}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
+            >
+              {ordering && <Loader2 size={16} className="animate-spin" />} Ajouter à mes achats
+            </button>
+            <p className="mt-3 text-xs text-muted">Gratuit : tes fichiers sont disponibles tout de suite dans ton espace.</p>
+          </>
+        ) : (finalTotal === 0 || transferOpen || paypalOpen) ? (
           <>
             <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-foreground/85">
               <input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-white" />
