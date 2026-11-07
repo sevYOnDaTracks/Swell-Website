@@ -112,3 +112,14 @@ export async function getAdminOrders() {
   const items = await itemsByOrder(orders.map((o) => o.id));
   return orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] }));
 }
+
+/** Une commande du client, retrouvée par sa référence (SW-XXXXXX). Null si elle n'est pas à lui. */
+export async function getMyOrder(userId: string, reference: string) {
+  const [order] = await db
+    .select()
+    .from(shopOrder)
+    .where(and(eq(shopOrder.userId, userId), eq(shopOrder.reference, reference.toUpperCase())));
+  if (!order) return null;
+  const items = await db.select().from(shopOrderItem).where(eq(shopOrderItem.orderId, order.id));
+  return { ...order, items };
+}

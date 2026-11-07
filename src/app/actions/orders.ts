@@ -8,7 +8,7 @@ import { product, shopOrder, shopOrderItem } from "@/db/schema";
 import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaypalEmail, getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
 import { resolvePromo } from "@/lib/promos";
-import { getCurrentUser, hasConfirmedEmail, requireAdmin } from "@/lib/session";
+import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 const MAX_PENDING_ORDERS = 5;
 
@@ -123,4 +123,18 @@ export async function markOrderPaid(orderId: string) {
 
 export async function cancelOrder(orderId: string) {
   await settleOrder(orderId, "cancelled");
+}
+
+/** Le client annule sa propre commande, tant qu'elle attend encore le paiement. */
+export async function cancelMyOrder(orderId: string): Promise<{ ok: true } | { error: string }> {
+  const user = await requireUser();
+  const updated = await db
+    .update(shopOrder)
+    .set({ status: "cancelled" })
+    .where(and(eq(shopOrder.id, orderId), eq(shopOrder.userId, user.id), eq(shopOrder.status, "pending")))
+    .returning({ id: shopOrder.id });
+  refresh();
+  if (updated.length === 0) return { error: "Cette commande ne peut plus être annulée." };
+  after(() => sendOrderEmails(orderId, "cancelled_by_client"));
+  return { ok: true };
 }
