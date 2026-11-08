@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BadgeCheck, Ban, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { BadgeCheck, Ban, Gift, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { giftProducts } from "@/app/actions/orders";
 import { createUserByAdmin, deleteUserByAdmin, sendPasswordLinkToUser, setUserDisabled, updateUserByAdmin } from "@/app/actions/users";
 import { Avatar } from "@/components/dashboard/Avatar";
 import { DEFAULT_COUNTRY_CODE, formatPhone, phoneHref, splitPhone } from "@/lib/phone";
@@ -18,17 +19,23 @@ export type AdminUser = {
   createdLabel: string;
   orders: number;
   bookings: number;
+  ownedProductIds: string[];
 };
+
+export type GiftableProduct = { id: string; name: string; type: string; published: boolean };
+
+const TYPE_LABELS: Record<string, string> = { vst: "VST", drumkit: "Drum kit", samplepack: "Sample pack", preset: "Presets", instrumental: "Instru" };
 
 const input =
   "mt-1 block w-full rounded-lg border border-white/10 bg-background/60 px-3 py-2 text-sm outline-none focus:border-white/50 [color-scheme:dark]";
 const iconButton = "rounded-md p-2 text-muted transition-colors hover:bg-white/10 hover:text-foreground disabled:opacity-40";
 
-export function UsersManager({ users, currentUserId }: { users: AdminUser[]; currentUserId: string }) {
+export function UsersManager({ users, currentUserId, products }: { users: AdminUser[]; currentUserId: string; products: GiftableProduct[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [gifting, setGifting] = useState<string | null>(null);
   const [message, setMessage] = useState<{ error?: string; ok?: string } | null>(null);
   const [pending, start] = useTransition();
 
@@ -158,7 +165,22 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center">
-                  <button type="button" title="Modifier" aria-label={`Modifier ${u.name}`} onClick={() => setEditing(editing === u.id ? null : u.id)} className={iconButton}>
+                  <button
+                    type="button"
+                    title="Offrir un produit"
+                    aria-label={`Offrir un produit à ${u.name}`}
+                    onClick={() => {
+                      setEditing(null);
+                      setGifting(gifting === u.id ? null : u.id);
+                    }}
+                    className={iconButton}
+                  >
+                    <Gift size={16} />
+                  </button>
+                  <button type="button" title="Modifier" aria-label={`Modifier ${u.name}`} onClick={() => {
+                      setGifting(null);
+                      setEditing(editing === u.id ? null : u.id);
+                    }} className={iconButton}>
                     <Pencil size={16} />
                   </button>
                   <button
@@ -201,6 +223,26 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
                   </button>
                 </div>
               </div>
+
+              {gifting === u.id && (
+                <GiftForm
+                  user={u}
+                  self={self}
+                  products={products}
+                  pending={pending}
+                  onCancel={() => setGifting(null)}
+                  onSubmit={(ids, note) =>
+                    run(
+                      async () => {
+                        const result = await giftProducts(u.id, ids, note);
+                        return "error" in result ? result : { ok: true as const };
+                      },
+                      self ? "C'est dans ton espace, avec les clés de licence des VST." : `Cadeau envoyé à ${u.name} : c'est dans son espace, et un email lui a été envoyé.`,
+                      () => setGifting(null),
+                    )
+                  }
+                />
+              )}
 
               {editing === u.id && (
                 <form
@@ -259,6 +301,83 @@ export function UsersManager({ users, currentUserId }: { users: AdminUser[]; cur
         })}
       </ul>
     </div>
+  );
+}
+
+/** Choix des produits à offrir : ceux déjà possédés sont cochés et grisés. */
+function GiftForm({
+  user,
+  self,
+  products,
+  pending,
+  onSubmit,
+  onCancel,
+}: {
+  user: AdminUser;
+  self: boolean;
+  products: GiftableProduct[];
+  pending: boolean;
+  onSubmit: (productIds: string[], note: string) => void;
+  onCancel: () => void;
+}) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [note, setNote] = useState("");
+  const owned = new Set(user.ownedProductIds);
+  const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  return (
+    <form
+      className="mt-4 space-y-3 rounded-xl border border-white/10 bg-background/40 p-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (selected.length > 0) onSubmit(selected, note);
+      }}
+    >
+      <p className="text-sm font-medium">{self ? "T'offrir des produits" : `Offrir à ${user.name}`}</p>
+      {products.length === 0 ? (
+        <p className="text-sm text-muted">Aucun produit dans la boutique.</p>
+      ) : (
+        <ul className="grid gap-1.5 sm:grid-cols-2">
+          {products.map((p) => {
+            const has = owned.has(p.id);
+            return (
+              <li key={p.id}>
+                <label className={`flex items-center gap-2 rounded-lg border border-white/5 px-3 py-2 text-sm ${has ? "opacity-50" : "cursor-pointer hover:bg-white/[0.04]"}`}>
+                  <input
+                    type="checkbox"
+                    checked={has || selected.includes(p.id)}
+                    disabled={has}
+                    onChange={() => toggle(p.id)}
+                    className="h-4 w-4 accent-white"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {has ? "Déjà possédé" : `${TYPE_LABELS[p.type] ?? p.type}${p.published ? "" : " · non publié"}`}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {!self && (
+        <label className="block text-sm">
+          Petit mot (facultatif, repris dans l&apos;email)
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} placeholder="Merci pour le feat !" className={input} />
+        </label>
+      )}
+      <div className="flex gap-2">
+        <button
+          disabled={pending || selected.length === 0}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200 disabled:opacity-50"
+        >
+          <Gift size={15} /> {selected.length > 1 ? `Offrir ces ${selected.length} produits` : "Offrir"}
+        </button>
+        <button type="button" onClick={onCancel} className="rounded-lg border border-white/10 px-4 py-2 text-sm hover:bg-white/5">
+          Annuler
+        </button>
+      </div>
+    </form>
   );
 }
 

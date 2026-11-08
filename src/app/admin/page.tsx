@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { and, asc, count, eq, gte, ne } from "drizzle-orm";
+import { and, asc, count, eq, gte, ne, notInArray } from "drizzle-orm";
 import { CalendarCheck, Hourglass, ShoppingBag, Users } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
@@ -48,7 +48,7 @@ async function AdminContent() {
       .where(and(gte(booking.date, today), ne(booking.status, "cancelled")))
       .orderBy(asc(booking.date), asc(booking.startTime)),
     getServiceNames(),
-    db.select({ total: count() }).from(shopOrder).where(and(eq(shopOrder.status, "paid"), ne(shopOrder.method, "free"))),
+    db.select({ total: count() }).from(shopOrder).where(and(eq(shopOrder.status, "paid"), notInArray(shopOrder.method, ["free", "gift"]))),
   ]);
 
   const clients = users.filter((u) => u.role !== "admin");

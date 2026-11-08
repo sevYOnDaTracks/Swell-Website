@@ -13,7 +13,7 @@ import { formatPrice } from "@/lib/shop-format";
 export const metadata = { title: "Ma commande — Swell" };
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Paris" });
-const METHODS = { paypal: "PayPal", transfer: "Virement bancaire", free: "Aucun (gratuit)" } as const;
+const METHODS = { paypal: "PayPal", transfer: "Virement bancaire", free: "Aucun (gratuit)", gift: "Offert par Swell" } as const;
 
 export default function OrderPage({ params }: PageProps<"/compte/commandes/[ref]">) {
   return (
@@ -30,7 +30,8 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
   if (!order) notFound();
 
   const subtotal = order.items.reduce((sum, i) => sum + i.priceCents, 0);
-  const free = order.method === "free";
+  const gift = order.method === "gift";
+  const free = order.method === "free" || gift;
 
   return (
     <DashboardShell user={user} title={`Commande ${order.reference}`} subtitle={`Passée le ${longDate.format(order.createdAt)}`}>
@@ -40,15 +41,16 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <Card title="Détail" action={<OrderStatusBadge status={order.status} free={free} />}>
+          <Card title="Détail" action={<OrderStatusBadge status={order.status} free={free} gift={gift} />}>
             <ul className="divide-y divide-white/5 text-sm">
               {order.items.map((i) => (
                 <li key={i.id} className="flex items-center justify-between gap-3 py-3 first:pt-0">
                   <span className="min-w-0 font-medium">{i.name}</span>
-                  <span className="shrink-0 tabular-nums">{i.priceCents === 0 ? "Gratuit" : formatPrice(i.priceCents)}</span>
+                  <span className="shrink-0 tabular-nums">{gift ? "Offert" : i.priceCents === 0 ? "Gratuit" : formatPrice(i.priceCents)}</span>
                 </li>
               ))}
             </ul>
+            {gift && order.giftNote && <p className="mt-3 rounded-lg bg-white/[0.04] px-3 py-2 text-sm italic">« {order.giftNote} »</p>}
             <dl className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-sm">
               {order.discountCents > 0 && (
                 <>
@@ -66,7 +68,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
               )}
               <div className="flex justify-between gap-3 font-semibold">
                 <dt>Total</dt>
-                <dd className="tabular-nums">{order.totalCents === 0 ? "Gratuit" : formatPrice(order.totalCents)}</dd>
+                <dd className="tabular-nums">{gift ? "Offert" : order.totalCents === 0 ? "Gratuit" : formatPrice(order.totalCents)}</dd>
               </div>
             </dl>
           </Card>

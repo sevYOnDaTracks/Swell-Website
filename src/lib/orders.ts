@@ -88,7 +88,7 @@ export async function getPendingOrders(userId: string) {
   return orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] }));
 }
 
-/** Commandes payantes pour l'admin : les gratuites ne demandent aucune action. */
+/** Commandes payantes et cadeaux pour l'admin : les gratuites ne demandent aucune action. */
 export async function getAdminOrders() {
   const orders = await db
     .select({

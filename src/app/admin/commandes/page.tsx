@@ -40,7 +40,7 @@ async function OrdersContent() {
                   <p className="font-semibold">
                     {o.reference} · {formatPrice(o.totalCents)}
                     <span className="ml-2 text-xs font-normal text-muted">
-                      {STATUS_LABELS[o.status]} · {o.method === "paypal" ? "PayPal" : "Virement"}
+                      {o.method === "gift" ? "Offerte" : `${STATUS_LABELS[o.status]} · ${o.method === "paypal" ? "PayPal" : "Virement"}`}
                     </span>
                   </p>
                   <p className="text-sm text-muted">
