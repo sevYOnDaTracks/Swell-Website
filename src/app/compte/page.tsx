@@ -12,6 +12,8 @@ import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/Book
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
+import { LicenseKey } from "@/components/licenses/LicenseKey";
+import { getMyLicenses } from "@/lib/licenses";
 import { getOrderHistory, getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
 import { formatBytes, formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
@@ -45,7 +47,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
   const transfer = getTransferDetails();
   const paypalEmail = getPaypalEmail();
-  const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory] = await Promise.all([
+  const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory, licenses] = await Promise.all([
     db
       .select()
       .from(booking)
@@ -63,7 +65,9 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     getPurchases(user.id),
     getPendingOrders(user.id),
     getOrderHistory(user.id),
+    getMyLicenses(user.id),
   ]);
+  const licenseByProduct = new Map(licenses.flatMap((l) => (l.productId ? [[l.productId, l] as const] : [])));
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
   const archived = [...upcoming.filter((b) => b.status === "cancelled"), ...past].sort(
@@ -212,8 +216,11 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               ))}
               {purchases.length > 0 ? (
                 <ul className="space-y-2">
-                  {purchases.map((p) => (
-                    <li key={p.itemId} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-background/40 p-3">
+                  {purchases.map((p) => {
+                    const lic = p.productId ? licenseByProduct.get(p.productId) : undefined;
+                    return (
+                    <li key={p.itemId} className="rounded-xl border border-white/5 bg-background/40 p-3">
+                      <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate font-medium">{p.name}</p>
                         {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
@@ -228,8 +235,18 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                       ) : (
                         <span className="shrink-0 text-xs text-muted">Indisponible</span>
                       )}
+                      </div>
+                      {lic && (
+                        <LicenseKey
+                          licenseKey={lic.key}
+                          maxActivations={lic.maxActivations}
+                          activations={lic.activations}
+                          revoked={!!lic.revokedAt}
+                        />
+                      )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               ) : (
                 pendingOrders.length === 0 && (
@@ -261,9 +278,9 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-3">
-                        <OrderStatusBadge status={o.status} free={o.method === "free"} />
+                        <OrderStatusBadge status={o.status} free={o.method === "free"} gift={o.method === "gift"} />
                         <span className={`w-16 text-right font-semibold tabular-nums ${o.status === "cancelled" ? "text-muted line-through" : ""}`}>
-                          {o.totalCents === 0 ? "Gratuit" : formatPrice(o.totalCents)}
+                          {o.method === "gift" ? "Offert" : o.totalCents === 0 ? "Gratuit" : formatPrice(o.totalCents)}
                         </span>
                         <ChevronRight size={16} className="text-muted" aria-hidden />
                       </div>

@@ -14,8 +14,8 @@ const STYLES: Record<OrderStatus, string> = {
   cancelled: "bg-white/5 text-muted line-through",
 };
 
-/** Statut d'une commande, lisible par le client. Une commande gratuite s'affiche « Validée ». */
-export function OrderStatusBadge({ status, free = false }: { status: OrderStatus; free?: boolean }) {
-  const label = status === "paid" && free ? "Validée" : LABELS[status];
+/** Statut d'une commande, lisible par le client. Une commande gratuite s'affiche « Validée », un cadeau « Offerte ». */
+export function OrderStatusBadge({ status, free = false, gift = false }: { status: OrderStatus; free?: boolean; gift?: boolean }) {
+  const label = status === "paid" && gift ? "Offerte" : status === "paid" && free ? "Validée" : LABELS[status];
   return <span className={`rounded-full px-2.5 py-1 text-xs whitespace-nowrap ${STYLES[status]}`}>{label}</span>;
 }

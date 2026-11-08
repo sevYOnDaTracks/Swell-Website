@@ -4,7 +4,7 @@ import { and, count, eq, inArray } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/db";
-import { product, shopOrder, shopOrderItem } from "@/db/schema";
+import { product, shopOrder, shopOrderItem, user as userTable } from "@/db/schema";
 import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaypalEmail, getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
 import { resolvePromo } from "@/lib/promos";
@@ -133,6 +133,42 @@ function insertFreeOrder(tx: Tx, userId: string, items: { id: string; name: stri
   for (const p of items) {
     tx.insert(shopOrderItem).values({ orderId, productId: p.id, name: p.name, priceCents: 0 }).run();
   }
+}
+
+/**
+ * L'admin offre des produits à un compte : une commande « offerte », validée d'office.
+ * Elle passe par le même chemin qu'un achat : « Mes achats », clé de licence des VST, email.
+ */
+export async function giftProducts(userId: string, productIds: string[], rawNote: string): Promise<{ ok: true; gifted: string[] } | { error: string }> {
+  await requireAdmin();
+  const [target] = await db.select({ id: userTable.id }).from(userTable).where(eq(userTable.id, userId));
+  if (!target) return { error: "Ce compte n'existe plus." };
+
+  const wanted = [...new Set(productIds.filter((id) => typeof id === "string"))].slice(0, 50);
+  if (wanted.length === 0) return { error: "Choisis au moins un produit." };
+
+  // Non publiés compris : on peut offrir un plugin avant sa sortie.
+  const rows = await db.select().from(product).where(inArray(product.id, wanted));
+  const toGift: typeof rows = [];
+  for (const p of rows) {
+    if (!(await hasPurchased(userId, p.id))) toGift.push(p);
+  }
+  if (toGift.length === 0) return { error: rows.length > 1 ? "Ce compte possède déjà ces produits." : "Ce compte possède déjà ce produit." };
+
+  const note = rawNote.trim().slice(0, 500) || null;
+  const orderId = crypto.randomUUID();
+  db.transaction((tx) => {
+    tx.insert(shopOrder)
+      .values({ id: orderId, userId, reference: newOrderReference(), method: "gift", status: "paid", totalCents: 0, paidAt: new Date(), giftNote: note })
+      .run();
+    for (const p of toGift) {
+      tx.insert(shopOrderItem).values({ orderId, productId: p.id, name: p.name, priceCents: 0 }).run();
+    }
+  });
+
+  after(() => sendOrderEmails(orderId, "gift"));
+  refresh();
+  return { ok: true, gifted: toGift.map((p) => p.name) };
 }
 
 /** Passe une commande en attente à un nouvel état : seul un état « en attente » peut changer. */

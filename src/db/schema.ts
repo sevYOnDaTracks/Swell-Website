@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Tables requises par Better Auth (+ champs du plugin admin : role, banned...).
 
@@ -223,7 +223,8 @@ export const production = sqliteTable("production", {
 // --- Commandes de la boutique ----------------------------------------------
 
 export const orderStatuses = ["pending", "paid", "cancelled"] as const;
-export const orderMethods = ["free", "transfer", "paypal"] as const;
+// "gift" : produit offert par l'admin depuis /admin/utilisateurs (validé d'office, hors chiffre des ventes).
+export const orderMethods = ["free", "transfer", "paypal", "gift"] as const;
 
 export const shopOrder = sqliteTable(
   "shop_order",
@@ -244,6 +245,8 @@ export const shopOrder = sqliteTable(
     discountCents: integer("discount_cents").notNull().default(0),
     // Date du renoncement exprès au droit de rétractation (contenu numérique).
     withdrawalWaivedAt: integer("withdrawal_waived_at", { mode: "timestamp_ms" }),
+    // Mot de l'admin joint à un cadeau, repris dans l'email et le détail de la commande.
+    giftNote: text("gift_note"),
     paidAt: integer("paid_at", { mode: "timestamp_ms" }),
     ...timestamps,
   },
@@ -284,3 +287,53 @@ export const promoCode = sqliteTable("promo_code", {
   expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
   ...timestamps,
 });
+
+// --- Licences des VST ------------------------------------------------------
+
+// Une clé par client et par plugin acheté, créée dès que la commande est payée.
+// Le plugin l'échange une fois contre un fichier de licence signé, lié à l'ordinateur.
+export const license = sqliteTable(
+  "license",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    // SWELL-XXXXX-XXXXX-XXXXX-XXXXX, saisie par le client dans le plugin.
+    key: text("key").notNull().unique(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // Le slug est recopié : c'est l'identifiant que le plugin connaît, même si le produit disparaît.
+    productId: text("product_id").references(() => product.id, { onDelete: "set null" }),
+    productSlug: text("product_slug").notNull(),
+    productName: text("product_name").notNull(),
+    maxActivations: integer("max_activations").notNull().default(3),
+    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("license_user_product_idx").on(t.userId, t.productSlug),
+    index("license_user_id_idx").on(t.userId),
+  ],
+);
+
+// Un ordinateur sur lequel la licence est activée.
+export const licenseActivation = sqliteTable(
+  "license_activation",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    licenseId: text("license_id")
+      .notNull()
+      .references(() => license.id, { onDelete: "cascade" }),
+    // Identifiant calculé par le plugin à partir de la machine (jamais affiché tel quel).
+    machineId: text("machine_id").notNull(),
+    machineName: text("machine_name").notNull().default(""),
+    lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("license_activation_machine_idx").on(t.licenseId, t.machineId)],
+);

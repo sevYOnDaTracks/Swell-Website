@@ -1,19 +1,22 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { shopOrder, shopOrderItem, user } from "@/db/schema";
+import { license, shopOrder, shopOrderItem, user } from "@/db/schema";
 import { ADMIN_NOTIFY_EMAIL, sendEmail, SITE_URL } from "./email";
+import { ensureLicenses } from "./licenses";
 import { getPaypalEmail, getTransferDetails } from "./orders";
 import { formatPrice } from "./shop-format";
 
 // Emails des commandes. Appelés via after() : ils partent une fois la réponse
 // envoyée, sans ralentir ni bloquer l'action.
 
-export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "cancelled" | "cancelled_by_client") {
+export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "gift" | "cancelled" | "cancelled_by_client") {
   const [order] = await db
     .select({
+      userId: shopOrder.userId,
       reference: shopOrder.reference,
       method: shopOrder.method,
+      giftNote: shopOrder.giftNote,
       totalCents: shopOrder.totalCents,
       clientName: user.name,
       clientEmail: user.email,
@@ -23,7 +26,7 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
     .where(eq(shopOrder.id, orderId));
   if (!order) return;
 
-  const items = await db.select({ name: shopOrderItem.name }).from(shopOrderItem).where(eq(shopOrderItem.orderId, orderId));
+  const items = await db.select({ name: shopOrderItem.name, productId: shopOrderItem.productId }).from(shopOrderItem).where(eq(shopOrderItem.orderId, orderId));
   const names = items.map((i) => i.name).join(", ");
   const total = formatPrice(order.totalCents);
   const account = { label: "Ouvrir mon espace", href: `${SITE_URL}/compte` };
@@ -59,12 +62,50 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
     ]);
   }
 
+  // Clés de licence des VST de cette commande, à saisir dans le plugin au premier lancement.
+  const licenseLines = async () => {
+    await ensureLicenses(order.userId);
+    const productIds = items.flatMap((i) => (i.productId ? [i.productId] : []));
+    const keys = productIds.length
+      ? await db
+          .select({ name: license.productName, key: license.key })
+          .from(license)
+          .where(and(eq(license.userId, order.userId), inArray(license.productId, productIds)))
+      : [];
+    return keys.length
+      ? [
+          keys.length > 1
+            ? "Tes clés de licence, à saisir dans chaque plugin au premier lancement (elles restent aussi dans ton espace) :"
+            : "Ta clé de licence, à saisir dans le plugin au premier lancement (elle reste aussi dans ton espace) :",
+          ...keys.map((k) => `${k.name} : ${k.key}`),
+        ]
+      : [];
+  };
+
+  if (event === "gift") {
+    await sendEmail({
+      to: order.clientEmail,
+      subject: items.length > 1 ? "Swell t'offre des produits 🎁" : `Swell t'offre ${names} 🎁`,
+      title: "Un cadeau t'attend",
+      paragraphs: [
+        `Swell t'offre ${names}. C'est déjà dans ton espace, prêt à télécharger.`,
+        ...(order.giftNote ? [`« ${order.giftNote} »`] : []),
+        ...(await licenseLines()),
+      ],
+      cta: account,
+    });
+  }
+
   if (event === "paid") {
     await sendEmail({
       to: order.clientEmail,
       subject: `Ta commande ${order.reference} est prête`,
       title: "Tes fichiers sont disponibles",
-      paragraphs: [order.totalCents === 0 ? "Ta commande est validée." : `Merci ! Ton paiement de ${total} est bien reçu.`, `Tu peux télécharger ${names} depuis ton espace.`],
+      paragraphs: [
+        order.totalCents === 0 ? "Ta commande est validée." : `Merci ! Ton paiement de ${total} est bien reçu.`,
+        `Tu peux télécharger ${names} depuis ton espace.`,
+        ...(await licenseLines()),
+      ],
       cta: account,
     });
   }
