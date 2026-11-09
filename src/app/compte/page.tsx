@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Suspense } from "react";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import { CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug } from "lucide-react";
@@ -15,6 +16,7 @@ import { getOrderHistory, getPendingOrders, getPurchases } from "@/lib/orders";
 import { formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
+import { isMixHost } from "@/lib/sites";
 
 export const metadata = { title: "Mon espace — Swell" };
 
@@ -41,6 +43,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const tab = onglet === "archives" ? "archives" : "a-venir";
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
+  // Tutoriel du site visité : plugins sur la boutique, réservations sur mix.
+  const site = isMixHost((await headers()).get("host")) ? "mix" : "shop";
 
   const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory, licenses] = await Promise.all([
     db
@@ -56,7 +60,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
       .limit(50),
     getServiceNames(),
     getBookableServices(),
-    db.select({ onboardedAt: userTable.onboardedAt }).from(userTable).where(eq(userTable.id, user.id)),
+    db.select({ onboardedAt: userTable.onboardedAt, mixOnboardedAt: userTable.mixOnboardedAt }).from(userTable).where(eq(userTable.id, user.id)),
     getPurchases(user.id),
     getPendingOrders(user.id),
     getOrderHistory(user.id),
@@ -79,7 +83,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
   return (
     <DashboardShell user={user} title={`Salut ${firstName} 👋`} subtitle="Retrouve ici tes réservations et tes achats.">
-      {!me?.onboardedAt && <OnboardingTour firstName={firstName} />}
+      {!(site === "mix" ? me?.mixOnboardedAt : me?.onboardedAt) && <OnboardingTour firstName={firstName} site={site} />}
       {reservation === "ok" && (
         <p className="mb-6 flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm">
           <CheckCircle2 size={18} className="shrink-0" /> Réservation envoyée ! Elle passera en « Confirmée » dès que

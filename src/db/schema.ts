@@ -21,8 +21,10 @@ export const user = sqliteTable("user", {
   // Profil, modifiable depuis /compte/profil : "+33 612345678" et "YYYY-MM-DD".
   phone: text("phone"),
   birthDate: text("birth_date"),
-  // Mini tutoriel affiché une seule fois, à la première visite de l'espace.
+  // Mini tutoriel affiché une seule fois par site, à la première visite de l'espace :
+  // onboardedAt pour la boutique (swell-audio.fr), mixOnboardedAt pour mix.swell-audio.fr.
   onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
+  mixOnboardedAt: integer("mix_onboarded_at", { mode: "timestamp_ms" }),
   role: text("role").default("user"),
   banned: integer("banned", { mode: "boolean" }).default(false),
   banReason: text("ban_reason"),
