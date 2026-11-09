@@ -1,7 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { inArray } from "drizzle-orm";
-import { ChevronRight, Download, FlaskConical, KeyRound, Music } from "lucide-react";
+import { AudioLines, ChevronRight, Download, FlaskConical, KeyRound, Music, Piano } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
@@ -11,7 +12,7 @@ import { db } from "@/db";
 import { product as productTable } from "@/db/schema";
 import { getMyLicenses } from "@/lib/licenses";
 import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
-import { formatBytes, formatPrice, productPath } from "@/lib/shop-format";
+import { formatBytes, formatPrice, mediaUrl, productPath } from "@/lib/shop-format";
 import { requireUser } from "@/lib/session";
 import { SHOP_URL } from "@/lib/sites";
 
@@ -20,6 +21,22 @@ export const metadata = { title: "Mes plugins — Swell" };
 const longDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const downloadButton =
   "inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200";
+
+/** Visuel du produit (ou une icône s'il n'en a pas). */
+function Cover({ file, size = "lg", Icon = Piano }: { file: string | null | undefined; size?: "lg" | "sm"; Icon?: typeof Piano }) {
+  const box = size === "lg" ? "h-16 w-16 sm:h-20 sm:w-20" : "h-12 w-12";
+  return (
+    <div className={`relative ${box} shrink-0 overflow-hidden rounded-xl bg-surface-2`}>
+      {file ? (
+        <Image src={mediaUrl(file)} alt="" fill sizes="80px" unoptimized className="object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-white/10 via-surface-2 to-white/[0.02]">
+          <Icon size={size === "lg" ? 26 : 20} className="text-white/60" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MyPluginsPage() {
   return (
@@ -42,7 +59,7 @@ async function MyPluginsContent() {
   const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
   const trialProducts = trialIds.length
     ? await db
-        .select({ id: productTable.id, slug: productTable.slug, type: productTable.type, available: productTable.downloadFile })
+        .select({ id: productTable.id, slug: productTable.slug, type: productTable.type, available: productTable.downloadFile, coverFile: productTable.coverFile })
         .from(productTable)
         .where(inArray(productTable.id, trialIds))
     : [];
@@ -98,12 +115,15 @@ async function MyPluginsContent() {
                 return (
                   <li key={p.itemId} className="rounded-xl border border-white/5 bg-background/40 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <Cover file={p.coverFile} />
+                        <div className="min-w-0">
                         <p className="truncate font-semibold">{p.name}</p>
                         <p className="text-xs text-muted">
                           {p.paidAt ? `Depuis le ${longDate.format(p.paidAt)}` : null}
                           {p.downloadSize ? ` · ${formatBytes(p.downloadSize)}` : null}
                         </p>
+                        </div>
                       </div>
                       {p.productId && p.available ? (
                         <a href={`/api/downloads/${p.productId}`} className={downloadButton}>
@@ -145,7 +165,9 @@ async function MyPluginsContent() {
                 return (
                   <li key={t.id} className="rounded-xl border border-white/15 bg-white/[0.03] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <Cover file={p?.coverFile} />
+                        <div className="min-w-0">
                         <p className="truncate font-semibold">
                           {t.productName}{" "}
                           <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-normal ${running ? "bg-white text-black" : "bg-white/5 text-muted"}`}>
@@ -155,6 +177,7 @@ async function MyPluginsContent() {
                         <p className="text-xs text-muted">
                           {running ? `Jusqu'au ${longDate.format(t.trialEndsAt!)}` : "Achète-le pour continuer : cette clé deviendra définitive."}
                         </p>
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {p && (
@@ -189,9 +212,12 @@ async function MyPluginsContent() {
             <ul className="space-y-2">
               {sounds.map((p) => (
                 <li key={p.itemId} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-background/40 p-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{p.name}</p>
-                    {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Cover file={p.coverFile} size="sm" Icon={p.type === "instrumental" ? AudioLines : Music} />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{p.name}</p>
+                      {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
+                    </div>
                   </div>
                   {p.productId && p.available ? (
                     <a href={`/api/downloads/${p.productId}`} className={downloadButton}>
