@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { ListSearch, Pagination } from "@/components/admin/ListControls";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
+import { PAGE_SIZE, readPage, readParam } from "@/lib/admin-list";
 import { OrderActions } from "@/components/orders/OrderActions";
 import { getAdminOrders, getPaymentOptions } from "@/lib/orders";
 import { formatFcfa, isMobileMethod, METHOD_LABELS } from "@/lib/payments";
@@ -10,17 +12,26 @@ export const metadata = { title: "Commandes — Swell" };
 
 const STATUS_LABELS = { pending: "En attente", paid: "Payée", cancelled: "Annulée" } as const;
 
-export default function OrdersPage() {
+export default function OrdersPage({ searchParams }: PageProps<"/admin/commandes">) {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <OrdersContent />
+      <OrdersContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function OrdersContent() {
+async function OrdersContent({ searchParams }: Pick<PageProps<"/admin/commandes">, "searchParams">) {
   const admin = await requireAdmin();
-  const orders = await getAdminOrders();
+  const params = await searchParams;
+  const { page, offset } = readPage(params);
+  const { orders, total } = await getAdminOrders({
+    q: readParam(params, "q"),
+    status: readParam(params, "statut"),
+    method: readParam(params, "paiement"),
+    limit: PAGE_SIZE,
+    offset,
+  });
+  const filtered = !!(readParam(params, "q") || readParam(params, "statut") || readParam(params, "paiement"));
   const paymentsOpen = Object.values(getPaymentOptions()).some(Boolean);
 
   return (
@@ -30,9 +41,39 @@ async function OrdersContent() {
           Les paiements sont fermés : les clients ne peuvent pas commander tant que PAYPAL_EMAIL, WAVE_NUMBER, ORANGE_MONEY_NUMBER, ou BANK_TRANSFER_IBAN et BANK_TRANSFER_HOLDER, ne sont pas réglés sur le serveur.
         </p>
       )}
-      <Card title="Paiements">
+      <Card title="Paiements" action={<span className="text-xs text-muted">{total} commande{total > 1 ? "s" : ""}</span>}>
+        <ListSearch
+          basePath="/admin/commandes"
+          params={params}
+          placeholder="Référence, client, email ou produit"
+          filters={[
+            {
+              name: "statut",
+              label: "Statut",
+              options: [
+                { value: "", label: "Tous les statuts" },
+                { value: "pending", label: "En attente" },
+                { value: "proof", label: "Justificatif à vérifier" },
+                { value: "paid", label: "Payées" },
+                { value: "cancelled", label: "Annulées" },
+                { value: "gift", label: "Offertes" },
+              ],
+            },
+            {
+              name: "paiement",
+              label: "Paiement",
+              options: [
+                { value: "", label: "Tous les paiements" },
+                { value: "wave", label: "Wave" },
+                { value: "orange_money", label: "Orange Money" },
+                { value: "paypal", label: "PayPal" },
+                { value: "transfer", label: "Virement" },
+              ],
+            },
+          ]}
+        />
         {orders.length === 0 ? (
-          <EmptyState>Aucune commande pour l&apos;instant.</EmptyState>
+          <EmptyState>{filtered ? "Aucune commande ne correspond à ta recherche." : "Aucune commande pour l'instant."}</EmptyState>
         ) : (
           <ul className="divide-y divide-white/5">
             {orders.map((o) => (
@@ -71,6 +112,7 @@ async function OrdersContent() {
             ))}
           </ul>
         )}
+        <Pagination basePath="/admin/commandes" params={params} page={page} total={total} />
       </Card>
     </DashboardShell>
   );

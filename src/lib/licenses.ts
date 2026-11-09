@@ -1,6 +1,6 @@
 import "server-only";
 import { createPrivateKey, createPublicKey, sign, type KeyObject } from "node:crypto";
-import { and, asc, count, desc, eq, gt, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, like, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { license, licenseActivation, product, shopOrder, shopOrderItem, user } from "@/db/schema";
 
@@ -73,28 +73,58 @@ export async function getMyLicenses(userId: string) {
   return withActivations(licenses);
 }
 
-/** Toutes les licences, pour l'admin. */
-export async function getAdminLicenses() {
+/** Licences pour l'admin, avec recherche (clé, client, email, plugin), filtre et pages. */
+export async function getAdminLicenses(filters: { q?: string; state?: string; limit: number; offset: number }) {
   await ensureLicenses();
-  const licenses = await db
+  const now = new Date();
+  const q = filters.q?.trim();
+  const pattern = q ? `%${q}%` : null;
+  const where = and(
+    pattern
+      ? or(like(license.key, pattern), like(license.productName, pattern), like(user.name, pattern), like(user.email, pattern))
+      : undefined,
+    filters.state === "active" ? and(isNull(license.revokedAt), or(isNull(license.trialEndsAt), gt(license.trialEndsAt, now))) : undefined,
+    filters.state === "revoked" ? isNotNull(license.revokedAt) : undefined,
+    filters.state === "trial" ? isNotNull(license.trialEndsAt) : undefined,
+    filters.state === "converted" ? and(isNotNull(license.trialStartedAt), isNull(license.trialEndsAt)) : undefined,
+  );
+  const [[{ total }], licenses] = await Promise.all([
+    db.select({ total: count() }).from(license).innerJoin(user, eq(license.userId, user.id)).where(where),
+    db
+      .select({
+        id: license.id,
+        key: license.key,
+        productSlug: license.productSlug,
+        productName: license.productName,
+        maxActivations: license.maxActivations,
+        revokedAt: license.revokedAt,
+        trialEndsAt: license.trialEndsAt,
+        trialStartedAt: license.trialStartedAt,
+        createdAt: license.createdAt,
+        clientName: user.name,
+        clientEmail: user.email,
+      })
+      .from(license)
+      .innerJoin(user, eq(license.userId, user.id))
+      .where(where)
+      .orderBy(desc(license.createdAt))
+      .limit(filters.limit)
+      .offset(filters.offset),
+  ]);
+  return { total, licenses: await withActivations(licenses) };
+}
+
+/** Chiffres des démos sur toutes les licences (indépendants de la recherche). */
+export async function getTrialStats() {
+  const now = new Date();
+  const [row] = await db
     .select({
-      id: license.id,
-      key: license.key,
-      productSlug: license.productSlug,
-      productName: license.productName,
-      maxActivations: license.maxActivations,
-      revokedAt: license.revokedAt,
-      trialEndsAt: license.trialEndsAt,
-      trialStartedAt: license.trialStartedAt,
-      createdAt: license.createdAt,
-      clientName: user.name,
-      clientEmail: user.email,
+      started: count(license.trialStartedAt),
+      converted: sql<number>`sum(case when ${license.trialStartedAt} is not null and ${license.trialEndsAt} is null then 1 else 0 end)`,
+      running: sql<number>`sum(case when ${license.trialEndsAt} > ${now.getTime()} then 1 else 0 end)`,
     })
-    .from(license)
-    .innerJoin(user, eq(license.userId, user.id))
-    .orderBy(desc(license.createdAt))
-    .limit(500);
-  return withActivations(licenses);
+    .from(license);
+  return { started: row.started, converted: Number(row.converted ?? 0), running: Number(row.running ?? 0) };
 }
 
 async function withActivations<T extends { id: string }>(licenses: T[]) {

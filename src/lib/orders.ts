@@ -1,7 +1,7 @@
 import "server-only";
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, count, desc, eq, exists, inArray, isNotNull, like as sqlLike, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { product, shopOrder, shopOrderItem, user } from "@/db/schema";
+import { orderMethods, product, shopOrder, shopOrderItem, user } from "@/db/schema";
 import type { PaymentOptions } from "./payments";
 
 /** Coordonnées du virement. Sans IBAN configuré sur le serveur, le paiement par virement reste fermé. */
@@ -113,30 +113,62 @@ export async function getPendingOrders(userId: string) {
   return orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] }));
 }
 
-/** Commandes payantes et cadeaux pour l'admin : les gratuites ne demandent aucune action. */
-export async function getAdminOrders() {
-  const orders = await db
-    .select({
-      id: shopOrder.id,
-      reference: shopOrder.reference,
-      method: shopOrder.method,
-      status: shopOrder.status,
-      totalCents: shopOrder.totalCents,
-      promoCode: shopOrder.promoCode,
-      proofSentAt: shopOrder.proofSentAt,
-      discountCents: shopOrder.discountCents,
-      createdAt: shopOrder.createdAt,
-      paidAt: shopOrder.paidAt,
-      clientName: user.name,
-      clientEmail: user.email,
-    })
-    .from(shopOrder)
-    .innerJoin(user, eq(shopOrder.userId, user.id))
-    .where(ne(shopOrder.method, "free"))
-    .orderBy(desc(shopOrder.createdAt))
-    .limit(100);
+/** Commandes payantes et cadeaux pour l'admin (les gratuites ne demandent aucune action), avec recherche et pages. */
+export async function getAdminOrders(filters: { q?: string; status?: string; method?: string; limit: number; offset: number }) {
+  const q = filters.q?.trim();
+  const like = q ? `%${q}%` : null;
+  const where = and(
+    ne(shopOrder.method, "free"),
+    like
+      ? or(
+          sqlLike(shopOrder.reference, like),
+          sqlLike(user.name, like),
+          sqlLike(user.email, like),
+          exists(
+            db
+              .select({ one: sql`1` })
+              .from(shopOrderItem)
+              .where(and(eq(shopOrderItem.orderId, shopOrder.id), sqlLike(shopOrderItem.name, like))),
+          ),
+        )
+      : undefined,
+    filters.status === "gift"
+      ? eq(shopOrder.method, "gift")
+      : filters.status === "pending" || filters.status === "paid" || filters.status === "cancelled"
+        ? and(eq(shopOrder.status, filters.status), ne(shopOrder.method, "gift"))
+        : undefined,
+    filters.status === "proof" ? and(eq(shopOrder.status, "pending"), isNotNull(shopOrder.proofSentAt)) : undefined,
+    filters.method && (orderMethods as readonly string[]).includes(filters.method)
+      ? eq(shopOrder.method, filters.method as (typeof orderMethods)[number])
+      : undefined,
+  );
+
+  const [[{ total }], orders] = await Promise.all([
+    db.select({ total: count() }).from(shopOrder).innerJoin(user, eq(shopOrder.userId, user.id)).where(where),
+    db
+      .select({
+        id: shopOrder.id,
+        reference: shopOrder.reference,
+        method: shopOrder.method,
+        status: shopOrder.status,
+        totalCents: shopOrder.totalCents,
+        promoCode: shopOrder.promoCode,
+        proofSentAt: shopOrder.proofSentAt,
+        discountCents: shopOrder.discountCents,
+        createdAt: shopOrder.createdAt,
+        paidAt: shopOrder.paidAt,
+        clientName: user.name,
+        clientEmail: user.email,
+      })
+      .from(shopOrder)
+      .innerJoin(user, eq(shopOrder.userId, user.id))
+      .where(where)
+      .orderBy(desc(shopOrder.createdAt))
+      .limit(filters.limit)
+      .offset(filters.offset),
+  ]);
   const items = await itemsByOrder(orders.map((o) => o.id));
-  return orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] }));
+  return { total, orders: orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] })) };
 }
 
 /** Une commande du client, retrouvée par sa référence (SW-XXXXXX). Null si elle n'est pas à lui. */
