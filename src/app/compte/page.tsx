@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt } from "drizzle-orm";
 import { CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
@@ -10,7 +10,7 @@ import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/BookingActions";
 import { db } from "@/db";
-import { booking, user as userTable } from "@/db/schema";
+import { booking, product as productTable, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { LicenseKey } from "@/components/licenses/LicenseKey";
 import { getMyLicenses } from "@/lib/licenses";
@@ -68,6 +68,16 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     getMyLicenses(user.id),
   ]);
   const licenseByProduct = new Map(licenses.flatMap((l) => (l.productId ? [[l.productId, l] as const] : [])));
+  // Essais (démos) : clés avec une date de fin. À l'achat, la clé passe dans « Mes achats ».
+  const trials = licenses.filter((l) => l.trialEndsAt);
+  const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
+  const trialProducts = trialIds.length
+    ? await db
+        .select({ id: productTable.id, slug: productTable.slug, available: productTable.downloadFile, downloadSize: productTable.downloadSize })
+        .from(productTable)
+        .where(inArray(productTable.id, trialIds))
+    : [];
+  const now = new Date();
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
   const archived = [...upcoming.filter((b) => b.status === "cancelled"), ...past].sort(
@@ -214,6 +224,53 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                   </div>
                 </div>
               ))}
+              {trials.length > 0 && (
+                <ul className="mb-3 space-y-2">
+                  {trials.map((t) => {
+                    const p = trialProducts.find((tp) => tp.id === t.productId);
+                    const active = t.trialEndsAt! > now;
+                    const daysLeft = Math.max(0, Math.ceil((t.trialEndsAt!.getTime() - now.getTime()) / 86_400_000));
+                    return (
+                      <li key={t.id} className="rounded-xl border border-white/15 bg-white/[0.03] p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">
+                              {t.productName}{" "}
+                              <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-normal ${active ? "bg-white text-black" : "bg-white/5 text-muted"}`}>
+                                {active ? `Essai · ${daysLeft} jour${daysLeft > 1 ? "s" : ""} restant${daysLeft > 1 ? "s" : ""}` : "Essai terminé"}
+                              </span>
+                            </p>
+                            <p className="text-xs text-muted">
+                              {active ? `Jusqu'au ${orderDate.format(t.trialEndsAt!)}` : "Achète-le pour continuer : cette clé deviendra définitive."}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {p && (
+                              <Link
+                                href={`/boutique/${p.slug}`}
+                                className="rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/10"
+                              >
+                                Acheter
+                              </Link>
+                            )}
+                            {active && p?.available && (
+                              <a
+                                href={`/api/downloads/${p.id}`}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                              >
+                                <Download size={15} /> Télécharger
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                        {active && (
+                          <LicenseKey licenseKey={t.key} maxActivations={t.maxActivations} activations={t.activations} revoked={!!t.revokedAt} />
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               {purchases.length > 0 ? (
                 <ul className="space-y-2">
                   {purchases.map((p) => {
@@ -249,7 +306,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                   })}
                 </ul>
               ) : (
-                pendingOrders.length === 0 && (
+                pendingOrders.length === 0 && trials.length === 0 && (
                   <EmptyState>
                     Tes VST et drum kits apparaîtront ici.{" "}
                     <Link href="/boutique" className="text-foreground underline underline-offset-4">

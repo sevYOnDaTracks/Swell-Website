@@ -1,6 +1,6 @@
 import "server-only";
 import { createPrivateKey, createPublicKey, sign, type KeyObject } from "node:crypto";
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { license, licenseActivation, product, shopOrder, shopOrderItem, user } from "@/db/schema";
 
@@ -48,7 +48,22 @@ export async function ensureLicenses(userId?: string) {
       .insert(license)
       .values({ key: newLicenseKey(), userId: row.userId, productId: row.productId, productSlug: row.slug, productName: row.name })
       .onConflictDoNothing({ target: [license.userId, license.productSlug] });
+    // Acheté après un essai : la clé d'essai devient définitive, avec les 3 ordinateurs habituels.
+    await db
+      .update(license)
+      .set({ trialEndsAt: null, maxActivations: 3 })
+      .where(and(eq(license.userId, row.userId), eq(license.productSlug, row.slug), isNotNull(license.trialEndsAt)));
   }
+}
+
+/** Vrai si ce client a un essai en cours pour ce produit (donne droit au téléchargement). */
+export async function hasActiveTrial(userId: string, productId: string) {
+  const [row] = await db
+    .select({ id: license.id })
+    .from(license)
+    .where(and(eq(license.userId, userId), eq(license.productId, productId), gt(license.trialEndsAt, new Date())))
+    .limit(1);
+  return !!row;
 }
 
 /** Licences d'un client, avec les ordinateurs où chacune est activée. */
@@ -69,6 +84,8 @@ export async function getAdminLicenses() {
       productName: license.productName,
       maxActivations: license.maxActivations,
       revokedAt: license.revokedAt,
+      trialEndsAt: license.trialEndsAt,
+      trialStartedAt: license.trialStartedAt,
       createdAt: license.createdAt,
       clientName: user.name,
       clientEmail: user.email,
@@ -115,8 +132,10 @@ export function publicKeyHex() {
   return der.subarray(der.length - 32).toString("hex");
 }
 
+// v1 : licence définitive. v2 : essai, avec expiresAt (les plugins d'avant les démos refusent les v2).
 export type LicensePayload = {
-  v: 1;
+  v: 1 | 2;
+  expiresAt?: string;
   key: string;
   product: string;
   machine: string;
@@ -164,6 +183,14 @@ export async function activateLicense(input: { key: string; product: string; mac
     return fail(403, "wrong_product", `Cette clé est celle de ${row.license.productName}, pas de ce plugin.`);
   }
   if (row.license.revokedAt || row.banned) return fail(403, "revoked", "Cette licence a été désactivée. Contacte Swell si c'est une erreur.");
+  const trialEndsAt = row.license.trialEndsAt;
+  if (trialEndsAt && trialEndsAt <= new Date()) {
+    return fail(
+      403,
+      "trial_expired",
+      `Ton essai de ${row.license.productName} est terminé. Achète-le sur swell-audio.fr : cette même clé deviendra définitive.`,
+    );
+  }
 
   const machineName = input.machineName.slice(0, 64);
   const result = db.transaction((tx) => {
@@ -187,12 +214,14 @@ export async function activateLicense(input: { key: string; product: string; mac
     return fail(
       409,
       "too_many_machines",
-      `Cette licence est déjà activée sur ${row.license.maxActivations} ordinateurs. Retire-en un depuis ton espace sur swell-audio.fr, puis réessaie.`,
+      row.license.maxActivations > 1
+        ? `Cette licence est déjà activée sur ${row.license.maxActivations} ordinateurs. Retire-en un depuis ton espace sur swell-audio.fr, puis réessaie.`
+        : "Cette licence est déjà activée sur un autre ordinateur. Retire-le depuis ton espace sur swell-audio.fr, puis réessaie.",
     );
   }
 
   const file = signLicense({
-    v: 1,
+    ...(trialEndsAt ? { v: 2 as const, expiresAt: trialEndsAt.toISOString() } : { v: 1 as const }),
     key: row.license.key,
     product: row.license.productSlug,
     machine: input.machineId,

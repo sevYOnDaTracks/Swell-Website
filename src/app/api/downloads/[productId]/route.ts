@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { product } from "@/db/schema";
+import { hasActiveTrial } from "@/lib/licenses";
 import { hasPurchased } from "@/lib/orders";
 import { openPrivateFile } from "@/lib/private-storage";
 import { getCurrentUser, hasConfirmedEmail } from "@/lib/session";
@@ -16,7 +17,8 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/downloads/[
   if (!hasConfirmedEmail(user)) return new Response("Confirme ton adresse email pour télécharger.", { status: 403 });
 
   const { productId } = await ctx.params;
-  if (user.role !== "admin" && !(await hasPurchased(user.id, productId))) {
+  // Acheté, ou essai en cours (démo d'un VST).
+  if (user.role !== "admin" && !(await hasPurchased(user.id, productId)) && !(await hasActiveTrial(user.id, productId))) {
     return new Response("Accès refusé", { status: 403 });
   }
 

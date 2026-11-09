@@ -160,6 +160,8 @@ export const product = sqliteTable(
     downloadSize: integer("download_size"),
     published: integer("published", { mode: "boolean" }).notNull().default(false),
     featured: integer("featured", { mode: "boolean" }).notNull().default(false),
+    // VST : durée de la démo offerte aux comptes connectés (null ou 0 = pas de démo).
+    trialDays: integer("trial_days"),
     ...timestamps,
   },
   (t) => [index("product_type_idx").on(t.type)],
@@ -309,6 +311,10 @@ export const license = sqliteTable(
     productName: text("product_name").notNull(),
     maxActivations: integer("max_activations").notNull().default(3),
     revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+    // Clé d'essai : fin de la démo. Remis à null à l'achat (la même clé devient définitive).
+    trialEndsAt: integer("trial_ends_at", { mode: "timestamp_ms" }),
+    // Début de l'essai, gardé après l'achat pour compter les testeurs devenus clients.
+    trialStartedAt: integer("trial_started_at", { mode: "timestamp_ms" }),
     ...timestamps,
   },
   (t) => [

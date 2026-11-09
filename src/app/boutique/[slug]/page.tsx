@@ -8,6 +8,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
+import { TrialButton } from "@/components/shop/TrialButton";
 import { getProductBySlug } from "@/lib/shop";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productTypeLabels } from "@/lib/shop-format";
 import { Gauge, Monitor } from "lucide-react";
@@ -135,7 +136,13 @@ async function ProductDetail({ params }: Pick<PageProps<"/boutique/[slug]">, "pa
             ) : (
               <>
                 <AddToCartButton productId={product.id} />
-                <p className="mt-3 text-xs text-muted">Téléchargement depuis ton espace après réception du paiement.</p>
+                {product.type === "vst" && !!product.trialDays && product.downloadFile && (
+                  <TrialButton productId={product.id} slug={product.slug} days={product.trialDays} />
+                )}
+                <p className="mt-3 text-xs text-muted">
+                  Téléchargement depuis ton espace après réception du paiement.
+                  {product.type === "vst" && !!product.trialDays && " Essai : avec un compte gratuit, une fois par plugin."}
+                </p>
               </>
             )}
           </div>
