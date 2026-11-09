@@ -27,9 +27,9 @@ const condensed = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "Swell — Mixing, Prod & Prise de voix à distance",
+  title: "Swell — Plugins VST, AU & sons pour beatmakers",
   description:
-    "Mixing & mastering, production / reprod, prise de voix à distance, VST et drum kits pour beatmakers.",
+    "Plugins Swell (VST3, AU, Standalone) et sons pour beatmakers. Mix, prod et prise de voix à distance sur mix.swell-audio.fr.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

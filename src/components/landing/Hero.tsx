@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, Check, ShoppingBag } from "lucide-react";
+import { ArrowRight, CalendarCheck, Check } from "lucide-react";
 import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getPublishedProductions } from "@/lib/productions";
 import { mediaUrl } from "@/lib/shop-format";
 import { getShopProducts } from "@/lib/shop";
+import { SHOP_URL } from "@/lib/sites";
 import { CoverColumns, type CoverItem } from "./CoverColumns";
 import { HeroAB } from "./HeroAB";
 
@@ -70,7 +71,7 @@ export async function Hero() {
         title: p.name,
         subtitle: p.type === "vst" ? "Plugin Swell" : p.type === "instrumental" ? "Instrumentale" : "Boutique Swell",
         cover: mediaUrl(p.coverFile!),
-        href: `/boutique/${p.slug}`,
+        href: `${SHOP_URL}/boutique/${p.slug}`,
       })),
   ];
 
@@ -116,11 +117,10 @@ export async function Hero() {
                   Réserver mon mix
                 </Link>
                 <Link
-                  href="/boutique"
+                  href="/#tarifs"
                   className="inline-flex items-center justify-center gap-2 rounded-md border border-white/20 bg-white/[0.03] px-5 py-3.5 font-medium whitespace-nowrap transition-colors hover:bg-white/10"
                 >
-                  <ShoppingBag size={18} />
-                  Voir la boutique
+                  Voir les tarifs
                 </Link>
               </div>
 
@@ -129,16 +129,13 @@ export async function Hero() {
                 <Link href="/#services" className="underline-offset-4 hover:text-foreground hover:underline">
                   prod sur mesure et prise de voix guidée
                 </Link>
-                {" · "}
-                <Link href="/#tarifs" className="underline underline-offset-4 hover:text-foreground">
-                  Voir les tarifs
-                </Link>
+
               </p>
 
               <div className="mt-7 border-t border-white/10 pt-5">
                 {plugins.length > 0 && (
                   <Link
-                    href="/boutique"
+                    href={`${SHOP_URL}/boutique`}
                     className="group inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-foreground/80"
                   >
                     Beatmaker ? {plugins.length} plugins Swell pour ton DAW

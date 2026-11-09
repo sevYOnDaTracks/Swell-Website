@@ -5,6 +5,7 @@ import { admin } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sendEmail } from "./email";
+import { MIX_URL, SHOP_URL } from "./sites";
 
 // Les emails listés dans ADMIN_EMAILS reçoivent le rôle admin à l'inscription.
 const adminEmails = (process.env.ADMIN_EMAILS ?? "")
@@ -19,8 +20,12 @@ const google =
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
-  // Le site répond aussi sur www : sans ça, la connexion y est refusée (INVALID_ORIGIN).
-  trustedOrigins: ["https://swell-audio.fr", "https://www.swell-audio.fr"],
+  // Le site répond aussi sur www et sur mix. (services) : sans ça, la connexion y est refusée (INVALID_ORIGIN).
+  trustedOrigins: [...new Set(["https://swell-audio.fr", "https://www.swell-audio.fr", "https://mix.swell-audio.fr", SHOP_URL, MIX_URL])],
+  // En production, le cookie de session vaut pour swell-audio.fr et mix.swell-audio.fr : un seul compte, connecté des deux côtés.
+  advanced: process.env.BETTER_AUTH_URL?.startsWith("https://swell-audio.fr")
+    ? { crossSubDomainCookies: { enabled: true, domain: "swell-audio.fr" } }
+    : undefined,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

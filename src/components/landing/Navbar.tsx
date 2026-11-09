@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
+import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, Plug, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
 import { CartLink } from "@/components/cart/CartLink";
 import { authClient } from "@/lib/auth-client";
-import { navLinks } from "@/lib/content";
+import { navLinksBySite } from "@/lib/content";
+import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
 import { Logo } from "./Logo";
 
 const ICONS: Record<string, typeof Disc3> = {
   "/#productions": Disc3,
   "/#services": SlidersHorizontal,
   "/instrumentales": AudioLines,
-  "/boutique": ShoppingBag,
+  "/boutique": Plug,
   "/#tarifs": Tags,
   "/#faq": CircleHelp,
+  [MIX_URL]: SlidersHorizontal,
+  [`${SHOP_URL}/boutique`]: ShoppingBag,
 };
 
 /** Bouton icône avec info-bulle au survol (et au focus clavier). */
@@ -45,7 +48,8 @@ function IconLink({
   );
 }
 
-export function Navbar() {
+export function Navbar({ site = "shop" }: { site?: Site }) {
+  const navLinks = navLinksBySite[site];
   const [open, setOpen] = useState(false);
   const { data: session, isPending } = authClient.useSession();
   const role = (session?.user as { role?: string } | undefined)?.role;
@@ -69,7 +73,7 @@ export function Navbar() {
         </ul>
 
         <div className={`hidden items-center gap-2 transition-opacity md:flex ${isPending ? "opacity-0" : ""}`}>
-          <CartLink />
+          {site === "shop" && <CartLink />}
           {account ? (
             <IconLink href={account.href} label={account.label} Icon={account.Icon} primary />
           ) : (
@@ -86,7 +90,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
-          <CartLink onClick={() => setOpen(false)} />
+          {site === "shop" && <CartLink onClick={() => setOpen(false)} />}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
