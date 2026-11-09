@@ -1,14 +1,24 @@
 // Textes fixes de la landing page. Les services et les tarifs se gèrent
 // depuis /admin/offres, les produits depuis /admin/produits.
 
-export const navLinks = [
-  { label: "Productions", href: "/#productions" },
-  { label: "Services", href: "/#services" },
-  { label: "Instrumentales", href: "/instrumentales" },
-  { label: "Boutique", href: "/boutique" },
-  { label: "Tarifs", href: "/#tarifs" },
-  { label: "FAQ", href: "/#faq" },
-];
+import { MIX_URL, SHOP_URL, type Site } from "./sites";
+
+// Menus des deux sites (voir src/lib/sites.ts). Le dernier lien mène à l'autre site.
+export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
+  shop: [
+    { label: "Plugins & sons", href: "/boutique" },
+    { label: "Instrumentales", href: "/instrumentales" },
+    { label: "FAQ", href: "/#faq" },
+    { label: "Mix & prod", href: MIX_URL },
+  ],
+  mix: [
+    { label: "Productions", href: "/#productions" },
+    { label: "Services", href: "/#services" },
+    { label: "Tarifs", href: "/#tarifs" },
+    { label: "FAQ", href: "/#faq" },
+    { label: "Plugins Swell", href: `${SHOP_URL}/boutique` },
+  ],
+};
 
 // Logiciels affichés sous l'accroche. "wordmark" : le logo contient déjà le nom ;
 // "icon" : petit logo suivi du nom ; sans logo : nom seul.
@@ -35,6 +45,7 @@ export const steps = [
   { title: "Reçois ton son", description: "Fichiers livrés dans ton espace, révisions incluses." },
 ];
 
+// FAQ du site des services (mix.swell-audio.fr).
 export const faq = [
   {
     q: "Comment se passe une prise de voix à distance ?",
@@ -48,8 +59,28 @@ export const faq = [
     q: "Comment fonctionne l'installation de plugins à distance ?",
     a: "On prend un créneau, tu installes AnyDesk (gratuit) et, avec ton accord, je me connecte à ton ordinateur pour installer et configurer tes plugins.",
   },
+];
+
+// FAQ de la boutique (swell-audio.fr).
+export const shopFaq = [
   {
-    q: "Les VST et drum kits sont-ils libres de droits ?",
+    q: "Comment j'active un plugin ?",
+    a: "Après l'achat, ta clé de licence est dans ton espace et dans l'email de confirmation. Colle-la dans le plugin au premier lancement : internet n'est nécessaire qu'une fois, ensuite il marche hors ligne.",
+  },
+  {
+    q: "Sur combien d'ordinateurs ?",
+    a: "Une licence s'active sur 3 ordinateurs. Pour changer de machine, retire l'ancienne depuis ton espace.",
+  },
+  {
+    q: "Je peux essayer avant d'acheter ?",
+    a: "Oui, quand le plugin le propose : bouton « Essayer » sur sa fiche, avec un compte gratuit. Si tu l'achètes ensuite, ta clé d'essai devient définitive.",
+  },
+  {
+    q: "Quels logiciels sont compatibles ?",
+    a: "VST3 sur Windows et Mac, AU sur Mac (Logic Pro), et une version Standalone. FL Studio, Ableton Live, Logic Pro, Studio One, Cubase, Reaper…",
+  },
+  {
+    q: "Les sons sont-ils libres de droits ?",
     a: "Oui, tous les sons de la boutique sont utilisables dans tes productions commerciales.",
   },
 ];

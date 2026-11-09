@@ -1,15 +1,15 @@
 import { Plus } from "lucide-react";
-import { faq } from "@/lib/content";
+import { faq as mixFaq } from "@/lib/content";
 import { SectionHeading } from "./SectionHeading";
 
-export function Faq() {
+export function Faq({ items = mixFaq }: { items?: { q: string; a: string }[] }) {
   return (
     <section id="faq" className="scroll-mt-20 py-24">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <SectionHeading eyebrow="FAQ" title="Questions fréquentes" />
 
         <div className="mt-12 divide-y divide-white/5 rounded-2xl border border-white/5 bg-surface">
-          {faq.map((item) => (
+          {items.map((item) => (
             <details key={item.q} className="group px-6 py-5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
                 {item.q}

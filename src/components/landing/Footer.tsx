@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { navLinks } from "@/lib/content";
+import { navLinksBySite } from "@/lib/content";
+import type { Site } from "@/lib/sites";
 import { Logo } from "./Logo";
 
-export function CallToAction() {
+export function CallToAction({ site = "mix" }: { site?: Site }) {
+  if (site === "shop") return null;
   return (
     <section className="px-4 pb-24 sm:px-6">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-surface px-6 py-16 text-center">
@@ -30,7 +32,8 @@ const legalLinks = [
   { href: "/confidentialite", label: "Confidentialité" },
 ];
 
-export function Footer() {
+export function Footer({ site = "shop" }: { site?: Site }) {
+  const navLinks = navLinksBySite[site];
   return (
     <footer className="border-t border-white/5 py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:flex-row sm:px-6">

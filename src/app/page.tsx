@@ -1,26 +1,22 @@
 import { Navbar } from "@/components/landing/Navbar";
-import { Hero } from "@/components/landing/Hero";
-import { Productions } from "@/components/landing/Productions";
-import { Services } from "@/components/landing/Services";
+import { MixBanner, ShopHero } from "@/components/landing/ShopHero";
 import { Shop } from "@/components/landing/Shop";
-import { Pricing } from "@/components/landing/Pricing";
 import { Faq } from "@/components/landing/Faq";
-import { CallToAction, Footer } from "@/components/landing/Footer";
+import { Footer } from "@/components/landing/Footer";
+import { shopFaq } from "@/lib/content";
 
+// swell-audio.fr : la boutique. Les services sont sur mix.swell-audio.fr (src/app/mix).
 export default function Home() {
   return (
     <>
-      <Navbar />
+      <Navbar site="shop" />
       <main className="flex-1">
-        <Hero />
-        <Productions />
-        <Services />
+        <ShopHero />
         <Shop />
-        <Pricing />
-        <Faq />
-        <CallToAction />
+        <Faq items={shopFaq} />
+        <MixBanner />
       </main>
-      <Footer />
+      <Footer site="shop" />
     </>
   );
 }
