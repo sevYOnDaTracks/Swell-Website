@@ -27,7 +27,25 @@ export function proxy(request: NextRequest) {
     url.searchParams.set("next", pathname + search);
     return NextResponse.redirect(url);
   }
-  return NextResponse.next();
+  return migrateSessionCookie(request, NextResponse.next());
+}
+
+// Connexions ouvertes avant le passage à deux adresses : leur cookie ne vaut que pour swell-audio.fr,
+// donc mix.swell-audio.fr les voit déconnectées. À la première visite sur swell-audio.fr, le cookie est
+// reposé pour tout le domaine (et l'ancien effacé, sinon la déconnexion ne le retirerait pas).
+const SESSION_COOKIE = "__Secure-better-auth.session_token";
+const MIGRATED = "swell_sso";
+
+function migrateSessionCookie(request: NextRequest, response: NextResponse) {
+  const host = request.headers.get("host") ?? "";
+  if (host !== "swell-audio.fr" || request.cookies.has(MIGRATED)) return response;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return response;
+  const shared = "Domain=swell-audio.fr; Path=/; Secure; SameSite=Lax";
+  response.headers.append("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  response.headers.append("Set-Cookie", `${SESSION_COOKIE}=${encodeURIComponent(token)}; Max-Age=604800; HttpOnly; ${shared}`);
+  response.headers.append("Set-Cookie", `${MIGRATED}=1; Max-Age=31536000; ${shared}`);
+  return response;
 }
 
 export const config = {
