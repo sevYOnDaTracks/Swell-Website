@@ -67,8 +67,11 @@ export async function updateProfile(formData: FormData): Promise<Result> {
   return { ok: true };
 }
 
-/** Marque le mini tutoriel comme vu : il ne s'affiche plus, sur aucun appareil. */
-export async function completeOnboarding() {
+/** Marque le mini tutoriel du site comme vu : il ne s'affiche plus, sur aucun appareil. */
+export async function completeOnboarding(site: "shop" | "mix" = "shop") {
   const me = await requireUser();
-  await db.update(user).set({ onboardedAt: new Date() }).where(eq(user.id, me.id));
+  await db
+    .update(user)
+    .set(site === "mix" ? { mixOnboardedAt: new Date() } : { onboardedAt: new Date() })
+    .where(eq(user.id, me.id));
 }
