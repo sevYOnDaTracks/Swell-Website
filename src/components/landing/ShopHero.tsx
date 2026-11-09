@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Check, Plug, SlidersHorizontal } from "lucide-react";
+import { Check, Plug } from "lucide-react";
 import { mediaUrl } from "@/lib/shop-format";
 import { getShopProducts } from "@/lib/shop";
-import { MIX_URL } from "@/lib/sites";
 import { CoverColumns, type CoverItem } from "./CoverColumns";
 
 // Accueil de la boutique (swell-audio.fr) : les plugins d'abord.
@@ -65,40 +64,10 @@ export async function ShopHero() {
               Toute la boutique
             </Link>
           </div>
-          <Link
-            href={MIX_URL}
-            className="group mt-7 inline-flex items-center gap-2 border-t border-white/10 pt-5 text-sm font-medium transition-colors hover:text-foreground/80"
-          >
-            <SlidersHorizontal size={16} />
-            Besoin d&apos;un mix, d&apos;une prod ou d&apos;une reprod ? mix.swell-audio.fr
-            <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-          </Link>
         </div>
         <div className="hidden overflow-hidden md:block md:h-[460px] lg:h-full">
           <CoverColumns items={covers} />
         </div>
-      </div>
-    </section>
-  );
-}
-
-/** Encart vers le site des services, en bas de la boutique. */
-export function MixBanner() {
-  return (
-    <section className="px-4 pb-24 sm:px-6">
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-surface px-6 py-14 text-center">
-        <div className="pointer-events-none absolute -bottom-32 left-1/2 h-64 w-[700px] -translate-x-1/2 rounded-full bg-white/[0.08] blur-[100px]" />
-        <p className="relative text-sm tracking-wide text-muted">SWELL MIX</p>
-        <h2 className="relative mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-          Ton titre mérite un <span className="text-gradient">vrai mix</span>
-        </h2>
-        <p className="relative mx-auto mt-4 max-w-md text-muted">Mix & master, prod sur mesure, reprod, prise de voix guidée à distance.</p>
-        <Link
-          href={MIX_URL}
-          className="relative mt-8 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-black transition-colors hover:bg-neutral-200"
-        >
-          Découvrir les services <ArrowRight size={16} />
-        </Link>
       </div>
     </section>
   );

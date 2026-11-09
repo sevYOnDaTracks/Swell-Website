@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, Check } from "lucide-react";
+import { CalendarCheck, Check } from "lucide-react";
 import { daws, heroDemo } from "@/lib/content";
 import { getPlans } from "@/lib/offers";
 import { getPublishedProductions } from "@/lib/productions";
 import { mediaUrl } from "@/lib/shop-format";
-import { getShopProducts } from "@/lib/shop";
-import { SHOP_URL } from "@/lib/sites";
 import { CoverColumns, type CoverItem } from "./CoverColumns";
 import { HeroAB } from "./HeroAB";
 
@@ -41,20 +39,14 @@ function planFacts(features: string[]) {
 }
 
 export async function Hero() {
-  const [plans, shop, productions] = await Promise.all([
-    getPlans(),
-    getShopProducts({}),
-    getPublishedProductions(),
-  ]);
+  const [plans, productions] = await Promise.all([getPlans(), getPublishedProductions()]);
   const plan = featuredPlan(plans);
   const facts = plan ? planFacts(plan.features) : [];
-  const plugins = shop.items.filter((p) => p.type === "vst");
-  const freePlugins = plugins.filter((p) => p.priceCents === 0).length;
   const logos = HERO_DAWS.flatMap((name) =>
     daws.filter((d) => d.name === name),
   );
 
-  // Pochettes qui défilent : les productions d'abord, puis les visuels de la boutique.
+  // Pochettes qui défilent : les productions (la boutique est sur l'autre site).
   const covers: CoverItem[] = [
     ...productions.map((p) => ({
       key: `prod-${p.id}`,
@@ -64,15 +56,6 @@ export async function Hero() {
       href: p.link ?? "/#productions",
       external: !!p.link,
     })),
-    ...shop.items
-      .filter((p) => p.coverFile)
-      .map((p) => ({
-        key: `shop-${p.id}`,
-        title: p.name,
-        subtitle: p.type === "vst" ? "Plugin Swell" : p.type === "instrumental" ? "Instrumentale" : "Boutique Swell",
-        cover: mediaUrl(p.coverFile!),
-        href: `${SHOP_URL}/boutique/${p.slug}`,
-      })),
   ];
 
   return (
@@ -133,16 +116,6 @@ export async function Hero() {
               </p>
 
               <div className="mt-7 border-t border-white/10 pt-5">
-                {plugins.length > 0 && (
-                  <Link
-                    href={`${SHOP_URL}/boutique`}
-                    className="group inline-flex items-center gap-2 text-sm font-medium transition-colors hover:text-foreground/80"
-                  >
-                    Beatmaker ? {plugins.length} plugins Swell pour ton DAW
-                    {freePlugins > 0 && `, dont ${freePlugins} gratuit${freePlugins > 1 ? "s" : ""}`}
-                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                )}
                 <ul
                   className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 text-foreground sm:gap-x-6"
                   aria-label="Logiciels compatibles"

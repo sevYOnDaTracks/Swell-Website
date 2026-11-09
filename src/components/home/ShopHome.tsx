@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/landing/Navbar";
-import { MixBanner, ShopHero } from "@/components/landing/ShopHero";
+import { ShopHero } from "@/components/landing/ShopHero";
 import { Shop } from "@/components/landing/Shop";
 import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
@@ -14,7 +14,6 @@ export function ShopHome() {
         <ShopHero />
         <Shop />
         <Faq items={shopFaq} />
-        <MixBanner />
       </main>
       <Footer site="shop" />
     </>
