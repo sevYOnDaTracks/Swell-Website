@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/landing/Logo";
+import { currentSite } from "@/lib/site-server";
 import { Avatar } from "./Avatar";
 import { DashboardNav } from "./DashboardNav";
 import { SignOutButton } from "./SignOutButton";
 
 type User = { name: string; email: string; image?: string | null; role: string };
 
-export function DashboardShell({
+export async function DashboardShell({
   user,
   title,
   subtitle,
@@ -19,6 +20,8 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const isAdmin = user.role === "admin";
+  // Le menu suit le site : plugins sur swell-audio.fr, réservations sur mix.swell-audio.fr.
+  const site = await currentSite();
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -27,7 +30,7 @@ export function DashboardShell({
           <div className="flex items-center gap-6">
             <Logo />
             <nav aria-label="Espace" className="hidden md:block">
-              <DashboardNav isAdmin={isAdmin} />
+              <DashboardNav isAdmin={isAdmin} site={site} />
             </nav>
           </div>
           <div className="flex items-center gap-3">
@@ -42,7 +45,7 @@ export function DashboardShell({
           </div>
         </div>
         <nav aria-label="Espace" className="mx-auto flex max-w-6xl justify-center px-4 pb-3 md:hidden">
-          <DashboardNav isAdmin={isAdmin} />
+          <DashboardNav isAdmin={isAdmin} site={site} />
         </nav>
       </header>
 

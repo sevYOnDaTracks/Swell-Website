@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { Suspense } from "react";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
-import { CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug } from "lucide-react";
+import { AudioLines, CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
@@ -12,11 +11,11 @@ import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getMyLicenses } from "@/lib/licenses";
-import { getOrderHistory, getPendingOrders, getPurchases } from "@/lib/orders";
+import { getOrderHistory, getPendingOrders, getPurchases, orderSite } from "@/lib/orders";
 import { formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
-import { isMixHost } from "@/lib/sites";
+import { currentSite } from "@/lib/site-server";
 
 export const metadata = { title: "Mon espace — Swell" };
 
@@ -43,8 +42,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const tab = onglet === "archives" ? "archives" : "a-venir";
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
-  // Tutoriel du site visité : plugins sur la boutique, réservations sur mix.
-  const site = isMixHost((await headers()).get("host")) ? "mix" : "shop";
+  // Site visité : plugins sur la boutique, réservations et instrumentales sur mix.
+  const site = await currentSite();
 
   const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory, licenses] = await Promise.all([
     db
@@ -76,13 +75,17 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const archived = [...upcoming.filter((b) => b.status === "cancelled"), ...past].sort(
     (a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime),
   );
+  // Chaque site montre ses commandes : instrumentales sur mix, plugins et sons sur la boutique.
+  const history = orderHistory.filter((o) => orderSite(o) === site);
+  const pending = pendingOrders.filter((o) => orderSite(o) === site);
+  const beats = purchases.filter((p) => p.type === "instrumental");
   const tabs = [
     { id: "a-venir", label: "À venir", count: active.length, href: "/compte" },
     { id: "archives", label: "Archivées", count: archived.length, href: "/compte?onglet=archives" },
   ];
 
   return (
-    <DashboardShell user={user} title={`Salut ${firstName} 👋`} subtitle="Retrouve ici tes réservations et tes achats.">
+    <DashboardShell user={user} title={`Salut ${firstName} 👋`} subtitle={site === "mix" ? "Retrouve ici tes réservations et tes instrumentales." : "Retrouve ici tes plugins, tes licences et tes commandes."}>
       {!(site === "mix" ? me?.mixOnboardedAt : me?.onboardedAt) && <OnboardingTour firstName={firstName} site={site} />}
       {reservation === "ok" && (
         <p className="mb-6 flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm">
@@ -93,6 +96,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
+          {site === "mix" && (
           <Card title="Mes réservations" action={<span className="text-xs text-muted">{active.length} à venir</span>}>
             <nav className="mb-4 flex gap-1 rounded-lg border border-white/5 bg-background/40 p-1 text-sm" aria-label="Réservations">
               {tabs.map((t) => (
@@ -183,7 +187,31 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               </ul>
             )}
           </Card>
+          )}
 
+          {site === "mix" && (beats.length > 0 || pending.length > 0) && (
+            <Card
+              title="Mes instrumentales"
+              action={
+                <Link href="/compte/plugins" className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground">
+                  Tout voir <ChevronRight size={14} />
+                </Link>
+              }
+            >
+              <p className="text-sm text-muted">
+                {beats.length} instrumentale{beats.length > 1 ? "s" : ""} à télécharger
+                {pending.length > 0 && ` · ${pending.length} commande${pending.length > 1 ? "s" : ""} en attente de paiement`}
+              </p>
+              <Link
+                href="/compte/plugins"
+                className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+              >
+                <AudioLines size={16} /> Mes instrumentales
+              </Link>
+            </Card>
+          )}
+
+          {site === "shop" && (
           <section id="achats" className="scroll-mt-24">
             <Card
               title="Mes plugins"
@@ -193,13 +221,13 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                 </Link>
               }
             >
-              {pendingOrders.length > 0 && (
+              {pending.length > 0 && (
                 <Link
                   href="/compte/plugins"
                   className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm transition-colors hover:bg-white/[0.07]"
                 >
                   <span>
-                    {pendingOrders.length} commande{pendingOrders.length > 1 ? "s" : ""} en attente de paiement
+                    {pending.length} commande{pending.length > 1 ? "s" : ""} en attente de paiement
                   </span>
                   <ChevronRight size={16} className="text-muted" />
                 </Link>
@@ -224,11 +252,12 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               </Link>
             </Card>
           </section>
+          )}
 
-          {orderHistory.length > 0 && (
-            <Card title="Historique des commandes" action={<span className="text-xs text-muted">{orderHistory.length} commande{orderHistory.length > 1 ? "s" : ""}</span>}>
+          {history.length > 0 && (
+            <Card title="Historique des commandes" action={<span className="text-xs text-muted">{history.length} commande{history.length > 1 ? "s" : ""}</span>}>
               <ul className="-mx-3 space-y-1">
-                {orderHistory.map((o) => (
+                {history.map((o) => (
                   <li key={o.id}>
                     <Link
                       href={`/compte/commandes/${o.reference}`}
@@ -257,6 +286,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
         </div>
 
         <div className="space-y-4">
+          {site === "mix" ? (
+          <>
           <Card title="Réserver une session">
             <ul className="space-y-2">
               {bookingServices.map((s) => (
@@ -293,6 +324,27 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
               </ul>
             </Card>
           </section>
+          </>
+          ) : (
+            <Card title="Activer un plugin">
+              <ol className="space-y-3 text-sm text-muted">
+                <li>
+                  <span className="font-medium text-foreground">1.</span> Télécharge le plugin depuis{" "}
+                  <Link href="/compte/plugins" className="text-foreground underline underline-offset-4">
+                    Mes plugins
+                  </Link>{" "}
+                  et installe-le (VST3, AU ou Standalone).
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">2.</span> Copie ta clé de licence, juste sous le plugin.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">3.</span> Ouvre le plugin dans ton DAW, colle la clé et clique sur Activer. Internet ne sert
+                  qu&apos;une fois.
+                </li>
+              </ol>
+            </Card>
+          )}
         </div>
       </div>
     </DashboardShell>

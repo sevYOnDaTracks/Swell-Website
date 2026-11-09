@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarPlus, Clock, Disc3, Gauge, KeyRound, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import { AudioLines, CalendarPlus, Clock, Disc3, Gauge, KeyRound, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import type { Site } from "@/lib/sites";
 
-const CLIENT_LINKS = [
-  { href: "/compte", label: "Mon espace", Icon: UserRound },
-  { href: "/compte/plugins", label: "Mes plugins", Icon: Plug },
-  { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
-  { href: "/compte/profil", label: "Mon profil", Icon: Settings },
-];
+// Boutique : plugins et achats, sans réservation. Mix : réservations et instrumentales, sans plugins.
+const CLIENT_LINKS: Record<Site, { href: string; label: string; Icon: typeof UserRound }[]> = {
+  shop: [
+    { href: "/compte", label: "Mon espace", Icon: UserRound },
+    { href: "/compte/plugins", label: "Mes plugins", Icon: Plug },
+    { href: "/compte/profil", label: "Mon profil", Icon: Settings },
+  ],
+  mix: [
+    { href: "/compte", label: "Mon espace", Icon: UserRound },
+    { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
+    { href: "/compte/plugins", label: "Mes instrumentales", Icon: AudioLines },
+    { href: "/compte/profil", label: "Mon profil", Icon: Settings },
+  ],
+};
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Tableau de bord", Icon: Gauge },
@@ -24,11 +33,11 @@ const ADMIN_LINKS = [
 ];
 
 /** Menu de l'espace connecté : icônes avec info-bulle, la page active en blanc. */
-export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
+export function DashboardNav({ isAdmin, site }: { isAdmin: boolean; site: Site }) {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/admin" || href === "/compte" ? pathname === href : pathname.startsWith(href));
 
-  const renderLinks = (links: typeof CLIENT_LINKS) =>
+  const renderLinks = (links: (typeof CLIENT_LINKS)["shop"]) =>
     links.map(({ href, label, Icon }) => {
       const active = isActive(href);
       return (
@@ -51,7 +60,7 @@ export function DashboardNav({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="flex items-center gap-1">
-      {renderLinks(CLIENT_LINKS)}
+      {renderLinks(CLIENT_LINKS[site])}
       {isAdmin && (
         <>
           <span aria-hidden className="mx-1.5 h-5 w-px bg-white/15" />

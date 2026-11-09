@@ -11,12 +11,15 @@ import { LicenseKey } from "@/components/licenses/LicenseKey";
 import { db } from "@/db";
 import { product as productTable } from "@/db/schema";
 import { getMyLicenses } from "@/lib/licenses";
-import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
+import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails, orderSite } from "@/lib/orders";
 import { formatBytes, formatPrice, mediaUrl, productPath } from "@/lib/shop-format";
 import { requireUser } from "@/lib/session";
-import { SHOP_URL } from "@/lib/sites";
+import { currentSite } from "@/lib/site-server";
+import { MIX_URL, SHOP_URL } from "@/lib/sites";
 
-export const metadata = { title: "Mes plugins — Swell" };
+export async function generateMetadata() {
+  return { title: (await currentSite()) === "mix" ? "Mes instrumentales — Swell" : "Mes plugins — Swell" };
+}
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 const downloadButton =
@@ -50,12 +53,16 @@ export default function MyPluginsPage() {
 // sons et instrumentales, et commandes en attente de paiement.
 async function MyPluginsContent() {
   const user = await requireUser();
-  const [purchases, pendingOrders, licenses] = await Promise.all([getPurchases(user.id), getPendingOrders(user.id), getMyLicenses(user.id)]);
+  // Boutique : plugins, essais et sons. Mix : instrumentales. Chaque site ses commandes en attente.
+  const site = await currentSite();
+  const mix = site === "mix";
+  const [purchases, allPending, licenses] = await Promise.all([getPurchases(user.id), getPendingOrders(user.id), getMyLicenses(user.id)]);
+  const pendingOrders = allPending.filter((o) => orderSite(o) === site);
 
   const licenseByProduct = new Map(licenses.flatMap((l) => (l.productId ? [[l.productId, l] as const] : [])));
-  const plugins = purchases.filter((p) => p.type === "vst");
-  const sounds = purchases.filter((p) => p.type !== "vst");
-  const trials = licenses.filter((l) => l.trialEndsAt);
+  const plugins = mix ? [] : purchases.filter((p) => p.type === "vst");
+  const sounds = purchases.filter((p) => (mix ? p.type === "instrumental" : p.type !== "vst" && p.type !== "instrumental"));
+  const trials = mix ? [] : licenses.filter((l) => l.trialEndsAt);
   const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
   const trialProducts = trialIds.length
     ? await db
@@ -69,7 +76,11 @@ async function MyPluginsContent() {
   const nothing = plugins.length + sounds.length + trials.length + pendingOrders.length === 0;
 
   return (
-    <DashboardShell user={user} title="Mes plugins" subtitle="Tes plugins, leurs clés de licence et les ordinateurs activés, tes essais et tes sons.">
+    <DashboardShell
+      user={user}
+      title={mix ? "Mes instrumentales" : "Mes plugins"}
+      subtitle={mix ? "Tes prods achetées, prêtes à télécharger." : "Tes plugins, leurs clés de licence et les ordinateurs activés, tes essais et tes sons."}
+    >
       <div className="space-y-4">
         {pendingOrders.length > 0 && (
           <Card title="En attente de paiement" action={<span className="text-xs text-muted">{pendingOrders.length}</span>}>
@@ -100,6 +111,7 @@ async function MyPluginsContent() {
           </Card>
         )}
 
+        {!mix && (
         <Card
           title="Mes plugins"
           action={
@@ -147,6 +159,7 @@ async function MyPluginsContent() {
             </EmptyState>
           )}
         </Card>
+        )}
 
         {trials.length > 0 && (
           <Card
@@ -202,7 +215,7 @@ async function MyPluginsContent() {
 
         {sounds.length > 0 && (
           <Card
-            title="Sons & instrumentales"
+            title={mix ? "Mes instrumentales" : "Sons"}
             action={
               <span className="inline-flex items-center gap-1.5 text-xs text-muted">
                 <Music size={14} /> {sounds.length}
@@ -234,7 +247,16 @@ async function MyPluginsContent() {
 
         {nothing && (
           <p className="text-center text-sm text-muted">
-            Les plugins achetés, offerts ou en essai arrivent ici avec leur clé de licence, prête à coller dans le plugin.
+            {mix ? (
+              <>
+                Tes instrumentales arrivent ici après l&apos;achat.{" "}
+                <Link href={`${MIX_URL}/instrumentales`} className="text-foreground underline underline-offset-4">
+                  Écouter les prods
+                </Link>
+              </>
+            ) : (
+              "Les plugins achetés, offerts ou en essai arrivent ici avec leur clé de licence, prête à coller dans le plugin."
+            )}
           </p>
         )}
       </div>
