@@ -44,6 +44,8 @@ export async function getPurchases(userId: string) {
       paidAt: shopOrder.paidAt,
       available: product.downloadFile,
       downloadSize: product.downloadSize,
+      type: product.type,
+      slug: product.slug,
     })
     .from(shopOrderItem)
     .innerJoin(shopOrder, eq(shopOrderItem.orderId, shopOrder.id))

@@ -1,21 +1,18 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { and, asc, desc, eq, gte, inArray, lt } from "drizzle-orm";
-import { CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone } from "lucide-react";
+import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
-import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
-import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/BookingActions";
 import { db } from "@/db";
-import { booking, product as productTable, user as userTable } from "@/db/schema";
+import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
-import { LicenseKey } from "@/components/licenses/LicenseKey";
 import { getMyLicenses } from "@/lib/licenses";
-import { getOrderHistory, getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails } from "@/lib/orders";
-import { formatBytes, formatPrice } from "@/lib/shop-format";
+import { getOrderHistory, getPendingOrders, getPurchases } from "@/lib/orders";
+import { formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
 
@@ -45,8 +42,6 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const today = parisNow().date;
   const firstName = user.name.split(" ")[0];
 
-  const transfer = getTransferDetails();
-  const paypalEmail = getPaypalEmail();
   const [upcoming, past, serviceName, bookingServices, [me], purchases, pendingOrders, orderHistory, licenses] = await Promise.all([
     db
       .select()
@@ -67,17 +62,11 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     getOrderHistory(user.id),
     getMyLicenses(user.id),
   ]);
-  const licenseByProduct = new Map(licenses.flatMap((l) => (l.productId ? [[l.productId, l] as const] : [])));
-  // Essais (démos) : clés avec une date de fin. À l'achat, la clé passe dans « Mes achats ».
-  const trials = licenses.filter((l) => l.trialEndsAt);
-  const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
-  const trialProducts = trialIds.length
-    ? await db
-        .select({ id: productTable.id, slug: productTable.slug, available: productTable.downloadFile, downloadSize: productTable.downloadSize })
-        .from(productTable)
-        .where(inArray(productTable.id, trialIds))
-    : [];
+  // Résumé : le détail (téléchargements, clés, ordinateurs) est sur /compte/plugins.
   const now = new Date();
+  const pluginCount = purchases.filter((p) => p.type === "vst").length;
+  const activeKeys = licenses.filter((l) => !l.revokedAt && (!l.trialEndsAt || l.trialEndsAt > now)).length;
+  const runningTrials = licenses.filter((l) => l.trialEndsAt && l.trialEndsAt > now).length;
   // À venir : sessions futures encore actives. Archivées : sessions passées et annulations.
   const active = upcoming.filter((b) => b.status !== "cancelled");
   const archived = [...upcoming.filter((b) => b.status === "cancelled"), ...past].sort(
@@ -193,128 +182,42 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
 
           <section id="achats" className="scroll-mt-24">
             <Card
-              title="Mes achats"
+              title="Mes plugins"
               action={
-                <span className="inline-flex items-center gap-1.5 text-xs text-muted">
-                  <Download size={14} /> VST & Drum kits
-                </span>
+                <Link href="/compte/plugins" className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground">
+                  Tout voir <ChevronRight size={14} />
+                </Link>
               }
             >
-              {pendingOrders.map((o) => (
-                <div key={o.id} className="mb-3 rounded-xl border border-white/15 bg-white/[0.04] p-4 text-sm">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="font-semibold">
-                      Commande {o.reference} · {formatPrice(o.totalCents)}
-                    </p>
-                    <OrderStatusBadge status={o.status} />
-                  </div>
-                  <p className="mt-1 text-muted">{o.items.map((i) => i.name).join(", ")}</p>
-                  <div className="mt-3">
-                    <PaymentInstructions order={o} paypalEmail={paypalEmail} transfer={transfer} />
-                  </div>
-                  <p className="mt-3 text-xs text-muted">Tes fichiers apparaîtront ici dès que le paiement sera vérifié.</p>
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/5 pt-4">
-                    <Link
-                      href={`/compte/commandes/${o.reference}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/10"
-                    >
-                      Voir le détail <ChevronRight size={14} />
-                    </Link>
-                    <CancelOrderButton orderId={o.id} reference={o.reference} />
-                  </div>
-                </div>
-              ))}
-              {trials.length > 0 && (
-                <ul className="mb-3 space-y-2">
-                  {trials.map((t) => {
-                    const p = trialProducts.find((tp) => tp.id === t.productId);
-                    const active = t.trialEndsAt! > now;
-                    const daysLeft = Math.max(0, Math.ceil((t.trialEndsAt!.getTime() - now.getTime()) / 86_400_000));
-                    return (
-                      <li key={t.id} className="rounded-xl border border-white/15 bg-white/[0.03] p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">
-                              {t.productName}{" "}
-                              <span className={`ml-1 rounded-full px-2 py-0.5 text-xs font-normal ${active ? "bg-white text-black" : "bg-white/5 text-muted"}`}>
-                                {active ? `Essai · ${daysLeft} jour${daysLeft > 1 ? "s" : ""} restant${daysLeft > 1 ? "s" : ""}` : "Essai terminé"}
-                              </span>
-                            </p>
-                            <p className="text-xs text-muted">
-                              {active ? `Jusqu'au ${orderDate.format(t.trialEndsAt!)}` : "Achète-le pour continuer : cette clé deviendra définitive."}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {p && (
-                              <Link
-                                href={`/boutique/${p.slug}`}
-                                className="rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/10"
-                              >
-                                Acheter
-                              </Link>
-                            )}
-                            {active && p?.available && (
-                              <a
-                                href={`/api/downloads/${p.id}`}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
-                              >
-                                <Download size={15} /> Télécharger
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        {active && (
-                          <LicenseKey licenseKey={t.key} maxActivations={t.maxActivations} activations={t.activations} revoked={!!t.revokedAt} />
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+              {pendingOrders.length > 0 && (
+                <Link
+                  href="/compte/plugins"
+                  className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-3 text-sm transition-colors hover:bg-white/[0.07]"
+                >
+                  <span>
+                    {pendingOrders.length} commande{pendingOrders.length > 1 ? "s" : ""} en attente de paiement
+                  </span>
+                  <ChevronRight size={16} className="text-muted" />
+                </Link>
               )}
-              {purchases.length > 0 ? (
-                <ul className="space-y-2">
-                  {purchases.map((p) => {
-                    const lic = p.productId ? licenseByProduct.get(p.productId) : undefined;
-                    return (
-                    <li key={p.itemId} className="rounded-xl border border-white/5 bg-background/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{p.name}</p>
-                        {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
-                      </div>
-                      {p.productId && p.available ? (
-                        <a
-                          href={`/api/downloads/${p.productId}`}
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
-                        >
-                          <Download size={15} /> Télécharger
-                        </a>
-                      ) : (
-                        <span className="shrink-0 text-xs text-muted">Indisponible</span>
-                      )}
-                      </div>
-                      {lic && (
-                        <LicenseKey
-                          licenseKey={lic.key}
-                          maxActivations={lic.maxActivations}
-                          activations={lic.activations}
-                          revoked={!!lic.revokedAt}
-                        />
-                      )}
-                    </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                pendingOrders.length === 0 && trials.length === 0 && (
-                  <EmptyState>
-                    Tes VST et drum kits apparaîtront ici.{" "}
-                    <Link href="/boutique" className="text-foreground underline underline-offset-4">
-                      Voir la boutique
-                    </Link>
-                  </EmptyState>
-                )
-              )}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { value: pluginCount, label: `plugin${pluginCount > 1 ? "s" : ""}` },
+                  { value: activeKeys, label: `licence${activeKeys > 1 ? "s" : ""} active${activeKeys > 1 ? "s" : ""}` },
+                  { value: runningTrials, label: `essai${runningTrials > 1 ? "s" : ""} en cours` },
+                ].map((stat) => (
+                  <div key={stat.label} className="rounded-xl border border-white/5 bg-background/40 px-2 py-3">
+                    <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
+                    <p className="text-xs text-muted">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+              <Link
+                href="/compte/plugins"
+                className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+              >
+                <Plug size={16} /> Mes plugins, téléchargements et licences
+              </Link>
             </Card>
           </section>
 
