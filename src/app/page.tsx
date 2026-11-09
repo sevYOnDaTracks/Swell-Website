@@ -1,22 +1,29 @@
-import { Navbar } from "@/components/landing/Navbar";
-import { MixBanner, ShopHero } from "@/components/landing/ShopHero";
-import { Shop } from "@/components/landing/Shop";
-import { Faq } from "@/components/landing/Faq";
-import { Footer } from "@/components/landing/Footer";
-import { shopFaq } from "@/lib/content";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { Suspense } from "react";
+import { MixHome } from "@/components/home/MixHome";
+import { ShopHome } from "@/components/home/ShopHome";
+import { isMixHost } from "@/lib/sites";
 
-// swell-audio.fr : la boutique. Les services sont sur mix.swell-audio.fr (src/app/mix).
+// Une seule page d'accueil pour les deux adresses : boutique sur swell-audio.fr,
+// services sur mix.swell-audio.fr (voir src/lib/sites.ts).
+
+export async function generateMetadata(): Promise<Metadata> {
+  if (!isMixHost((await headers()).get("host"))) return {};
+  return {
+    title: "Swell Mix — Mix, prod & prise de voix à distance",
+    description: "Mix & master, prod sur mesure, reprod et prise de voix guidée à distance par @sevyondatracks.",
+  };
+}
+
 export default function Home() {
   return (
-    <>
-      <Navbar site="shop" />
-      <main className="flex-1">
-        <ShopHero />
-        <Shop />
-        <Faq items={shopFaq} />
-        <MixBanner />
-      </main>
-      <Footer site="shop" />
-    </>
+    <Suspense>
+      <HomeForHost />
+    </Suspense>
   );
+}
+
+async function HomeForHost() {
+  return isMixHost((await headers()).get("host")) ? <MixHome /> : <ShopHome />;
 }
