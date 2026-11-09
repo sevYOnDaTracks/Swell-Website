@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { product, shopOrder, shopOrderItem, user } from "@/db/schema";
+import type { PaymentOptions } from "./payments";
 
 /** Coordonnées du virement. Sans IBAN configuré sur le serveur, le paiement par virement reste fermé. */
 export function getTransferDetails() {
@@ -13,6 +14,21 @@ export function getTransferDetails() {
 /** Adresse PayPal qui reçoit les paiements. Sans elle, PayPal n'est pas proposé. */
 export function getPaypalEmail() {
   return process.env.PAYPAL_EMAIL?.trim() || null;
+}
+
+/** Numéros Wave et Orange Money (WAVE_NUMBER, ORANGE_MONEY_NUMBER) et nom affiché (MOBILE_MONEY_NAME). */
+export function getMobileMoney() {
+  return {
+    wave: process.env.WAVE_NUMBER?.trim() || null,
+    orange_money: process.env.ORANGE_MONEY_NUMBER?.trim() || null,
+    name: process.env.MOBILE_MONEY_NAME?.trim() || null,
+  };
+}
+
+/** Moyens de paiement ouverts sur le serveur. */
+export function getPaymentOptions(): PaymentOptions {
+  const mobile = getMobileMoney();
+  return { paypal: !!getPaypalEmail(), transfer: !!getTransferDetails(), wave: !!mobile.wave, orange_money: !!mobile.orange_money };
 }
 
 // Sans O, 0, I ni 1 : la référence se recopie sans erreur dans un libellé de virement.
@@ -107,6 +123,7 @@ export async function getAdminOrders() {
       status: shopOrder.status,
       totalCents: shopOrder.totalCents,
       promoCode: shopOrder.promoCode,
+      proofSentAt: shopOrder.proofSentAt,
       discountCents: shopOrder.discountCents,
       createdAt: shopOrder.createdAt,
       paidAt: shopOrder.paidAt,

@@ -4,13 +4,14 @@ import { db } from "@/db";
 import { license, shopOrder, shopOrderItem, user } from "@/db/schema";
 import { ADMIN_NOTIFY_EMAIL, sendEmail, SITE_URL } from "./email";
 import { ensureLicenses } from "./licenses";
-import { getPaypalEmail, getTransferDetails } from "./orders";
+import { getMobileMoney, getPaypalEmail, getTransferDetails } from "./orders";
+import { formatFcfa, isMobileMethod, METHOD_LABELS } from "./payments";
 import { formatPrice } from "./shop-format";
 
 // Emails des commandes. Appelés via after() : ils partent une fois la réponse
 // envoyée, sans ralentir ni bloquer l'action.
 
-export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "gift" | "cancelled" | "cancelled_by_client") {
+export async function sendOrderEmails(orderId: string, event: "created" | "paid" | "gift" | "cancelled" | "cancelled_by_client" | "proof") {
   const [order] = await db
     .select({
       userId: shopOrder.userId,
@@ -35,7 +36,11 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
     const transfer = getTransferDetails();
     const paypal = getPaypalEmail();
     const byPaypal = order.method === "paypal";
-    const instruction = byPaypal && paypal
+    const mobile = getMobileMoney();
+    const mobileNumber = isMobileMethod(order.method) ? mobile[order.method] : null;
+    const instruction = mobileNumber
+      ? `Envoie ${formatFcfa(order.totalCents)} (${total}) par ${METHOD_LABELS[order.method]} au ${mobileNumber}${mobile.name ? ` (${mobile.name})` : ""}, avec la référence ${order.reference} en message si possible. Ensuite, envoie la capture du paiement depuis ton espace : je valide dès réception.`
+      : byPaypal && paypal
       ? `Envoie ${total} sur PayPal à ${paypal}, en paiement de biens ou services, avec la référence ${order.reference} dans le message.`
       : transfer
         ? `Fais un virement de ${total} à ${transfer.holder}, IBAN ${transfer.iban}, avec la référence ${order.reference} dans le libellé.`
@@ -55,7 +60,7 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
       sendEmail({
         to: ADMIN_NOTIFY_EMAIL,
         subject: `Nouvelle commande ${order.reference} : ${total}`,
-        title: byPaypal ? "Nouvelle commande par PayPal" : "Nouvelle commande par virement",
+        title: `Nouvelle commande par ${METHOD_LABELS[order.method] ?? order.method}`,
         paragraphs: [`${order.clientName} (${order.clientEmail})`, `Articles : ${names}. Total : ${total}.`, `Référence attendue : ${order.reference}.`],
         cta: { label: "Voir les commandes", href: `${SITE_URL}/admin/commandes` },
       }),
@@ -93,6 +98,20 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
         ...(await licenseLines()),
       ],
       cta: account,
+    });
+  }
+
+  if (event === "proof") {
+    await sendEmail({
+      to: ADMIN_NOTIFY_EMAIL,
+      subject: `Justificatif reçu : commande ${order.reference}`,
+      title: `Paiement ${METHOD_LABELS[order.method] ?? ""} à vérifier`,
+      paragraphs: [
+        `${order.clientName} (${order.clientEmail}) a envoyé la capture de son paiement.`,
+        `Articles : ${names}. Montant attendu : ${formatFcfa(order.totalCents)} (${total}). Référence : ${order.reference}.`,
+        "Vérifie que l'argent est bien arrivé sur ton compte, puis valide la commande.",
+      ],
+      cta: { label: "Voir les commandes", href: `${SITE_URL}/admin/commandes` },
     });
   }
 

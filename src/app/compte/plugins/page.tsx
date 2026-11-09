@@ -11,7 +11,7 @@ import { LicenseKey } from "@/components/licenses/LicenseKey";
 import { db } from "@/db";
 import { product as productTable } from "@/db/schema";
 import { getMyLicenses } from "@/lib/licenses";
-import { getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails, orderSite } from "@/lib/orders";
+import { getMobileMoney, getPaypalEmail, getPendingOrders, getPurchases, getTransferDetails, orderSite } from "@/lib/orders";
 import { formatBytes, formatPrice, mediaUrl, productPath } from "@/lib/shop-format";
 import { requireUser } from "@/lib/session";
 import { currentSite } from "@/lib/site-server";
@@ -94,7 +94,7 @@ async function MyPluginsContent() {
                 </div>
                 <p className="mt-1 text-muted">{o.items.map((i) => i.name).join(", ")}</p>
                 <div className="mt-3">
-                  <PaymentInstructions order={o} paypalEmail={paypalEmail} transfer={transfer} />
+                  <PaymentInstructions order={o} paypalEmail={paypalEmail} transfer={transfer} mobile={getMobileMoney()} />
                 </div>
                 <p className="mt-3 text-xs text-muted">Tes fichiers et tes clés apparaîtront ici dès que le paiement sera vérifié.</p>
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/5 pt-4">
