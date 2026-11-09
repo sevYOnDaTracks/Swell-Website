@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BadgeCheck, Ban, Gift, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { BadgeCheck, Ban, ChevronLeft, ChevronRight, Gift, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { giftProducts } from "@/app/actions/orders";
 import { createUserByAdmin, deleteUserByAdmin, sendPasswordLinkToUser, setUserDisabled, updateUserByAdmin } from "@/app/actions/users";
 import { Avatar } from "@/components/dashboard/Avatar";
@@ -29,6 +29,8 @@ const TYPE_LABELS: Record<string, string> = { vst: "VST", drumkit: "Drum kit", s
 const input =
   "mt-1 block w-full rounded-lg border border-white/10 bg-background/60 px-3 py-2 text-sm outline-none focus:border-white/50 [color-scheme:dark]";
 const iconButton = "rounded-md p-2 text-muted transition-colors hover:bg-white/10 hover:text-foreground disabled:opacity-40";
+const pageButton = "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 transition-colors hover:bg-white/5 disabled:opacity-30";
+const USERS_PER_PAGE = 20;
 
 export function UsersManager({ users, currentUserId, products }: { users: AdminUser[]; currentUserId: string; products: GiftableProduct[] }) {
   const [query, setQuery] = useState("");
@@ -36,6 +38,7 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [gifting, setGifting] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const [message, setMessage] = useState<{ error?: string; ok?: string } | null>(null);
   const [pending, start] = useTransition();
 
@@ -47,6 +50,10 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
     if (filter === "unverified") return !u.emailVerified;
     return true;
   });
+  // 20 comptes par page ; la recherche et le filtre ramènent à la première page.
+  const pages = Math.max(1, Math.ceil(shown.length / USERS_PER_PAGE));
+  const current = Math.min(page, pages);
+  const visible = shown.slice((current - 1) * USERS_PER_PAGE, current * USERS_PER_PAGE);
 
   function run(action: () => Promise<{ error: string } | { ok: true }>, success: string, after?: () => void) {
     setMessage(null);
@@ -64,11 +71,26 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
         <label className="relative flex-1">
           <span className="sr-only">Rechercher un utilisateur</span>
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nom, email ou téléphone" className={`${input} mt-0 pl-9`} />
+          <input
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Nom, email ou téléphone"
+            className={`${input} mt-0 pl-9`}
+          />
         </label>
         <label>
           <span className="sr-only">Filtrer</span>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} className={`${input} mt-0`}>
+          <select
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              setPage(1);
+            }}
+            className={`${input} mt-0`}
+          >
             <option value="all">Tous ({users.length})</option>
             <option value="admin">Admins</option>
             <option value="disabled">Désactivés</option>
@@ -138,7 +160,7 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
 
       <ul className="divide-y divide-white/5 rounded-2xl border border-white/5 bg-surface">
         {shown.length === 0 && <li className="px-5 py-10 text-center text-sm text-muted">Aucun utilisateur trouvé.</li>}
-        {shown.map((u) => {
+        {visible.map((u) => {
           const self = u.id === currentUserId;
           return (
             <li key={u.id} className="p-4">
@@ -300,6 +322,26 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
           );
         })}
       </ul>
+      {shown.length > 0 && (
+        <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-muted">
+            {(current - 1) * USERS_PER_PAGE + 1}–{Math.min(shown.length, current * USERS_PER_PAGE)} sur {shown.length}
+          </p>
+          {pages > 1 && (
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setPage(current - 1)} disabled={current === 1} aria-label="Page précédente" className={pageButton}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className="px-2 text-muted">
+                Page {current} / {pages}
+              </span>
+              <button type="button" onClick={() => setPage(current + 1)} disabled={current === pages} aria-label="Page suivante" className={pageButton}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </nav>
+      )}
     </div>
   );
 }

@@ -2,29 +2,34 @@ import { Suspense } from "react";
 import { Laptop } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { AdminLicenseActions, AdminRemoveActivation } from "@/components/licenses/AdminLicenseActions";
-import { getAdminLicenses, publicKeyHex } from "@/lib/licenses";
+import { getAdminLicenses, getTrialStats, publicKeyHex } from "@/lib/licenses";
+import { ListSearch, Pagination } from "@/components/admin/ListControls";
+import { PAGE_SIZE, readPage, readParam } from "@/lib/admin-list";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Licences — Swell" };
 
 const date = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
-export default function LicensesPage() {
+export default function LicensesPage({ searchParams }: PageProps<"/admin/licences">) {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <LicensesContent />
+      <LicensesContent searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function LicensesContent() {
+async function LicensesContent({ searchParams }: Pick<PageProps<"/admin/licences">, "searchParams">) {
   const admin = await requireAdmin();
-  const licenses = await getAdminLicenses();
+  const params = await searchParams;
+  const { page, offset } = readPage(params);
+  const [{ licenses, total }, stats] = await Promise.all([
+    getAdminLicenses({ q: readParam(params, "q"), state: readParam(params, "etat"), limit: PAGE_SIZE, offset }),
+    getTrialStats(),
+  ]);
   const publicKey = publicKeyHex();
   const now = new Date();
-  const trials = licenses.filter((l) => l.trialStartedAt);
-  const converted = trials.filter((l) => !l.trialEndsAt).length;
-  const running = trials.filter((l) => l.trialEndsAt && l.trialEndsAt > now).length;
+  const { started, converted, running } = stats;
 
   return (
     <DashboardShell user={admin} title="Licences" subtitle="Une clé par client et par VST payé, offert ou en essai. Désactive une clé ou libère un ordinateur ici.">
@@ -38,16 +43,34 @@ async function LicensesContent() {
           s&apos;affichent quand même chez les clients.
         </p>
       )}
-      {trials.length > 0 && (
+      {started > 0 && (
         <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm">
-          Démos : {trials.length} essai{trials.length > 1 ? "s" : ""} lancé{trials.length > 1 ? "s" : ""} · {running} en cours ·{" "}
+          Démos : {started} essai{started > 1 ? "s" : ""} lancé{started > 1 ? "s" : ""} · {running} en cours ·{" "}
           <strong>{converted} acheté{converted > 1 ? "s" : ""} après l&apos;essai</strong>
-          {trials.length > 0 && ` (${Math.round((converted / trials.length) * 100)} %)`}
+          {` (${Math.round((converted / started) * 100)} %)`}
         </p>
       )}
-      <Card title="Clés" action={<span className="text-xs text-muted">{licenses.length}</span>}>
+      <Card title="Clés" action={<span className="text-xs text-muted">{total}</span>}>
+        <ListSearch
+          basePath="/admin/licences"
+          params={params}
+          placeholder="Clé, client, email ou plugin"
+          filters={[
+            {
+              name: "etat",
+              label: "État",
+              options: [
+                { value: "", label: "Toutes les clés" },
+                { value: "active", label: "Actives" },
+                { value: "trial", label: "Essais" },
+                { value: "converted", label: "Achetées après essai" },
+                { value: "revoked", label: "Désactivées" },
+              ],
+            },
+          ]}
+        />
         {licenses.length === 0 ? (
-          <EmptyState>Aucune licence pour l&apos;instant : elles apparaissent dès qu&apos;un VST est payé ou offert.</EmptyState>
+          <EmptyState>{readParam(params, "q") || readParam(params, "etat") ? "Aucune licence ne correspond à ta recherche." : "Aucune licence pour l'instant : elles apparaissent dès qu'un VST est payé, offert ou en essai."}</EmptyState>
         ) : (
           <ul className="divide-y divide-white/5">
             {licenses.map((l) => (
@@ -86,6 +109,7 @@ async function LicensesContent() {
             ))}
           </ul>
         )}
+        <Pagination basePath="/admin/licences" params={params} page={page} total={total} />
       </Card>
     </DashboardShell>
   );
