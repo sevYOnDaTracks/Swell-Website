@@ -58,3 +58,26 @@ export function useCart() {
     clear: () => write([]),
   };
 }
+
+// Panneau latéral du panier (ouvert depuis l'icône du menu ou après « Ajouter au panier »).
+const drawerListeners = new Set<() => void>();
+let drawerOpen = false;
+
+function setDrawer(open: boolean) {
+  drawerOpen = open;
+  drawerListeners.forEach((l) => l());
+}
+
+export const openCart = () => setDrawer(true);
+export const closeCart = () => setDrawer(false);
+
+export function useCartDrawer() {
+  return useSyncExternalStore(
+    (l) => {
+      drawerListeners.add(l);
+      return () => drawerListeners.delete(l);
+    },
+    () => drawerOpen,
+    () => false,
+  );
+}
