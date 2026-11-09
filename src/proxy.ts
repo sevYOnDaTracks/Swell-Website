@@ -12,7 +12,12 @@ export function proxy(request: NextRequest) {
   //    derrière Nginx, request.url pointe vers le serveur interne.
   if (mix) {
     if (matchesPath(pathname, SHOP_ONLY_PATHS)) return NextResponse.redirect(`${SHOP_URL}${pathname}${search}`);
-    if (pathname === "/") return NextResponse.rewrite(new URL(`/mix${search}`, request.url));
+    if (pathname === "/") {
+      // nextUrl garde l'adresse interne : avec request.url, le https venu de Nginx fait passer la réécriture pour externe.
+      const url = request.nextUrl.clone();
+      url.pathname = "/mix";
+      return NextResponse.rewrite(url);
+    }
   } else {
     if (pathname === "/mix") return NextResponse.redirect(`${MIX_URL}/${search}`);
     if (matchesPath(pathname, MIX_ONLY_PATHS)) return NextResponse.redirect(`${MIX_URL}${pathname}${search}`);
