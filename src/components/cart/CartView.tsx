@@ -10,11 +10,11 @@ import { createOrder } from "@/app/actions/orders";
 import { checkPromo } from "@/app/actions/promos";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 import { useCart } from "@/lib/cart";
-import { formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { formatPrice, mediaUrl, productPath, productTypeLabels } from "@/lib/shop-format";
 
 type CartProduct = Awaited<ReturnType<typeof getCartProducts>>[number];
 
-export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; paypalOpen: boolean }) {
+export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }: { transferOpen: boolean; paypalOpen: boolean; browseHref?: string }) {
   const router = useRouter();
   const cart = useCart();
   const [waived, setWaived] = useState(false);
@@ -90,10 +90,10 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
         <ShoppingCart size={28} className="mx-auto text-muted" />
         <p className="mt-4 text-muted">Ton panier est vide.</p>
         <Link
-          href="/boutique"
+          href={browseHref}
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-black hover:bg-neutral-200"
         >
-          Voir la boutique
+          {browseHref === "/instrumentales" ? "Voir les instrumentales" : "Voir la boutique"}
         </Link>
       </div>
     );
@@ -104,11 +104,11 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
       <ul className="divide-y divide-white/5 rounded-2xl border border-white/5 bg-surface">
         {items.map((p) => (
           <li key={p.id} className="flex items-center gap-4 p-4">
-            <Link href={`/boutique/${p.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+            <Link href={productPath(p)} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-2">
               {p.coverFile && <Image src={mediaUrl(p.coverFile)} alt="" fill sizes="80px" unoptimized className="object-cover" />}
             </Link>
             <div className="min-w-0 flex-1">
-              <Link href={`/boutique/${p.slug}`} className="font-semibold hover:underline">
+              <Link href={productPath(p)} className="font-semibold hover:underline">
                 {p.name}
               </Link>
               <p className="text-xs text-muted">{productTypeLabels[p.type]}</p>
@@ -259,7 +259,7 @@ export function CartView({ transferOpen, paypalOpen }: { transferOpen: boolean; 
             <p className="mt-3 text-xs text-muted">Ton panier est gardé sur cet appareil en attendant l&apos;ouverture des paiements.</p>
           </>
         )}
-        <Link href="/boutique" className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+        <Link href={browseHref} className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowLeft size={14} /> Continuer mes achats
         </Link>
       </aside>

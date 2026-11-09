@@ -87,3 +87,7 @@ export function formatBytes(bytes: number) {
 
 /** Format affiché du fichier livré ("ZIP", "DMG"...). */
 export const fileFormat = (name: string) => name.split(".").pop()?.toUpperCase() ?? "";
+
+/** Adresse de la fiche d'un produit sur son site : instrumentales sur mix, le reste dans la boutique. */
+export const productPath = (p: { slug: string; type: string }) =>
+  isInstrumental(p.type) ? `/instrumentales/${p.slug}` : `/boutique/${p.slug}`;

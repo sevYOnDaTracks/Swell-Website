@@ -71,7 +71,7 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
         </ul>
 
         <div className={`hidden items-center gap-2 transition-opacity md:flex ${isPending ? "opacity-0" : ""}`}>
-          {site === "shop" && <CartLink />}
+          <CartLink />
           {account ? (
             <IconLink href={account.href} label={account.label} Icon={account.Icon} primary />
           ) : (
@@ -88,7 +88,7 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
         </div>
 
         <div className="flex items-center gap-1 md:hidden">
-          {site === "shop" && <CartLink onClick={() => setOpen(false)} />}
+          <CartLink onClick={() => setOpen(false)} />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

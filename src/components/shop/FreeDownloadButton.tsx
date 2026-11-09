@@ -7,7 +7,7 @@ import { claimFreeProduct } from "@/app/actions/orders";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 
 /** Téléchargement d'un produit gratuit : sans compte, on passe d'abord par l'inscription. */
-export function FreeDownloadButton({ productId, slug }: { productId: string; slug: string }) {
+export function FreeDownloadButton({ productId, path }: { productId: string; path: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -17,7 +17,7 @@ export function FreeDownloadButton({ productId, slug }: { productId: string; slu
     start(async () => {
       const result = await claimFreeProduct(productId);
       if ("needsAccount" in result) {
-        router.push(`/inscription?next=${encodeURIComponent(`/boutique/${slug}`)}`);
+        router.push(`/inscription?next=${encodeURIComponent(path)}`);
         return;
       }
       if ("needsVerification" in result) {
