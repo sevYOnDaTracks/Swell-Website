@@ -1,22 +1,20 @@
 // Textes fixes de la landing page. Les services et les tarifs se gèrent
 // depuis /admin/offres, les produits depuis /admin/produits.
 
-import { MIX_URL, SHOP_URL, type Site } from "./sites";
+import type { Site } from "./sites";
 
-// Menus des deux sites (voir src/lib/sites.ts). Le dernier lien mène à l'autre site.
+// Menus des deux sites (voir src/lib/sites.ts). Aucun lien de l'un vers l'autre : seuls le compte et l'admin sont communs.
 export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
   shop: [
     { label: "Plugins & sons", href: "/boutique" },
     { label: "Instrumentales", href: "/instrumentales" },
     { label: "FAQ", href: "/#faq" },
-    { label: "Mix & prod", href: MIX_URL },
   ],
   mix: [
     { label: "Productions", href: "/#productions" },
     { label: "Services", href: "/#services" },
     { label: "Tarifs", href: "/#tarifs" },
     { label: "FAQ", href: "/#faq" },
-    { label: "Plugins Swell", href: `${SHOP_URL}/boutique` },
   ],
 };
 

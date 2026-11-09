@@ -29,7 +29,7 @@ const condensed = Bebas_Neue({
 export const metadata: Metadata = {
   title: "Swell — Plugins VST, AU & sons pour beatmakers",
   description:
-    "Plugins Swell (VST3, AU, Standalone) et sons pour beatmakers. Mix, prod et prise de voix à distance sur mix.swell-audio.fr.",
+    "Plugins Swell (VST3, AU, Standalone) et sons pour beatmakers.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, Plug, ShoppingBag, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
+import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, Plug, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
 import { CartLink } from "@/components/cart/CartLink";
 import { authClient } from "@/lib/auth-client";
 import { navLinksBySite } from "@/lib/content";
-import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
+import type { Site } from "@/lib/sites";
 import { Logo } from "./Logo";
 
 const ICONS: Record<string, typeof Disc3> = {
@@ -16,8 +16,6 @@ const ICONS: Record<string, typeof Disc3> = {
   "/boutique": Plug,
   "/#tarifs": Tags,
   "/#faq": CircleHelp,
-  [MIX_URL]: SlidersHorizontal,
-  [`${SHOP_URL}/boutique`]: ShoppingBag,
 };
 
 /** Bouton icône avec info-bulle au survol (et au focus clavier). */
