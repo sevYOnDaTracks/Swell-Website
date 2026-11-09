@@ -54,6 +54,7 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           downloadSize: row.downloadSize,
           published: row.published,
           featured: row.featured,
+          trialDays: row.trialDays,
         }}
       />
     </DashboardShell>

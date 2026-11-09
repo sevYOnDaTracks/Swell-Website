@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/session";
 import { hasCompatibility, isInstrumental, MAX_GALLERY_PHOTOS, PLATFORMS, PLUGIN_FORMATS, youtubeId } from "@/lib/shop-format";
 import { PRODUCTS_TAG, slugify } from "@/lib/shop";
 import { deletePrivateFile } from "@/lib/private-storage";
+import { TRIAL_DAY_CHOICES } from "@/lib/trial";
 import { deleteUpload, saveUpload, UploadError } from "@/lib/storage";
 
 type Result = { error: string } | { ok: true; id: string };
@@ -103,6 +104,9 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     videoFile: videoId ? null : (existing?.videoFile ?? null),
     published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
+    trialDays: hasCompatibility(type) && TRIAL_DAY_CHOICES.includes(Number(text(formData, "trialDays")) as (typeof TRIAL_DAY_CHOICES)[number])
+      ? Number(text(formData, "trialDays"))
+      : null,
   };
 
   let savedId = existing?.id;

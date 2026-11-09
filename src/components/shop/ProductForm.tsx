@@ -18,6 +18,7 @@ import {
 } from "@/lib/shop-format";
 import { DeliverableUpload } from "./DeliverableUpload";
 import { ProductVideoField } from "./ProductVideoField";
+import { TRIAL_DAY_CHOICES } from "@/lib/trial";
 
 export type ProductFormValues = {
   id: string;
@@ -42,6 +43,7 @@ export type ProductFormValues = {
   downloadSize: number | null;
   published: boolean;
   featured: boolean;
+  trialDays: number | null;
 };
 
 const input =
@@ -170,6 +172,20 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
                 ))}
               </div>
             </fieldset>
+            <label className="text-sm sm:col-span-2">
+              <span className="font-medium">Démo</span>
+              <select name="trialDays" defaultValue={product?.trialDays ?? 0} className={input}>
+                <option value={0}>Pas de démo</option>
+                {TRIAL_DAY_CHOICES.map((d) => (
+                  <option key={d} value={d}>
+                    Essai gratuit de {d} jours (compte connecté)
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs text-muted">
+                Ajoute un bouton « Essayer » sur la fiche : une clé d&apos;essai pour 1 ordinateur, un seul essai par compte.
+              </span>
+            </label>
           </div>
         )}
 
