@@ -1,13 +1,38 @@
+import { formatFcfa, isMobileMethod, METHOD_LABELS } from "@/lib/payments";
 import { formatPrice } from "@/lib/shop-format";
+import { ProofUpload } from "./ProofUpload";
 
 type Props = {
-  order: { method: string; totalCents: number; reference: string };
+  order: { id: string; method: string; totalCents: number; reference: string; proofSentAt?: Date | null };
   paypalEmail: string | null;
   transfer: { iban: string; holder: string } | null;
+  mobile?: { wave: string | null; orange_money: string | null; name: string | null };
 };
 
 /** Ce que le client doit faire pour régler une commande en attente. */
-export function PaymentInstructions({ order, paypalEmail, transfer }: Props) {
+export function PaymentInstructions({ order, paypalEmail, transfer, mobile }: Props) {
+  const mobileNumber = isMobileMethod(order.method) ? mobile?.[order.method] : null;
+  if (mobileNumber) {
+    return (
+      <>
+        <ol className="space-y-1.5">
+          <li>
+            <span className="text-muted">1. Envoie </span>
+            <span className="font-semibold">{formatFcfa(order.totalCents)}</span>
+            <span className="text-muted"> ({formatPrice(order.totalCents)}) par {METHOD_LABELS[order.method]} au </span>
+            <span className="font-mono font-semibold">{mobileNumber}</span>
+            {mobile?.name && <span className="text-muted"> ({mobile.name})</span>}
+          </li>
+          <li>
+            <span className="text-muted">2. En message, si possible : </span>
+            <span className="font-mono font-semibold">{order.reference}</span>
+          </li>
+          <li className="text-muted">3. Fais une capture d&apos;écran de la confirmation et envoie-la ici.</li>
+        </ol>
+        <ProofUpload orderId={order.id} sentAt={order.proofSentAt ?? null} />
+      </>
+    );
+  }
   if (order.method === "paypal" && paypalEmail) {
     return (
       <>

@@ -6,7 +6,8 @@ import { after } from "next/server";
 import { db } from "@/db";
 import { product, shopOrder, shopOrderItem, user as userTable } from "@/db/schema";
 import { sendOrderEmails } from "@/lib/order-emails";
-import { getPaypalEmail, getTransferDetails, hasPurchased, newOrderReference } from "@/lib/orders";
+import { getPaymentOptions, hasPurchased, newOrderReference } from "@/lib/orders";
+import type { PayMethod } from "@/lib/payments";
 import { resolvePromo } from "@/lib/promos";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
@@ -39,7 +40,7 @@ type CheckoutResult = { ok: true; doneIds: string[] } | { needsAccount: true } |
 export async function createOrder(
   productIds: string[],
   waivedWithdrawal: boolean,
-  method: "transfer" | "paypal",
+  method: PayMethod,
   rawPromoCode?: string,
 ): Promise<CheckoutResult> {
   const user = await getCurrentUser();
@@ -93,7 +94,7 @@ export async function createOrder(
 
   // Une remise de 100 % ne demande aucun paiement : la commande est validée tout de suite.
   const coveredByPromo = total === 0;
-  const open = method === "paypal" ? !!getPaypalEmail() : method === "transfer" && !!getTransferDetails();
+  const open = !!getPaymentOptions()[method];
   if (!coveredByPromo && !open) return { error: "Ce moyen de paiement n'est pas encore ouvert." };
 
   const orderId = crypto.randomUUID();

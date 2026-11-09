@@ -228,7 +228,7 @@ export const production = sqliteTable("production", {
 
 export const orderStatuses = ["pending", "paid", "cancelled"] as const;
 // "gift" : produit offert par l'admin depuis /admin/utilisateurs (validé d'office, hors chiffre des ventes).
-export const orderMethods = ["free", "transfer", "paypal", "gift"] as const;
+export const orderMethods = ["free", "transfer", "paypal", "gift", "wave", "orange_money"] as const;
 
 export const shopOrder = sqliteTable(
   "shop_order",
@@ -251,6 +251,9 @@ export const shopOrder = sqliteTable(
     withdrawalWaivedAt: integer("withdrawal_waived_at", { mode: "timestamp_ms" }),
     // Mot de l'admin joint à un cadeau, repris dans l'email et le détail de la commande.
     giftNote: text("gift_note"),
+    // Mobile money : capture du paiement envoyée par le client (storage/proofs), à vérifier par l'admin.
+    proofFile: text("proof_file"),
+    proofSentAt: integer("proof_sent_at", { mode: "timestamp_ms" }),
     paidAt: integer("paid_at", { mode: "timestamp_ms" }),
     ...timestamps,
   },

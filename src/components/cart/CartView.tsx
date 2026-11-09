@@ -4,29 +4,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { ArrowLeft, Landmark, Loader2, Lock, ShoppingCart, Wallet, X } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, ShoppingCart, X } from "lucide-react";
 import { getCartProducts } from "@/app/actions/cart";
 import { createOrder } from "@/app/actions/orders";
 import { checkPromo } from "@/app/actions/promos";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 import { closeCart, useCart } from "@/lib/cart";
 import { formatPrice, mediaUrl, productPath, productTypeLabels } from "@/lib/shop-format";
+import { isMobileMethod, METHOD_LABELS, type PayMethod, type PaymentOptions } from "@/lib/payments";
+import { PaymentMethodPicker } from "./PaymentMethodPicker";
 
 type CartProduct = Awaited<ReturnType<typeof getCartProducts>>[number];
 
+// Ordre d'affichage des moyens de paiement.
+const METHOD_ORDER: PayMethod[] = ["wave", "orange_money", "paypal", "transfer"];
+
 export function CartView({
-  transferOpen,
-  paypalOpen,
+  payments,
   browseHref = "/boutique",
   variant = "page",
 }: {
-  transferOpen: boolean;
-  paypalOpen: boolean;
+  payments: PaymentOptions;
   browseHref?: string;
   // "drawer" : une seule colonne, dans le panneau latéral.
   variant?: "page" | "drawer";
 }) {
   const drawer = variant === "drawer";
+  const available = METHOD_ORDER.filter((m) => payments[m]);
+  const [method, setMethod] = useState<PayMethod | null>(available[0] ?? null);
   const router = useRouter();
   const cart = useCart();
   const [waived, setWaived] = useState(false);
@@ -74,7 +79,7 @@ export function CartView({
     });
   }
 
-  function order(method: "transfer" | "paypal") {
+  function order(method: PayMethod) {
     setError(null);
     startOrder(async () => {
       const result = await createOrder(items.map((p) => p.id), waived, method, promo?.code);
@@ -213,8 +218,9 @@ export function CartView({
             </button>
             <p className="mt-3 text-xs text-muted">Gratuit : tes fichiers sont disponibles tout de suite dans ton espace.</p>
           </>
-        ) : (finalTotal === 0 || transferOpen || paypalOpen) ? (
+        ) : (finalTotal === 0 || available.length > 0) ? (
           <>
+            {finalTotal > 0 && <PaymentMethodPicker methods={available} value={method} onChange={setMethod} totalCents={finalTotal} />}
             <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-foreground/85">
               <input type="checkbox" checked={waived} onChange={(e) => setWaived(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-white" />
               <span>
@@ -230,37 +236,20 @@ export function CartView({
                 {error}
               </p>
             )}
-            {finalTotal === 0 && (
-              <button
-                type="button"
-                onClick={() => order("paypal")}
-                disabled={!waived || ordering}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
-              >
-                {ordering && <Loader2 size={16} className="animate-spin" />} Valider ma commande
-              </button>
-            )}
-            {finalTotal > 0 && paypalOpen && (
-              <button
-                type="button"
-                onClick={() => order("paypal")}
-                disabled={!waived || ordering}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
-              >
-                {ordering ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />} Commander et payer par PayPal
-              </button>
-            )}
-            {finalTotal > 0 && transferOpen && (
-              <button
-                type="button"
-                onClick={() => order("transfer")}
-                disabled={!waived || ordering}
-                className={`${paypalOpen ? "mt-2 border border-white/20 hover:bg-white/5" : "mt-4 bg-primary text-black hover:bg-neutral-200"} flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors disabled:opacity-50`}
-              >
-                {ordering ? <Loader2 size={16} className="animate-spin" /> : <Landmark size={16} />} Commander par virement
-              </button>
-            )}
-            <p className="mt-3 text-xs text-muted">Ta commande reçoit une référence. Tes fichiers arrivent dans ton espace dès que le paiement est vérifié.</p>
+            <button
+              type="button"
+              onClick={() => order(finalTotal === 0 ? "paypal" : method!)}
+              disabled={!waived || ordering || (finalTotal > 0 && !method)}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:opacity-50"
+            >
+              {ordering && <Loader2 size={16} className="animate-spin" />}
+              {finalTotal === 0 ? "Valider ma commande" : `Commander · ${method ? METHOD_LABELS[method] : ""}`}
+            </button>
+            <p className="mt-3 text-xs text-muted">
+              {method && isMobileMethod(method) && finalTotal > 0
+                ? "Tu verras mon numéro et le montant exact. Après le paiement, envoie la capture depuis ton espace : je valide ta commande dès réception."
+                : "Ta commande reçoit une référence. Tes fichiers arrivent dans ton espace dès que le paiement est vérifié."}
+            </p>
           </>
         ) : (
           <>

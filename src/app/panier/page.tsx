@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { CartView } from "@/components/cart/CartView";
-import { getPaypalEmail, getTransferDetails } from "@/lib/orders";
+import { getPaymentOptions } from "@/lib/orders";
 import { isMixHost, type Site } from "@/lib/sites";
 
 export const metadata = { title: "Panier — Swell" };
@@ -39,5 +39,5 @@ async function CartShell() {
 async function CartContent({ site }: { site: Site }) {
   // Lu à chaque visite : les paiements s'ouvrent en réglant le serveur, sans nouveau build.
   await connection();
-  return <CartView transferOpen={!!getTransferDetails()} paypalOpen={!!getPaypalEmail()} browseHref={site === "mix" ? "/instrumentales" : "/boutique"} />;
+  return <CartView payments={getPaymentOptions()} browseHref={site === "mix" ? "/instrumentales" : "/boutique"} />;
 }

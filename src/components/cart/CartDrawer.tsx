@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingCart, X } from "lucide-react";
 import { getPaymentOptions } from "@/app/actions/cart";
+import type { PaymentOptions } from "@/lib/payments";
 import { closeCart, useCart, useCartDrawer } from "@/lib/cart";
 import { CartView } from "./CartView";
 
@@ -10,7 +11,7 @@ import { CartView } from "./CartView";
 export function CartDrawer({ browseHref }: { browseHref: string }) {
   const open = useCartDrawer();
   const { count } = useCart();
-  const [payments, setPayments] = useState<{ transferOpen: boolean; paypalOpen: boolean } | null>(null);
+  const [payments, setPayments] = useState<PaymentOptions | null>(null);
 
   // Moyens de paiement relus à chaque ouverture : ils s'ouvrent en réglant le serveur.
   useEffect(() => {
@@ -60,7 +61,7 @@ export function CartDrawer({ browseHref }: { browseHref: string }) {
         </header>
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {open && payments ? (
-            <CartView variant="drawer" transferOpen={payments.transferOpen} paypalOpen={payments.paypalOpen} browseHref={browseHref} />
+            <CartView variant="drawer" payments={payments} browseHref={browseHref} />
           ) : (
             <div className="h-40 animate-pulse rounded-2xl border border-white/5 bg-surface" />
           )}

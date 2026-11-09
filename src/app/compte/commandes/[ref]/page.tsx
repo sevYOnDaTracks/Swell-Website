@@ -6,14 +6,15 @@ import { Card, DashboardShell, DashboardSkeleton } from "@/components/dashboard/
 import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
-import { getMyOrder, getPaypalEmail, getTransferDetails } from "@/lib/orders";
+import { getMobileMoney, getMyOrder, getPaypalEmail, getTransferDetails } from "@/lib/orders";
+import { METHOD_LABELS } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 import { formatPrice } from "@/lib/shop-format";
 
 export const metadata = { title: "Ma commande — Swell" };
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Paris" });
-const METHODS = { paypal: "PayPal", transfer: "Virement bancaire", free: "Aucun (gratuit)", gift: "Offert par Swell" } as const;
+
 
 export default function OrderPage({ params }: PageProps<"/compte/commandes/[ref]">) {
   return (
@@ -76,7 +77,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
           {order.status === "pending" && (
             <Card title="Paiement à effectuer">
               <div className="text-sm">
-                <PaymentInstructions order={order} paypalEmail={getPaypalEmail()} transfer={getTransferDetails()} />
+                <PaymentInstructions order={order} paypalEmail={getPaypalEmail()} transfer={getTransferDetails()} mobile={getMobileMoney()} />
                 <p className="mt-3 text-xs text-muted">
                   Le paiement est vérifié à la main : tes fichiers apparaîtront dans « Mes achats » dès qu&apos;il sera
                   confirmé, et tu recevras un email.
@@ -126,7 +127,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
               </div>
               <div>
                 <dt className="text-xs text-muted">Moyen de paiement</dt>
-                <dd>{METHODS[order.method]}</dd>
+                <dd>{METHOD_LABELS[order.method] ?? order.method}</dd>
               </div>
               {order.paidAt && (
                 <div>
