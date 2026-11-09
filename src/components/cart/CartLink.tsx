@@ -1,16 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/lib/cart";
+import { openCart, useCart } from "@/lib/cart";
 
-/** Icône du panier dans le menu, avec le nombre d'articles. */
+/** Icône du panier dans le menu, avec le nombre d'articles : ouvre le panneau latéral. */
 export function CartLink({ onClick }: { onClick?: () => void }) {
   const { count } = useCart();
   return (
-    <Link
-      href="/panier"
-      onClick={onClick}
+    <button
+      type="button"
+      onClick={() => {
+        onClick?.();
+        openCart();
+      }}
       aria-label={count ? `Panier (${count} article${count > 1 ? "s" : ""})` : "Panier"}
       className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/10 hover:text-foreground"
     >
@@ -20,6 +22,6 @@ export function CartLink({ onClick }: { onClick?: () => void }) {
           {count}
         </span>
       )}
-    </Link>
+    </button>
   );
 }

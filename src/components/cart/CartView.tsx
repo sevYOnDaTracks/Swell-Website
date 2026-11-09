@@ -9,12 +9,24 @@ import { getCartProducts } from "@/app/actions/cart";
 import { createOrder } from "@/app/actions/orders";
 import { checkPromo } from "@/app/actions/promos";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
-import { useCart } from "@/lib/cart";
+import { closeCart, useCart } from "@/lib/cart";
 import { formatPrice, mediaUrl, productPath, productTypeLabels } from "@/lib/shop-format";
 
 type CartProduct = Awaited<ReturnType<typeof getCartProducts>>[number];
 
-export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }: { transferOpen: boolean; paypalOpen: boolean; browseHref?: string }) {
+export function CartView({
+  transferOpen,
+  paypalOpen,
+  browseHref = "/boutique",
+  variant = "page",
+}: {
+  transferOpen: boolean;
+  paypalOpen: boolean;
+  browseHref?: string;
+  // "drawer" : une seule colonne, dans le panneau latéral.
+  variant?: "page" | "drawer";
+}) {
+  const drawer = variant === "drawer";
   const router = useRouter();
   const cart = useCart();
   const [waived, setWaived] = useState(false);
@@ -41,7 +53,7 @@ export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }:
   }, [key]);
 
   if (products === null) {
-    return <div className="mt-10 h-40 animate-pulse rounded-2xl border border-white/5 bg-surface" />;
+    return <div className={`${drawer ? "" : "mt-10 "}h-40 animate-pulse rounded-2xl border border-white/5 bg-surface`} />;
   }
 
   // Dans l'ordre d'ajout ; un produit retiré de la boutique disparaît du panier.
@@ -67,6 +79,7 @@ export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }:
     startOrder(async () => {
       const result = await createOrder(items.map((p) => p.id), waived, method, promo?.code);
       if ("needsAccount" in result) {
+        closeCart();
         router.push("/inscription?next=%2Fpanier");
         return;
       }
@@ -80,17 +93,19 @@ export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }:
         return;
       }
       result.doneIds.forEach(cart.remove);
+      closeCart();
       router.push("/compte#achats");
     });
   }
 
   if (items.length === 0) {
     return (
-      <div className="mt-10 rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center">
+      <div className={`${drawer ? "" : "mt-10 "}rounded-2xl border border-dashed border-white/10 px-6 py-16 text-center`}>
         <ShoppingCart size={28} className="mx-auto text-muted" />
         <p className="mt-4 text-muted">Ton panier est vide.</p>
         <Link
           href={browseHref}
+          onClick={closeCart}
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-black hover:bg-neutral-200"
         >
           {browseHref === "/instrumentales" ? "Voir les instrumentales" : "Voir la boutique"}
@@ -100,19 +115,19 @@ export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }:
   }
 
   return (
-    <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className={drawer ? "grid gap-4" : "mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]"}>
       <ul className="divide-y divide-white/5 rounded-2xl border border-white/5 bg-surface">
         {items.map((p) => (
           <li key={p.id} className="flex items-center gap-4 p-4">
-            <Link href={productPath(p)} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface-2">
+            <Link href={productPath(p)} onClick={closeCart} className={`relative ${drawer ? "h-16 w-16" : "h-20 w-20"} shrink-0 overflow-hidden rounded-lg bg-surface-2`}>
               {p.coverFile && <Image src={mediaUrl(p.coverFile)} alt="" fill sizes="80px" unoptimized className="object-cover" />}
             </Link>
             <div className="min-w-0 flex-1">
-              <Link href={productPath(p)} className="font-semibold hover:underline">
+              <Link href={productPath(p)} onClick={closeCart} className="font-semibold hover:underline">
                 {p.name}
               </Link>
               <p className="text-xs text-muted">{productTypeLabels[p.type]}</p>
-              {p.shortDescription && <p className="mt-1 line-clamp-1 text-sm text-muted">{p.shortDescription}</p>}
+              {p.shortDescription && !drawer && <p className="mt-1 line-clamp-1 text-sm text-muted">{p.shortDescription}</p>}
             </div>
             <p className="shrink-0 font-semibold">{formatPrice(p.priceCents)}</p>
             <button
@@ -259,9 +274,15 @@ export function CartView({ transferOpen, paypalOpen, browseHref = "/boutique" }:
             <p className="mt-3 text-xs text-muted">Ton panier est gardé sur cet appareil en attendant l&apos;ouverture des paiements.</p>
           </>
         )}
-        <Link href={browseHref} className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
-          <ArrowLeft size={14} /> Continuer mes achats
-        </Link>
+        {drawer ? (
+          <button type="button" onClick={closeCart} className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+            <ArrowLeft size={14} /> Continuer mes achats
+          </button>
+        ) : (
+          <Link href={browseHref} className="mt-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
+            <ArrowLeft size={14} /> Continuer mes achats
+          </Link>
+        )}
       </aside>
     </div>
   );

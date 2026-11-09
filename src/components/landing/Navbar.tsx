@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AudioLines, CircleHelp, Disc3, Gauge, LogIn, Menu, Plug, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { CartLink } from "@/components/cart/CartLink";
 import { authClient } from "@/lib/auth-client";
 import { navLinksBySite } from "@/lib/content";
@@ -58,6 +59,8 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
     : null;
 
   return (
+    <>
+    <CartDrawer browseHref={site === "mix" ? "/instrumentales" : "/boutique"} />
     <header className="sticky top-0 z-50 border-b border-white/5 bg-background/70 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Logo />
@@ -147,5 +150,6 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
         </div>
       )}
     </header>
+    </>
   );
 }

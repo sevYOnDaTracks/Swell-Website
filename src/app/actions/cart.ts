@@ -3,6 +3,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { product } from "@/db/schema";
+import { getPaypalEmail, getTransferDetails } from "@/lib/orders";
 
 /** Produits du panier, relus en base : prix à jour, produits dépubliés écartés. */
 export async function getCartProducts(ids: string[]) {
@@ -20,4 +21,9 @@ export async function getCartProducts(ids: string[]) {
     })
     .from(product)
     .where(and(inArray(product.id, wanted), eq(product.published, true)));
+}
+
+/** Moyens de paiement ouverts (réglés sur le serveur), pour le panneau du panier. */
+export async function getPaymentOptions() {
+  return { transferOpen: !!getTransferDetails(), paypalOpen: !!getPaypalEmail() };
 }
