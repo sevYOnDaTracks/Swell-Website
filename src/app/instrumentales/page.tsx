@@ -5,6 +5,7 @@ import { AudioLines } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { PreviewButton } from "@/components/shop/PreviewButton";
+import { QuickAddButton } from "@/components/cart/QuickAddButton";
 import { getInstrumentals } from "@/lib/shop";
 import { formatPrice, mediaUrl } from "@/lib/shop-format";
 
@@ -109,6 +110,7 @@ async function InstrumentalList({ searchParams }: Pick<PageProps<"/instrumentale
               >
                 {formatPrice(p.priceCents)}
               </Link>
+              {p.downloadFile && <QuickAddButton productId={p.id} name={p.name} variant="inline" />}
             </li>
           ))}
         </ul>

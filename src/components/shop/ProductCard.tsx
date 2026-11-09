@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { AudioLines, Drum, Package, Piano, SlidersVertical } from "lucide-react";
 import type { ProductType } from "@/db/schema";
-import { formatPrice, mediaUrl, productTypeLabels, singlePlatformLabel } from "@/lib/shop-format";
+import { QuickAddButton } from "@/components/cart/QuickAddButton";
+import { formatPrice, mediaUrl, productPath, productTypeLabels, singlePlatformLabel } from "@/lib/shop-format";
 import { PreviewButton } from "./PreviewButton";
 
 export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
@@ -14,6 +15,7 @@ export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
 };
 
 type CardProduct = {
+  id?: string;
   slug: string;
   name: string;
   type: ProductType;
@@ -22,6 +24,8 @@ type CardProduct = {
   coverFile: string | null;
   previewFile: string | null;
   platforms?: string[];
+  // Sans fichier à livrer, le produit n'est pas encore en vente : pas d'ajout rapide.
+  downloadFile?: string | null;
 };
 
 export function ProductCover({ product, sizes, eager }: { product: CardProduct; sizes: string; eager?: boolean }) {
@@ -40,7 +44,7 @@ export function ProductCard({ product }: { product: CardProduct }) {
   const onlyOn = singlePlatformLabel(product.platforms);
   return (
     <Link
-      href={`/boutique/${product.slug}`}
+      href={productPath(product)}
       className="group overflow-hidden rounded-2xl border border-white/5 bg-surface transition-colors hover:border-white/25"
     >
       <div className="relative aspect-square overflow-hidden">
@@ -57,6 +61,11 @@ export function ProductCard({ product }: { product: CardProduct }) {
             </span>
           )}
         </div>
+        {product.id && product.downloadFile && (
+          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3">
+            <QuickAddButton productId={product.id} name={product.name} />
+          </div>
+        )}
         {product.previewFile && (
           <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3">
             <PreviewButton src={mediaUrl(product.previewFile)} label={product.name} />
