@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Check, Copy, KeyRound, Laptop, X } from "lucide-react";
 import { removeMyActivation } from "@/app/actions/licenses";
@@ -52,7 +53,10 @@ export function LicenseKey({
       ) : (
         <p className="mt-1 text-xs text-muted">
           À coller dans le plugin au premier lancement. Activé sur {activations.length} / {maxActivations} ordinateur
-          {maxActivations > 1 ? "s" : ""}.
+          {maxActivations > 1 ? "s" : ""}.{" "}
+          <Link href="/boutique/aide" className="underline hover:text-foreground">
+            Comment installer et activer ?
+          </Link>
         </p>
       )}
       {activations.length > 0 && (

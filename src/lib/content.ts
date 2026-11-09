@@ -7,6 +7,7 @@ import type { Site } from "./sites";
 export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
   shop: [
     { label: "Plugins & sons", href: "/boutique" },
+    { label: "Installer un plugin", href: "/boutique/aide" },
     { label: "FAQ", href: "/#faq" },
   ],
   mix: [

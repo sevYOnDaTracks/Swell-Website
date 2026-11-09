@@ -83,6 +83,7 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
             ? "Tes clés de licence, à saisir dans chaque plugin au premier lancement (elles restent aussi dans ton espace) :"
             : "Ta clé de licence, à saisir dans le plugin au premier lancement (elle reste aussi dans ton espace) :",
           ...keys.map((k) => `${k.name} : ${k.key}`),
+          `Installer et activer pas à pas : ${SITE_URL}/boutique/aide`,
         ]
       : [];
   };

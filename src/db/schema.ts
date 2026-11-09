@@ -160,6 +160,13 @@ export const product = sqliteTable(
     downloadFile: text("download_file"),
     downloadName: text("download_name"),
     downloadSize: integer("download_size"),
+    // VST : installateurs qui posent le plugin au bon endroit (proposés à la place du fichier ci-dessus).
+    installerMacFile: text("installer_mac_file"),
+    installerMacName: text("installer_mac_name"),
+    installerMacSize: integer("installer_mac_size"),
+    installerWinFile: text("installer_win_file"),
+    installerWinName: text("installer_win_name"),
+    installerWinSize: integer("installer_win_size"),
     published: integer("published", { mode: "boolean" }).notNull().default(false),
     featured: integer("featured", { mode: "boolean" }).notNull().default(false),
     // VST : durée de la démo offerte aux comptes connectés (null ou 0 = pas de démo).
