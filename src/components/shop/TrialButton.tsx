@@ -7,7 +7,7 @@ import { startTrial } from "@/app/actions/licenses";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 
 /** Démo d'un VST : sans compte, on passe d'abord par l'inscription, puis l'essai part vers « Mon espace ». */
-export function TrialButton({ productId, slug, days }: { productId: string; slug: string; days: number }) {
+export function TrialButton({ productId, path, days }: { productId: string; path: string; days: number }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -17,7 +17,7 @@ export function TrialButton({ productId, slug, days }: { productId: string; slug
     start(async () => {
       const result = await startTrial(productId);
       if ("needsAccount" in result) {
-        router.push(`/inscription?next=${encodeURIComponent(`/boutique/${slug}`)}`);
+        router.push(`/inscription?next=${encodeURIComponent(path)}`);
         return;
       }
       if ("needsVerification" in result) {

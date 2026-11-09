@@ -16,7 +16,7 @@ export const metadata = {
 export default function InstrumentalsPage({ searchParams }: PageProps<"/instrumentales">) {
   return (
     <>
-      <Navbar />
+      <Navbar site="mix" />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-white/5">
           <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6">
@@ -32,7 +32,7 @@ export default function InstrumentalsPage({ searchParams }: PageProps<"/instrume
           </Suspense>
         </div>
       </main>
-      <Footer />
+      <Footer site="mix" />
     </>
   );
 }
@@ -96,7 +96,7 @@ async function InstrumentalList({ searchParams }: Pick<PageProps<"/instrumentale
 
               {p.previewFile && <PreviewButton src={mediaUrl(p.previewFile)} label={p.name} />}
 
-              <Link href={`/boutique/${p.slug}`} className="min-w-0 flex-1 hover:underline-offset-4">
+              <Link href={`/instrumentales/${p.slug}`} className="min-w-0 flex-1 hover:underline-offset-4">
                 <p className="truncate font-semibold hover:underline">{p.name}</p>
                 <p className="mt-0.5 truncate text-sm text-muted">
                   {[p.bpm && `${p.bpm} BPM`, p.musicalKey, ...p.genres].filter(Boolean).join(" · ")}
@@ -104,7 +104,7 @@ async function InstrumentalList({ searchParams }: Pick<PageProps<"/instrumentale
               </Link>
 
               <Link
-                href={`/boutique/${p.slug}`}
+                href={`/instrumentales/${p.slug}`}
                 className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
               >
                 {formatPrice(p.priceCents)}

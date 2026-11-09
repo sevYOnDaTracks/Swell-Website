@@ -7,12 +7,12 @@ import type { Site } from "./sites";
 export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
   shop: [
     { label: "Plugins & sons", href: "/boutique" },
-    { label: "Instrumentales", href: "/instrumentales" },
     { label: "FAQ", href: "/#faq" },
   ],
   mix: [
     { label: "Productions", href: "/#productions" },
     { label: "Services", href: "/#services" },
+    { label: "Instrumentales", href: "/instrumentales" },
     { label: "Tarifs", href: "/#tarifs" },
     { label: "FAQ", href: "/#faq" },
   ],
