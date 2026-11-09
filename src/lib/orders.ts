@@ -64,8 +64,14 @@ export async function getPurchases(userId: string) {
 }
 
 async function itemsByOrder(orderIds: string[]) {
-  if (orderIds.length === 0) return new Map<string, (typeof shopOrderItem.$inferSelect)[]>();
-  const items = await db.select().from(shopOrderItem).where(inArray(shopOrderItem.orderId, orderIds));
+  type Item = typeof shopOrderItem.$inferSelect & { productType: string | null };
+  if (orderIds.length === 0) return new Map<string, Item[]>();
+  const rows = await db
+    .select({ item: shopOrderItem, productType: product.type })
+    .from(shopOrderItem)
+    .leftJoin(product, eq(shopOrderItem.productId, product.id))
+    .where(inArray(shopOrderItem.orderId, orderIds));
+  const items: Item[] = rows.map((r) => ({ ...r.item, productType: r.productType }));
   const grouped = new Map<string, typeof items>();
   for (const item of items) {
     grouped.set(item.orderId, [...(grouped.get(item.orderId) ?? []), item]);
@@ -126,3 +132,7 @@ export async function getMyOrder(userId: string, reference: string) {
   const items = await db.select().from(shopOrderItem).where(eq(shopOrderItem.orderId, order.id));
   return { ...order, items };
 }
+
+/** Les instrumentales se vendent sur mix.swell-audio.fr, le reste sur la boutique : chaque site montre ses commandes. */
+export const orderSite = (order: { items: { productType?: string | null }[] }) =>
+  order.items.some((i) => i.productType === "instrumental") ? "mix" : "shop";
