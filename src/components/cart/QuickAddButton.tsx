@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Plus } from "lucide-react";
+import { Check, ShoppingCartPlus } from "lucide-react";
 import { openCart, useCart } from "@/lib/cart";
 
 /** Ajout au panier depuis une carte ou une liste, sans ouvrir la fiche : le panneau du panier s'ouvre. */
@@ -22,7 +22,7 @@ export function QuickAddButton({ productId, name, variant = "overlay" }: { produ
       title={inCart ? "Dans ton panier" : "Ajouter au panier"}
       className={
         variant === "overlay"
-          ? `flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium shadow-lg backdrop-blur transition-colors sm:text-sm ${
+          ? `flex h-10 w-10 items-center justify-center rounded-full shadow-lg backdrop-blur transition-colors ${
               inCart ? "bg-black/70 text-white" : "bg-white text-black hover:bg-neutral-200"
             }`
           : `flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
@@ -30,8 +30,7 @@ export function QuickAddButton({ productId, name, variant = "overlay" }: { produ
             }`
       }
     >
-      {inCart ? <Check size={16} /> : <Plus size={16} />}
-      {variant === "overlay" && <span>{inCart ? "Dans le panier" : "Ajouter"}</span>}
+      {inCart ? <Check size={18} /> : <ShoppingCartPlus size={18} />}
     </button>
   );
 }
