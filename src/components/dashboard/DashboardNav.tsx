@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarPlus, Clock, Disc3, Gauge, KeyRound, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import { CalendarPlus, Clock, Disc3, Gauge, KeyRound, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
 
 const CLIENT_LINKS = [
   { href: "/compte", label: "Mon espace", Icon: UserRound },
+  { href: "/compte/plugins", label: "Mes plugins", Icon: Plug },
   { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
   { href: "/compte/profil", label: "Mon profil", Icon: Settings },
 ];

@@ -29,7 +29,7 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
   const items = await db.select({ name: shopOrderItem.name, productId: shopOrderItem.productId }).from(shopOrderItem).where(eq(shopOrderItem.orderId, orderId));
   const names = items.map((i) => i.name).join(", ");
   const total = formatPrice(order.totalCents);
-  const account = { label: "Ouvrir mon espace", href: `${SITE_URL}/compte` };
+  const account = { label: "Voir mes plugins et achats", href: `${SITE_URL}/compte/plugins` };
 
   if (event === "created") {
     const transfer = getTransferDetails();

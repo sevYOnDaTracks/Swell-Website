@@ -29,7 +29,7 @@ export function TrialButton({ productId, path, days }: { productId: string; path
         setError(result.error);
         return;
       }
-      router.push("/compte#achats");
+      router.push("/compte/plugins");
     });
   }
 

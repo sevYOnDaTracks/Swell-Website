@@ -94,7 +94,7 @@ export function CartView({
       }
       result.doneIds.forEach(cart.remove);
       closeCart();
-      router.push("/compte#achats");
+      router.push("/compte/plugins");
     });
   }
 

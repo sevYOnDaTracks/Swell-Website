@@ -92,7 +92,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
             <Card title="Téléchargements">
               <p className="text-sm text-muted">
                 Tes fichiers sont disponibles dans{" "}
-                <Link href="/compte#achats" className="text-foreground underline underline-offset-4">
+                <Link href="/compte/plugins" className="text-foreground underline underline-offset-4">
                   Mes achats
                 </Link>
                 .

@@ -94,7 +94,7 @@ export async function startTrial(productId: string): Promise<TrialResult> {
         key,
         "Si tu l'achètes, cette même clé devient définitive : rien à réinstaller.",
       ],
-      cta: { label: "Ouvrir mon espace", href: `${SITE_URL}/compte#achats` },
+      cta: { label: "Ouvrir mon espace", href: `${SITE_URL}/compte/plugins` },
     }),
   );
   return { ok: true };
