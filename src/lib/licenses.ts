@@ -1,6 +1,6 @@
 import "server-only";
 import { createPrivateKey, createPublicKey, sign, type KeyObject } from "node:crypto";
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, like, or, sql } from "drizzle-orm";
+import { and, asc, count, countDistinct, desc, eq, gt, inArray, isNotNull, isNull, like, max, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { license, licenseActivation, product, shopOrder, shopOrderItem, user } from "@/db/schema";
 
@@ -88,30 +88,43 @@ export async function getAdminLicenses(filters: { q?: string; state?: string; li
     filters.state === "trial" ? isNotNull(license.trialEndsAt) : undefined,
     filters.state === "converted" ? and(isNotNull(license.trialStartedAt), isNull(license.trialEndsAt)) : undefined,
   );
-  const [[{ total }], licenses] = await Promise.all([
-    db.select({ total: count() }).from(license).innerJoin(user, eq(license.userId, user.id)).where(where),
+  // Pagination par client : chaque page montre des clients entiers, avec toutes leurs clés qui correspondent.
+  const lastCreated = max(license.createdAt);
+  const [[{ total }], clients] = await Promise.all([
+    db.select({ total: countDistinct(license.userId) }).from(license).innerJoin(user, eq(license.userId, user.id)).where(where),
     db
-      .select({
-        id: license.id,
-        key: license.key,
-        productSlug: license.productSlug,
-        productName: license.productName,
-        maxActivations: license.maxActivations,
-        revokedAt: license.revokedAt,
-        trialEndsAt: license.trialEndsAt,
-        trialStartedAt: license.trialStartedAt,
-        createdAt: license.createdAt,
-        clientName: user.name,
-        clientEmail: user.email,
-      })
+      .select({ id: user.id, name: user.name, email: user.email, lastCreated })
       .from(license)
       .innerJoin(user, eq(license.userId, user.id))
       .where(where)
-      .orderBy(desc(license.createdAt))
+      .groupBy(user.id)
+      .orderBy(desc(lastCreated))
       .limit(filters.limit)
       .offset(filters.offset),
   ]);
-  return { total, licenses: await withActivations(licenses) };
+  if (clients.length === 0) return { total, clients: [] };
+  const licenses = await db
+    .select({
+      id: license.id,
+      userId: license.userId,
+      key: license.key,
+      productSlug: license.productSlug,
+      productName: license.productName,
+      maxActivations: license.maxActivations,
+      revokedAt: license.revokedAt,
+      trialEndsAt: license.trialEndsAt,
+      trialStartedAt: license.trialStartedAt,
+      createdAt: license.createdAt,
+    })
+    .from(license)
+    .innerJoin(user, eq(license.userId, user.id))
+    .where(and(where, inArray(license.userId, clients.map((c) => c.id))))
+    .orderBy(asc(license.productName), desc(license.createdAt));
+  const full = await withActivations(licenses);
+  return {
+    total,
+    clients: clients.map((c) => ({ id: c.id, name: c.name, email: c.email, licenses: full.filter((l) => l.userId === c.id) })),
+  };
 }
 
 /** Chiffres des démos sur toutes les licences (indépendants de la recherche). */
