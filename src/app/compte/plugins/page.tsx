@@ -8,6 +8,7 @@ import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
 import { LicenseKey } from "@/components/licenses/LicenseKey";
+import { DownloadChoice } from "@/components/shop/DownloadChoice";
 import { db } from "@/db";
 import { product as productTable } from "@/db/schema";
 import { getMyLicenses } from "@/lib/licenses";
@@ -66,7 +67,15 @@ async function MyPluginsContent() {
   const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
   const trialProducts = trialIds.length
     ? await db
-        .select({ id: productTable.id, slug: productTable.slug, type: productTable.type, available: productTable.downloadFile, coverFile: productTable.coverFile })
+        .select({
+          id: productTable.id,
+          slug: productTable.slug,
+          type: productTable.type,
+          available: productTable.downloadFile,
+          coverFile: productTable.coverFile,
+          installerMacSize: productTable.installerMacSize,
+          installerWinSize: productTable.installerWinSize,
+        })
         .from(productTable)
         .where(inArray(productTable.id, trialIds))
     : [];
@@ -138,9 +147,7 @@ async function MyPluginsContent() {
                         </div>
                       </div>
                       {p.productId && p.available ? (
-                        <a href={`/api/downloads/${p.productId}`} className={downloadButton}>
-                          <Download size={15} /> Télécharger
-                        </a>
+                        <DownloadChoice productId={p.productId} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
                       ) : (
                         <span className="shrink-0 text-xs text-muted">Bientôt disponible</span>
                       )}
@@ -199,9 +206,7 @@ async function MyPluginsContent() {
                           </Link>
                         )}
                         {running && p?.available && (
-                          <a href={`/api/downloads/${p.id}`} className={downloadButton}>
-                            <Download size={15} /> Télécharger
-                          </a>
+                          <DownloadChoice productId={p.id} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
                         )}
                       </div>
                     </div>

@@ -5,9 +5,10 @@ import { useState, useTransition } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { claimFreeProduct } from "@/app/actions/orders";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
+import { detectOs, type Installers } from "@/components/shop/DownloadChoice";
 
 /** Téléchargement d'un produit gratuit : sans compte, on passe d'abord par l'inscription. */
-export function FreeDownloadButton({ productId, path }: { productId: string; path: string }) {
+export function FreeDownloadButton({ productId, path, installers }: { productId: string; path: string; installers?: Installers }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -31,7 +32,10 @@ export function FreeDownloadButton({ productId, path }: { productId: string; pat
       }
       // Un lien de téléchargement ne quitte pas la page ; router.push ne sait pas ouvrir une route d'API.
       const link = document.createElement("a");
-      link.href = `/api/downloads/${productId}`;
+      // L'installateur du système du visiteur s'il existe ; les autres restent dans son espace.
+      const os = detectOs();
+      const hasInstaller = (os === "mac" && installers?.mac != null) || (os === "win" && installers?.win != null);
+      link.href = `/api/downloads/${productId}${hasInstaller ? `?os=${os}` : ""}`;
       link.download = "";
       link.click();
     });

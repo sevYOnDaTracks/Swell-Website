@@ -128,16 +128,31 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-surface p-5">
             <p className="text-3xl font-bold tracking-tight">{formatPrice(product.priceCents)}</p>
-            {product.downloadName && (
+            {product.installerMacFile || product.installerWinFile ? (
               <p className="mt-1 text-sm text-muted">
-                Téléchargement : {fileFormat(product.downloadName)}
-                {product.downloadSize ? ` · ${formatBytes(product.downloadSize)}` : ""}
+                Installateur{" "}
+                {[product.installerMacFile && "Mac", product.installerWinFile && "Windows"].filter(Boolean).join(" et ")} : un clic et
+                c&apos;est installé.{" "}
+                <Link href="/boutique/aide" className="underline hover:text-foreground">
+                  Aide
+                </Link>
               </p>
+            ) : (
+              product.downloadName && (
+                <p className="mt-1 text-sm text-muted">
+                  Téléchargement : {fileFormat(product.downloadName)}
+                  {product.downloadSize ? ` · ${formatBytes(product.downloadSize)}` : ""}
+                </p>
+              )
             )}
             {product.priceCents === 0 ? (
               <>
                 {product.downloadFile ? (
-                  <FreeDownloadButton productId={product.id} path={productPath(product)} />
+                  <FreeDownloadButton
+                    productId={product.id}
+                    path={productPath(product)}
+                    installers={{ mac: product.installerMacSize, win: product.installerWinSize }}
+                  />
                 ) : (
                   <p className="mt-4 rounded-lg border border-white/10 px-4 py-3 text-center text-sm text-muted">Bientôt disponible</p>
                 )}

@@ -60,6 +60,8 @@ export async function getPurchases(userId: string) {
       paidAt: shopOrder.paidAt,
       available: product.downloadFile,
       downloadSize: product.downloadSize,
+      installerMacSize: product.installerMacSize,
+      installerWinSize: product.installerWinSize,
       type: product.type,
       slug: product.slug,
       coverFile: product.coverFile,
