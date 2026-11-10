@@ -130,8 +130,13 @@ export default function PluginHelpPage() {
           <Step id="telecharger" n={1} title="Télécharger">
             <p>
               Va dans <Link href="/compte/plugins" className="font-medium underline">Mon espace &gt; Mes plugins</Link> et clique
-              sur <strong>Mac</strong> ou <strong>Windows</strong> : tu reçois l&apos;installateur du plugin (un fichier{" "}
-              <strong>.pkg</strong> sur Mac, <strong>.exe</strong> sur Windows).
+              sur <strong>Mac</strong> ou <strong>Windows</strong> : tu reçois l&apos;installateur du plugin dans un fichier{" "}
+              <strong>.zip</strong> (certains navigateurs bloquent les installateurs téléchargés directement).
+            </p>
+            <p>
+              Double-clique sur le <strong>.zip</strong> pour le décompresser (sur Windows : clic droit &gt;{" "}
+              <strong>Extraire tout</strong>). Tu obtiens l&apos;installateur : un fichier <strong>.pkg</strong> sur Mac,{" "}
+              <strong>.exe</strong> sur Windows.
             </p>
             <p>
               Ta <strong>clé de licence</strong> est juste en dessous, et aussi dans l&apos;e-mail de confirmation de ta commande.
