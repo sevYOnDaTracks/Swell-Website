@@ -3,12 +3,14 @@ import { and, asc, count, desc, eq, gte, lte, ne, notInArray } from "drizzle-orm
 import { CalendarCheck, Hourglass, ShoppingBag, Users } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
-import { AdminBookingActions } from "@/components/booking/BookingActions";
+import { AdminBookingActions, AdminBookingPayment } from "@/components/booking/BookingActions";
 import { SessionFilesManager } from "@/components/booking/SessionFilesManager";
 import { db } from "@/db";
 import { booking, shopOrder, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getServiceNames } from "@/lib/offers";
+import { METHOD_LABELS } from "@/lib/payments";
+import { formatPrice } from "@/lib/shop-format";
 import { formatPhone, phoneHref } from "@/lib/phone";
 import { requireAdmin } from "@/lib/session";
 import { getSessionFiles } from "@/lib/session-files";
@@ -41,6 +43,10 @@ async function AdminContent() {
         proposedDate: booking.proposedDate,
         proposedStartTime: booking.proposedStartTime,
         proposedEndTime: booking.proposedEndTime,
+        priceCents: booking.priceCents,
+        paymentMethod: booking.paymentMethod,
+        paymentReference: booking.paymentReference,
+        paidAt: booking.paidAt,
         clientName: userTable.name,
         clientEmail: userTable.email,
         clientPhone: userTable.phone,
@@ -57,6 +63,10 @@ async function AdminContent() {
         date: booking.date,
         startTime: booking.startTime,
         endTime: booking.endTime,
+        priceCents: booking.priceCents,
+        paymentMethod: booking.paymentMethod,
+        paymentReference: booking.paymentReference,
+        paidAt: booking.paidAt,
         clientName: userTable.name,
         clientEmail: userTable.email,
       })
@@ -123,6 +133,7 @@ async function AdminContent() {
                       )}
                     </p>
                     {b.notes && <p className="mt-1 line-clamp-2 text-sm text-foreground/80">« {b.notes} »</p>}
+                    {b.priceCents ? <Payment b={b} /> : null}
                     {b.status === "proposed" && b.proposedDate && (
                       <p className="mt-1 text-sm">
                         Proposé : <span className="capitalize">{formatDate(b.proposedDate)}</span> · {b.proposedStartTime} –{" "}
@@ -154,6 +165,7 @@ async function AdminContent() {
                   <p className="mt-1 text-sm text-muted">
                     {serviceName(b.service)} — {b.clientName} ({b.clientEmail})
                   </p>
+                  {b.priceCents ? <Payment b={b} /> : null}
                   <SessionFilesManager bookingId={b.id} files={recentFiles.get(b.id) ?? []} />
                 </li>
               ))}
@@ -162,5 +174,19 @@ async function AdminContent() {
         </Card>
       </div>
     </DashboardShell>
+  );
+}
+
+type PaymentRow = { id: string; priceCents: number | null; paymentMethod: string | null; paymentReference: string | null; paidAt: Date | null };
+
+function Payment({ b }: { b: PaymentRow }) {
+  return (
+    <AdminBookingPayment
+      id={b.id}
+      price={formatPrice(b.priceCents ?? 0)}
+      method={b.paymentMethod ? (METHOD_LABELS[b.paymentMethod] ?? b.paymentMethod) : null}
+      reference={b.paymentReference}
+      paid={!!b.paidAt}
+    />
   );
 }

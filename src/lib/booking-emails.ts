@@ -5,6 +5,9 @@ import { booking, user } from "@/db/schema";
 import { formatDate } from "./booking";
 import { ADMIN_NOTIFY_EMAIL, sendEmail, SITE_URL } from "./email";
 import { getServiceNames } from "./offers";
+import { paymentInstructionText } from "./orders";
+import { METHOD_LABELS } from "./payments";
+import { formatPrice } from "./shop-format";
 import { MIX_URL } from "./sites";
 
 // Emails liés aux réservations. Appelés via after() : ils partent une fois
@@ -18,7 +21,8 @@ type Event =
   | "reminder"
   | "proposed"
   | "proposal_accepted"
-  | "proposal_declined";
+  | "proposal_declined"
+  | "paid";
 
 async function loadBooking(id: string) {
   const [row] = await db
@@ -33,6 +37,9 @@ async function loadBooking(id: string) {
       proposedStartTime: booking.proposedStartTime,
       proposedEndTime: booking.proposedEndTime,
       proposalNote: booking.proposalNote,
+      priceCents: booking.priceCents,
+      paymentMethod: booking.paymentMethod,
+      paymentReference: booking.paymentReference,
       clientName: user.name,
       clientEmail: user.email,
     })
@@ -50,6 +57,13 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
   const firstName = b.clientName.split(" ")[0];
   const account = { label: "Voir mes réservations", href: `${SITE_URL}/compte` };
   const admin = { label: "Ouvrir l'admin", href: `${SITE_URL}/admin` };
+  // Séance à prix fixe : montant et façon de payer.
+  const price = b.priceCents ? formatPrice(b.priceCents) : null;
+  const instruction =
+    b.priceCents && b.paymentMethod && b.paymentReference
+      ? paymentInstructionText(b.paymentMethod, b.priceCents, b.paymentReference, false)
+      : null;
+  const methodLabel = b.paymentMethod ? (METHOD_LABELS[b.paymentMethod] ?? b.paymentMethod) : null;
 
   switch (event) {
     case "created":
@@ -61,6 +75,8 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
           paragraphs: [
             `Salut ${firstName},`,
             `Ta demande de session « ${serviceName} » le ${when} est enregistrée.`,
+            ...(price ? [`Prix : ${price}.`] : []),
+            ...(instruction ? [instruction, "Tu retrouves ces infos dans ton espace."] : []),
             "Tu recevras un email dès qu'elle sera confirmée. Tu peux l'annuler à tout moment depuis ton espace.",
           ],
           cta: account,
@@ -72,6 +88,7 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
           paragraphs: [
             `${b.clientName} (${b.clientEmail}) a réservé « ${serviceName} » le ${when}.`,
             ...(b.notes ? [`Message : « ${b.notes} »`] : []),
+            ...(price ? [`Prix : ${price}${methodLabel ? ` par ${methodLabel}` : ""}${b.paymentReference ? ` (référence ${b.paymentReference})` : ""}.`] : []),
             "Elle est en attente : confirme-la ou annule-la depuis l'admin.",
           ],
           cta: admin,
@@ -84,6 +101,15 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
         subject: `Session confirmée — ${serviceName} le ${formatDate(b.date)}`,
         title: "Ta session est confirmée ✅",
         paragraphs: [`Salut ${firstName},`, `C'est validé : « ${serviceName} » le ${when}.`, "À très vite !"],
+        cta: account,
+      });
+      break;
+    case "paid":
+      await sendEmail({
+        to: b.clientEmail,
+        subject: `Paiement reçu — ${serviceName}`,
+        title: "Paiement reçu ✅",
+        paragraphs: [`Salut ${firstName},`, `J'ai bien reçu ton paiement${price ? ` de ${price}` : ""} pour « ${serviceName} » le ${when}. Merci !`],
         cta: account,
       });
       break;

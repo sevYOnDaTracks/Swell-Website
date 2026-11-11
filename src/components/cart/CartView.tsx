@@ -11,13 +11,12 @@ import { checkPromo } from "@/app/actions/promos";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 import { closeCart, useCart } from "@/lib/cart";
 import { formatPrice, mediaUrl, productPath, productTypeLabels } from "@/lib/shop-format";
-import { isMobileMethod, METHOD_LABELS, type PayMethod, type PaymentOptions } from "@/lib/payments";
+import { isMobileMethod, METHOD_LABELS, METHOD_ORDER, type PayMethod, type PaymentOptions } from "@/lib/payments";
 import { PaymentMethodPicker } from "./PaymentMethodPicker";
 
 type CartProduct = Awaited<ReturnType<typeof getCartProducts>>[number];
 
 // Ordre d'affichage des moyens de paiement.
-const METHOD_ORDER: PayMethod[] = ["wave", "orange_money", "paypal", "transfer"];
 
 export function CartView({
   payments,

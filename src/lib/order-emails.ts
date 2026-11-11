@@ -4,8 +4,8 @@ import { db } from "@/db";
 import { license, shopOrder, shopOrderItem, user } from "@/db/schema";
 import { ADMIN_NOTIFY_EMAIL, sendEmail, SITE_URL } from "./email";
 import { ensureLicenses } from "./licenses";
-import { getMobileMoney, getPaypalEmail, getTransferDetails } from "./orders";
-import { formatFcfa, isMobileMethod, METHOD_LABELS } from "./payments";
+import { paymentInstructionText } from "./orders";
+import { formatFcfa, METHOD_LABELS } from "./payments";
 import { formatPrice } from "./shop-format";
 
 // Emails des commandes. Appelés via after() : ils partent une fois la réponse
@@ -33,18 +33,8 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
   const account = { label: "Voir mes plugins et achats", href: `${SITE_URL}/compte/plugins` };
 
   if (event === "created") {
-    const transfer = getTransferDetails();
-    const paypal = getPaypalEmail();
-    const byPaypal = order.method === "paypal";
-    const mobile = getMobileMoney();
-    const mobileNumber = isMobileMethod(order.method) ? mobile[order.method] : null;
-    const instruction = mobileNumber
-      ? `Envoie ${formatFcfa(order.totalCents)} (${total}) par ${METHOD_LABELS[order.method]} au ${mobileNumber}${mobile.name ? ` (${mobile.name})` : ""}, avec la référence ${order.reference} en message si possible. Ensuite, envoie la capture du paiement depuis ton espace : je valide dès réception.`
-      : byPaypal && paypal
-      ? `Envoie ${total} sur PayPal à ${paypal}, en paiement de biens ou services, avec la référence ${order.reference} dans le message.`
-      : transfer
-        ? `Fais un virement de ${total} à ${transfer.holder}, IBAN ${transfer.iban}, avec la référence ${order.reference} dans le libellé.`
-        : "Les informations de paiement sont indiquées dans ton espace.";
+    const instruction =
+      paymentInstructionText(order.method, order.totalCents, order.reference, true) ?? "Les informations de paiement sont indiquées dans ton espace.";
     await Promise.all([
       sendEmail({
         to: order.clientEmail,

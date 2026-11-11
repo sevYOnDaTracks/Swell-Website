@@ -7,10 +7,13 @@ type Props = {
   paypalEmail: string | null;
   transfer: { iban: string; holder: string } | null;
   mobile?: { wave: string | null; orange_money: string | null; name: string | null };
+  wero?: { id: string; name: string | null } | null;
+  /** Mobile money : demande la capture du paiement (commandes). Faux pour les réservations. */
+  withProof?: boolean;
 };
 
 /** Ce que le client doit faire pour régler une commande en attente. */
-export function PaymentInstructions({ order, paypalEmail, transfer, mobile }: Props) {
+export function PaymentInstructions({ order, paypalEmail, transfer, mobile, wero, withProof = true }: Props) {
   const mobileNumber = isMobileMethod(order.method) ? mobile?.[order.method] : null;
   if (mobileNumber) {
     return (
@@ -27,9 +30,31 @@ export function PaymentInstructions({ order, paypalEmail, transfer, mobile }: Pr
             <span className="text-muted">2. En message, si possible : </span>
             <span className="font-mono font-semibold">{order.reference}</span>
           </li>
-          <li className="text-muted">3. Fais une capture d&apos;écran de la confirmation et envoie-la ici.</li>
+          {withProof && <li className="text-muted">3. Fais une capture d&apos;écran de la confirmation et envoie-la ici.</li>}
         </ol>
-        <ProofUpload orderId={order.id} sentAt={order.proofSentAt ?? null} />
+        {withProof && <ProofUpload orderId={order.id} sentAt={order.proofSentAt ?? null} />}
+      </>
+    );
+  }
+  if (order.method === "wero" && wero) {
+    return (
+      <>
+        <dl className="space-y-1">
+          <div>
+            <dt className="inline text-muted">Wero : </dt>
+            <dd className="inline break-all font-mono">{wero.id}</dd>
+            {wero.name && <dd className="inline text-muted"> ({wero.name})</dd>}
+          </div>
+          <div>
+            <dt className="inline text-muted">Montant : </dt>
+            <dd className="inline font-semibold">{formatPrice(order.totalCents)}</dd>
+          </div>
+          <div>
+            <dt className="inline text-muted">Message à indiquer : </dt>
+            <dd className="inline font-mono font-semibold">{order.reference}</dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-xs text-muted">Ouvre l&apos;app de ta banque (ou l&apos;app Wero), choisis Wero et envoie le montant à ce numéro.</p>
       </>
     );
   }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, Loader2, Pencil, Plus, Star, Trash2, X } from "lucide-react";
 import { deletePlan, deleteService, movePlan, moveService, savePlan, saveService } from "@/app/actions/offers";
 import { SERVICE_ICONS, serviceIcon } from "@/lib/offer-icons";
+import { formatPrice } from "@/lib/shop-format";
 
 export type ServiceRow = {
   id: string;
@@ -11,6 +12,7 @@ export type ServiceRow = {
   description: string;
   icon: string;
   durationMinutes: number;
+  priceCents: number | null;
   bookable: boolean;
   visible: boolean;
 };
@@ -173,7 +175,7 @@ function ServiceFields({ s }: { s?: ServiceRow }) {
   return (
     <>
       {s && <input type="hidden" name="id" value={s.id} />}
-      <div className="grid gap-4 sm:grid-cols-[1fr_160px_140px]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_160px_120px_120px]">
         <label className="block text-sm font-medium">
           Nom
           <input name="name" required defaultValue={s?.name} placeholder="Mixing & Mastering" className={input} />
@@ -191,6 +193,16 @@ function ServiceFields({ s }: { s?: ServiceRow }) {
         <label className="block text-sm font-medium">
           Durée (min)
           <input name="duration" type="number" min={15} max={600} step={15} required defaultValue={s?.durationMinutes ?? 60} className={input} />
+        </label>
+        <label className="block text-sm font-medium">
+          Prix (€)
+          <input
+            name="price"
+            inputMode="decimal"
+            defaultValue={s?.priceCents ? String(s.priceCents / 100).replace(".", ",") : ""}
+            placeholder="Sur devis"
+            className={input}
+          />
         </label>
       </div>
       <label className="block text-sm font-medium">
@@ -240,7 +252,7 @@ export function ServicesEditor({ services }: { services: ServiceRow[] }) {
                   <div className="min-w-0">
                     <p className="truncate font-medium">{s.name}</p>
                     <p className="text-xs text-muted">
-                      {s.durationMinutes} min
+                      {s.durationMinutes} min · {s.priceCents ? formatPrice(s.priceCents) : "sur devis"}
                       {s.bookable ? " · réservable" : ""}
                       {s.visible ? "" : " · masqué"}
                     </p>

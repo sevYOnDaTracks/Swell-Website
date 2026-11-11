@@ -38,7 +38,7 @@ async function OrdersContent({ searchParams }: Pick<PageProps<"/admin/commandes"
     <DashboardShell user={admin} title="Commandes" subtitle="Vérifie la référence et le montant sur ton compte, puis valide le paiement.">
       {!paymentsOpen && (
         <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm">
-          Les paiements sont fermés : les clients ne peuvent pas commander tant que PAYPAL_EMAIL, WAVE_NUMBER, ORANGE_MONEY_NUMBER, ou BANK_TRANSFER_IBAN et BANK_TRANSFER_HOLDER, ne sont pas réglés sur le serveur.
+          Les paiements sont fermés : les clients ne peuvent pas commander tant que PAYPAL_EMAIL, WERO_NUMBER, WAVE_NUMBER, ORANGE_MONEY_NUMBER, ou BANK_TRANSFER_IBAN et BANK_TRANSFER_HOLDER, ne sont pas réglés sur le serveur.
         </p>
       )}
       <Card title="Paiements" action={<span className="text-xs text-muted">{total} commande{total > 1 ? "s" : ""}</span>}>
@@ -67,6 +67,7 @@ async function OrdersContent({ searchParams }: Pick<PageProps<"/admin/commandes"
                 { value: "wave", label: "Wave" },
                 { value: "orange_money", label: "Orange Money" },
                 { value: "paypal", label: "PayPal" },
+                { value: "wero", label: "Wero" },
                 { value: "transfer", label: "Virement" },
               ],
             },

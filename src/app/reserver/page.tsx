@@ -3,6 +3,8 @@ import { DashboardShell, DashboardSkeleton } from "@/components/dashboard/Dashbo
 import { BookingForm } from "@/components/booking/BookingForm";
 import { getBookableServices } from "@/lib/offers";
 import { getBookableDays } from "@/lib/booking";
+import { getPaymentOptions } from "@/lib/orders";
+import { METHOD_ORDER } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 
 export const metadata = { title: "Réserver — Swell" };
@@ -19,6 +21,7 @@ async function BookingContent({ searchParams }: Pick<PageProps<"/reserver">, "se
   const user = await requireUser();
   const { service } = await searchParams;
   const [days, services] = await Promise.all([getBookableDays(), getBookableServices()]);
+  const payments = getPaymentOptions();
   const initialService = services.some((s) => s.id === service) ? String(service) : undefined;
 
   return (
@@ -29,7 +32,8 @@ async function BookingContent({ searchParams }: Pick<PageProps<"/reserver">, "se
         </p>
       ) : (
         <BookingForm
-          services={services.map((s) => ({ id: s.id, label: s.name, duration: s.durationMinutes, description: s.description }))}
+          services={services.map((s) => ({ id: s.id, label: s.name, duration: s.durationMinutes, description: s.description, priceCents: s.priceCents }))}
+          methods={METHOD_ORDER.filter((m) => payments[m])}
           days={days}
           initialService={initialService}
         />

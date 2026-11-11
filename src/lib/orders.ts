@@ -2,7 +2,8 @@ import "server-only";
 import { and, count, desc, eq, exists, inArray, isNotNull, like as sqlLike, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { orderMethods, product, shopOrder, shopOrderItem, user } from "@/db/schema";
-import type { PaymentOptions } from "./payments";
+import { formatFcfa, isMobileMethod, METHOD_LABELS, type PaymentOptions } from "./payments";
+import { formatPrice } from "./shop-format";
 
 /** Coordonnées du virement. Sans IBAN configuré sur le serveur, le paiement par virement reste fermé. */
 export function getTransferDetails() {
@@ -25,10 +26,47 @@ export function getMobileMoney() {
   };
 }
 
+/** Numéro (ou adresse email) Wero qui reçoit les paiements (WERO_NUMBER), et nom affiché (WERO_NAME). */
+export function getWero() {
+  const id = process.env.WERO_NUMBER?.trim();
+  return id ? { id, name: process.env.WERO_NAME?.trim() || null } : null;
+}
+
 /** Moyens de paiement ouverts sur le serveur. */
 export function getPaymentOptions(): PaymentOptions {
   const mobile = getMobileMoney();
-  return { paypal: !!getPaypalEmail(), transfer: !!getTransferDetails(), wave: !!mobile.wave, orange_money: !!mobile.orange_money };
+  return {
+    paypal: !!getPaypalEmail(),
+    wero: !!getWero(),
+    transfer: !!getTransferDetails(),
+    wave: !!mobile.wave,
+    orange_money: !!mobile.orange_money,
+  };
+}
+
+/** Toutes les coordonnées de paiement, pour afficher les instructions au client. */
+export function getPaymentDetails() {
+  return { paypalEmail: getPaypalEmail(), transfer: getTransferDetails(), mobile: getMobileMoney(), wero: getWero() };
+}
+
+/** Phrase qui explique comment payer (emails des commandes et des réservations). */
+export function paymentInstructionText(method: string, totalCents: number, reference: string, proofHint: boolean) {
+  const total = formatPrice(totalCents);
+  const { paypalEmail, transfer, mobile, wero } = getPaymentDetails();
+  const mobileNumber = isMobileMethod(method) ? mobile[method] : null;
+  if (mobileNumber) {
+    return `Envoie ${formatFcfa(totalCents)} (${total}) par ${METHOD_LABELS[method]} au ${mobileNumber}${mobile.name ? ` (${mobile.name})` : ""}, avec la référence ${reference} en message si possible.${proofHint ? " Ensuite, envoie la capture du paiement depuis ton espace : je valide dès réception." : ""}`;
+  }
+  if (method === "wero" && wero) {
+    return `Envoie ${total} avec Wero (depuis l'app de ta banque ou l'app Wero) au ${wero.id}${wero.name ? ` (${wero.name})` : ""}, avec la référence ${reference} dans le message.`;
+  }
+  if (method === "paypal" && paypalEmail) {
+    return `Envoie ${total} sur PayPal à ${paypalEmail}, en paiement de biens ou services, avec la référence ${reference} dans le message.`;
+  }
+  if (transfer) {
+    return `Fais un virement de ${total} à ${transfer.holder}, IBAN ${transfer.iban}, avec la référence ${reference} dans le libellé.`;
+  }
+  return null;
 }
 
 // Sans O, 0, I ni 1 : la référence se recopie sans erreur dans un libellé de virement.

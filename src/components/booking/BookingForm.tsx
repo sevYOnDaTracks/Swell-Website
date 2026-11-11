@@ -5,8 +5,11 @@ import { useEffect, useState, useTransition } from "react";
 import { Check, Clock, Loader2 } from "lucide-react";
 import { createBooking, fetchSlots } from "@/app/actions/booking";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
+import { PaymentMethodPicker } from "@/components/cart/PaymentMethodPicker";
+import { isMobileMethod, type PayMethod } from "@/lib/payments";
+import { formatPrice } from "@/lib/shop-format";
 
-type Service = { id: string; label: string; duration: number; description: string };
+type Service = { id: string; label: string; duration: number; description: string; priceCents: number | null };
 type Day = { date: string; open: boolean };
 
 const dayName = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
@@ -21,10 +24,13 @@ export function BookingForm({
   services,
   days,
   initialService,
+  methods,
 }: {
   services: Service[];
   days: Day[];
   initialService?: string;
+  /** Moyens de paiement ouverts, dans l'ordre d'affichage. */
+  methods: PayMethod[];
 }) {
   const router = useRouter();
   const [serviceId, setServiceId] = useState(initialService ?? services[0].id);
@@ -32,11 +38,14 @@ export function BookingForm({
   const [slots, setSlots] = useState<string[] | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [method, setMethod] = useState<PayMethod | null>(methods[0] ?? null);
   const [error, setError] = useState<string | null>(null);
   const [loadingSlots, startLoadingSlots] = useTransition();
   const [submitting, startSubmitting] = useTransition();
 
   const service = services.find((s) => s.id === serviceId)!;
+  // Paiement demandé seulement pour un service à prix fixe, si un moyen de paiement est ouvert.
+  const toPay = !!service.priceCents && methods.length > 0;
 
   useEffect(() => {
     if (!date) return;
@@ -50,7 +59,7 @@ export function BookingForm({
     if (!time) return;
     setError(null);
     startSubmitting(async () => {
-      const result = await createBooking({ serviceId, date, startTime: time, notes });
+      const result = await createBooking({ serviceId, date, startTime: time, notes, paymentMethod: toPay ? method : null });
       if ("error" in result) {
         setError(result.error);
         if (result.needsVerification) askEmailVerification();
@@ -84,6 +93,7 @@ export function BookingForm({
                   </span>
                 </span>
                 <span className="mt-1 block text-sm text-muted">{s.description}</span>
+                <span className="mt-2 block text-sm font-semibold">{s.priceCents ? formatPrice(s.priceCents) : "Sur devis"}</span>
               </button>
             ))}
           </div>
@@ -164,7 +174,14 @@ export function BookingForm({
           <Row label="Durée" value={formatDuration(service.duration)} />
           <Row label="Date" value={date ? fullDate.format(asDate(date)) : "—"} capitalize />
           <Row label="Heure" value={time ?? "—"} />
+          <div className="flex justify-between gap-4 border-t border-white/10 pt-3 text-base">
+            <dt className="font-medium">Prix</dt>
+            <dd className="text-right font-semibold">{service.priceCents ? formatPrice(service.priceCents) : "Sur devis"}</dd>
+          </div>
         </dl>
+        {toPay && (
+          <PaymentMethodPicker methods={methods} value={method} onChange={setMethod} totalCents={service.priceCents!} legend="Payer avec" />
+        )}
         {error && (
           <p role="alert" className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             {error}
@@ -173,14 +190,19 @@ export function BookingForm({
         <button
           type="button"
           onClick={submit}
-          disabled={!time || submitting}
+          disabled={!time || submitting || (toPay && !method)}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-black transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
           Confirmer la réservation
         </button>
         <p className="mt-3 text-xs text-muted">
-          Ta demande sera confirmée par Swell. Tu peux l&apos;annuler depuis ton espace.
+          {toPay
+            ? `Après la réservation, tu verras ${method && isMobileMethod(method) ? "mon numéro" : "où envoyer le paiement"}, le montant et une référence, dans ton espace et par email.`
+            : service.priceCents
+              ? "Ta demande sera confirmée par Swell, qui t'indiquera comment régler la séance."
+              : "Le prix est fixé avec toi selon ton projet. Ta demande sera confirmée par Swell."}{" "}
+          Tu peux l&apos;annuler depuis ton espace.
         </p>
       </aside>
     </div>
