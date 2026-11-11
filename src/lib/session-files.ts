@@ -1,9 +1,19 @@
 import "server-only";
-import { asc, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { sessionFile } from "@/db/schema";
+import { booking, sessionFile } from "@/db/schema";
 
 export type SessionFileInfo = { id: string; name: string; size: number };
+
+// Formats que les navigateurs savent lire (l'AIFF ne passe que sur Safari : téléchargement seul).
+export const PLAYABLE_TYPES: Record<string, string> = {
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  m4a: "audio/mp4",
+  flac: "audio/flac",
+};
+
+export const isPlayable = (storedFile: string) => storedFile.split(".").pop()! in PLAYABLE_TYPES;
 
 /** Fichiers livrés, regroupés par réservation. */
 export async function getSessionFiles(bookingIds: string[]) {
@@ -20,4 +30,24 @@ export async function getSessionFiles(bookingIds: string[]) {
     byBooking.set(bookingId, list);
   }
   return byBooking;
+}
+
+/** Tous les fichiers rendus à un client, du plus récent au plus ancien, avec leur séance d'origine. */
+export async function getMySongs(userId: string) {
+  const rows = await db
+    .select({
+      id: sessionFile.id,
+      name: sessionFile.name,
+      size: sessionFile.size,
+      file: sessionFile.file,
+      createdAt: sessionFile.createdAt,
+      service: booking.service,
+      date: booking.date,
+    })
+    .from(sessionFile)
+    .innerJoin(booking, eq(sessionFile.bookingId, booking.id))
+    .where(eq(booking.userId, userId))
+    .orderBy(desc(sessionFile.createdAt));
+  // Le nom de stockage reste côté serveur : on ne garde que « lisible ou non ».
+  return rows.map(({ file, ...song }) => ({ ...song, playable: isPlayable(file) }));
 }

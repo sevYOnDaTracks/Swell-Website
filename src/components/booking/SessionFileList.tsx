@@ -1,4 +1,5 @@
-import { Download, FileAudio } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Download, FileAudio } from "lucide-react";
 import { formatBytes } from "@/lib/shop-format";
 import type { SessionFileInfo } from "@/lib/session-files";
 
@@ -7,9 +8,14 @@ export function SessionFileList({ files }: { files: SessionFileInfo[] | undefine
   if (!files?.length) return null;
   return (
     <div className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] p-3">
-      <p className="text-xs font-medium">
-        Tes fichiers · {files.length} fichier{files.length > 1 ? "s" : ""}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium">
+          Tes fichiers · {files.length} fichier{files.length > 1 ? "s" : ""}
+        </p>
+        <Link href="/compte/sons" className="inline-flex items-center gap-0.5 text-xs text-muted hover:text-foreground">
+          Écouter dans Mes sons <ChevronRight size={13} />
+        </Link>
+      </div>
       <ul className="mt-2 space-y-1">
         {files.map((f) => (
           <li key={f.id}>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, CalendarPlus, Clock, Disc3, Gauge, KeyRound, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import { AudioLines, CalendarPlus, Clock, Disc3, Gauge, KeyRound, Music, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
 import type { Site } from "@/lib/sites";
 
 // Boutique : plugins et achats, sans réservation. Mix : réservations et instrumentales, sans plugins.
@@ -15,6 +15,7 @@ const CLIENT_LINKS: Record<Site, { href: string; label: string; Icon: typeof Use
   mix: [
     { href: "/compte", label: "Mon espace", Icon: UserRound },
     { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
+    { href: "/compte/sons", label: "Mes sons", Icon: Music },
     { href: "/compte/plugins", label: "Mes instrumentales", Icon: AudioLines },
     { href: "/compte/profil", label: "Mon profil", Icon: Settings },
   ],

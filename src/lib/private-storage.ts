@@ -44,3 +44,18 @@ export async function openPrivateFile(name: string) {
     return null;
   }
 }
+
+/** Taille d'un fichier privé, ou null s'il n'existe pas. */
+export async function privateFileSize(name: string) {
+  if (!FILE_NAME.test(name)) return null;
+  try {
+    return (await stat(path.join(PRIVATE_DIR, name))).size;
+  } catch {
+    return null;
+  }
+}
+
+/** Flux d'une partie d'un fichier privé (bornes incluses), pour la lecture audio avec avance rapide. */
+export function streamPrivateFile(name: string, start: number, end: number) {
+  return Readable.toWeb(createReadStream(path.join(PRIVATE_DIR, name), { start, end })) as ReadableStream<Uint8Array>;
+}
