@@ -7,6 +7,7 @@ import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/BookingActions";
+import { SessionFileList } from "@/components/booking/SessionFileList";
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
@@ -15,6 +16,7 @@ import { getOrderHistory, getPendingOrders, getPurchases, orderSite } from "@/li
 import { formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
+import { getSessionFiles } from "@/lib/session-files";
 import { currentSite } from "@/lib/site-server";
 
 export const metadata = { title: "Mon espace — Swell" };
@@ -75,6 +77,8 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
   const archived = [...upcoming.filter((b) => b.status === "cancelled"), ...past].sort(
     (a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime),
   );
+  // Fichiers rendus après les séances (mix, master, stems…).
+  const sessionFiles = await getSessionFiles(site === "mix" ? [...active, ...archived].map((b) => b.id) : []);
   // Chaque site montre ses commandes : instrumentales sur mix, plugins et sons sur la boutique.
   const history = orderHistory.filter((o) => orderSite(o) === site);
   const pending = pendingOrders.filter((o) => orderSite(o) === site);
@@ -155,6 +159,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                             <MonitorSmartphone size={13} /> Installe AnyDesk avant la session
                           </a>
                         )}
+                        <SessionFileList files={sessionFiles.get(b.id)} />
                       </div>
                       <div className="flex items-center gap-3">
                         <BookingStatusBadge status={b.status} />
@@ -182,6 +187,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                     ) : (
                       <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs whitespace-nowrap text-muted">Passée</span>
                     )}
+                    <SessionFileList files={sessionFiles.get(b.id)} />
                   </li>
                 ))}
               </ul>

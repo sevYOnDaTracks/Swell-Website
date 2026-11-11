@@ -4,9 +4,10 @@ import { and, eq, ne } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { user } from "@/db/schema";
+import { booking, sessionFile, user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { parsePhoneInput } from "@/lib/phone";
+import { deletePrivateFile } from "@/lib/private-storage";
 import { requireAdmin } from "@/lib/session";
 
 type Result = { error: string } | { ok: true };
@@ -78,11 +79,18 @@ export async function sendPasswordLinkToUser(id: string): Promise<Result> {
   return { ok: true };
 }
 
-/** Supprime le compte avec ses réservations et ses commandes (suppression en cascade). */
+/** Supprime le compte avec ses réservations, ses fichiers de séance et ses commandes (suppression en cascade). */
 export async function deleteUserByAdmin(id: string): Promise<Result> {
   const admin = await requireAdmin();
   if (id === admin.id) return { error: "Tu ne peux pas supprimer ton propre compte." };
+  // Les lignes partent en cascade, mais les fichiers de séance sont sur le disque : on les efface aussi.
+  const files = await db
+    .select({ file: sessionFile.file })
+    .from(sessionFile)
+    .innerJoin(booking, eq(sessionFile.bookingId, booking.id))
+    .where(eq(booking.userId, id));
   await db.delete(user).where(eq(user.id, id));
+  await Promise.all(files.map((f) => deletePrivateFile(f.file)));
   refresh();
   return { ok: true };
 }

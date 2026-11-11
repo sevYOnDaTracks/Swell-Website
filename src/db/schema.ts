@@ -116,6 +116,24 @@ export const booking = sqliteTable(
   (t) => [index("booking_date_idx").on(t.date), index("booking_user_id_idx").on(t.userId)],
 );
 
+// Fichiers livrés au client après une séance (mix, master, stems…), stockés dans storage/private.
+export const sessionFile = sqliteTable(
+  "session_file",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    bookingId: text("booking_id")
+      .notNull()
+      .references(() => booking.id, { onDelete: "cascade" }),
+    file: text("file").notNull(),
+    name: text("name").notNull(),
+    size: integer("size").notNull(),
+    ...timestamps,
+  },
+  (t) => [index("session_file_booking_id_idx").on(t.bookingId)],
+);
+
 // Horaires d'ouverture hebdomadaires (0 = dimanche ... 6 = samedi).
 export const availability = sqliteTable("availability", {
   weekday: integer("weekday").primaryKey(),

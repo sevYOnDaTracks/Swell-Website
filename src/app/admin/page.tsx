@@ -1,15 +1,17 @@
 import { Suspense } from "react";
-import { and, asc, count, eq, gte, ne, notInArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, ne, notInArray } from "drizzle-orm";
 import { CalendarCheck, Hourglass, ShoppingBag, Users } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { AdminBookingActions } from "@/components/booking/BookingActions";
+import { SessionFilesManager } from "@/components/booking/SessionFilesManager";
 import { db } from "@/db";
 import { booking, shopOrder, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getServiceNames } from "@/lib/offers";
 import { formatPhone, phoneHref } from "@/lib/phone";
 import { requireAdmin } from "@/lib/session";
+import { getSessionFiles } from "@/lib/session-files";
 
 export const metadata = { title: "Admin — Swell" };
 
@@ -25,7 +27,7 @@ async function AdminContent() {
   const admin = await requireAdmin();
   const today = parisNow().date;
 
-  const [users, bookings, serviceName, [sales]] = await Promise.all([
+  const [users, bookings, recent, serviceName, [sales]] = await Promise.all([
     db.select({ role: userTable.role }).from(userTable),
     db
       .select({
@@ -47,10 +49,27 @@ async function AdminContent() {
       .innerJoin(userTable, eq(booking.userId, userTable.id))
       .where(and(gte(booking.date, today), ne(booking.status, "cancelled")))
       .orderBy(asc(booking.date), asc(booking.startTime)),
+    // Séances confirmées déjà commencées (aujourd'hui compris) : on y dépose les fichiers du client.
+    db
+      .select({
+        id: booking.id,
+        service: booking.service,
+        date: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        clientName: userTable.name,
+        clientEmail: userTable.email,
+      })
+      .from(booking)
+      .innerJoin(userTable, eq(booking.userId, userTable.id))
+      .where(and(lte(booking.date, today), eq(booking.status, "confirmed")))
+      .orderBy(desc(booking.date), desc(booking.startTime))
+      .limit(20),
     getServiceNames(),
     db.select({ total: count() }).from(shopOrder).where(and(eq(shopOrder.status, "paid"), notInArray(shopOrder.method, ["free", "gift"]))),
   ]);
 
+  const recentFiles = await getSessionFiles(recent.map((b) => b.id));
   const clients = users.filter((u) => u.role !== "admin");
   const pendingCount = bookings.filter((b) => b.status === "pending").length;
 
@@ -118,6 +137,29 @@ async function AdminContent() {
           )}
         </Card>
 
+        <Card title="Séances récentes" action={<span className="text-xs text-muted">Fichiers à rendre au client</span>}>
+          {recent.length === 0 ? (
+            <EmptyState>Aucune séance confirmée terminée pour le moment.</EmptyState>
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {recent.map((b) => (
+                <li key={b.id} className="py-4 first:pt-0 last:pb-0">
+                  <p className="flex flex-wrap items-center gap-2 font-medium">
+                    <span className="capitalize">{formatDate(b.date)}</span>
+                    <span className="text-muted">·</span>
+                    <span className="tabular-nums">
+                      {b.startTime} – {b.endTime}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    {serviceName(b.service)} — {b.clientName} ({b.clientEmail})
+                  </p>
+                  <SessionFilesManager bookingId={b.id} files={recentFiles.get(b.id) ?? []} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </DashboardShell>
   );

@@ -2,9 +2,10 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { booking, user } from "@/db/schema";
-import { formatDate } from "./booking";
+import { formatDate, parisNow } from "./booking";
 import { ADMIN_NOTIFY_EMAIL, sendEmail, SITE_URL } from "./email";
 import { getServiceNames } from "./offers";
+import { MIX_URL } from "./sites";
 
 // Emails liés aux réservations. Appelés via after() : ils partent une fois
 // la réponse envoyée, sans ralentir ni bloquer l'action.
@@ -170,4 +171,26 @@ export async function sendBookingEmails(bookingId: string, event: Event) {
       });
       break;
   }
+}
+
+/** Prévient le client que les fichiers de sa séance sont prêts dans son espace (sur mix). */
+export async function sendSessionFilesEmail(bookingId: string, fileCount: number) {
+  const b = await loadBooking(bookingId);
+  if (!b || fileCount === 0) return;
+  const serviceName = (await getServiceNames())(b.service);
+  const firstName = b.clientName.split(" ")[0];
+  // Une séance du jour est encore dans l'onglet « À venir », les autres sont dans « Archivées ».
+  const href = b.date < parisNow().date ? `${MIX_URL}/compte?onglet=archives` : `${MIX_URL}/compte`;
+  const files = fileCount > 1 ? `tes ${fileCount} fichiers sont prêts` : "ton fichier est prêt";
+  await sendEmail({
+    to: b.clientEmail,
+    subject: `Tes fichiers sont prêts — ${serviceName}`,
+    title: "Tes fichiers sont prêts 🎧",
+    paragraphs: [
+      `Salut ${firstName},`,
+      `Suite à ta séance « ${serviceName} » du ${formatDate(b.date)}, ${files}.`,
+      `Tu peux ${fileCount > 1 ? "les" : "le"} télécharger depuis ton espace, sous la séance.`,
+    ],
+    cta: { label: "Télécharger mes fichiers", href },
+  });
 }
