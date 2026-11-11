@@ -8,11 +8,12 @@ import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { BookingStatusBadge } from "@/components/booking/BookingStatus";
 import { CancelMyBookingButton, ProposalAnswer } from "@/components/booking/BookingActions";
 import { SessionFileList } from "@/components/booking/SessionFileList";
+import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
 import { db } from "@/db";
 import { booking, user as userTable } from "@/db/schema";
 import { formatDate, parisNow } from "@/lib/booking";
 import { getMyLicenses } from "@/lib/licenses";
-import { getOrderHistory, getPendingOrders, getPurchases, orderSite } from "@/lib/orders";
+import { getOrderHistory, getPaymentDetails, getPendingOrders, getPurchases, orderSite } from "@/lib/orders";
 import { formatPrice } from "@/lib/shop-format";
 import { getBookableServices, getServiceNames } from "@/lib/offers";
 import { requireUser } from "@/lib/session";
@@ -78,6 +79,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
     (a, b) => b.date.localeCompare(a.date) || b.startTime.localeCompare(a.startTime),
   );
   // Fichiers rendus après les séances (mix, master, stems…).
+  const payment = getPaymentDetails();
   const sessionFiles = await getSessionFiles(site === "mix" ? [...active, ...archived].map((b) => b.id) : []);
   // Chaque site montre ses commandes : instrumentales sur mix, plugins et sons sur la boutique.
   const history = orderHistory.filter((o) => orderSite(o) === site);
@@ -151,6 +153,24 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                             </div>
                           </div>
                         )}
+                        {b.priceCents ? (
+                          b.paidAt ? (
+                            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+                              <CheckCircle2 size={13} /> Payée · {formatPrice(b.priceCents)}
+                            </p>
+                          ) : b.paymentMethod && b.paymentReference ? (
+                            <div className="mt-3 rounded-xl border border-white/15 bg-white/[0.04] p-3 text-sm">
+                              <p className="mb-2 font-medium">À régler : {formatPrice(b.priceCents)}</p>
+                              <PaymentInstructions
+                                order={{ id: b.id, method: b.paymentMethod, totalCents: b.priceCents, reference: b.paymentReference }}
+                                {...payment}
+                                withProof={false}
+                              />
+                            </div>
+                          ) : (
+                            <p className="mt-1.5 text-xs text-muted">Prix : {formatPrice(b.priceCents)} · Swell t&apos;indiquera comment régler.</p>
+                          )
+                        ) : null}
                         {REMOTE_SERVICES.has(b.service) && (
                           <a
                             href="#anydesk"

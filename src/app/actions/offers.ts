@@ -29,11 +29,17 @@ export async function saveService(formData: FormData): Promise<Result> {
   const name = text(formData, "name");
   const icon = text(formData, "icon");
   const duration = Number(text(formData, "duration"));
+  // Prix en euros ("79" ou "79,50") ; vide = sur devis.
+  const rawPrice = text(formData, "price").replace(",", ".");
+  const price = rawPrice ? Number(rawPrice) : null;
 
   if (!name) return { error: "Le nom est obligatoire." };
   if (!(icon in SERVICE_ICONS)) return { error: "Icône invalide." };
   if (!Number.isInteger(duration) || duration < 15 || duration > 600 || duration % 15 !== 0) {
     return { error: "Durée invalide : entre 15 et 600 minutes, par tranches de 15." };
+  }
+  if (price !== null && (!Number.isFinite(price) || price < 0 || price > 10000)) {
+    return { error: "Prix invalide : un montant en euros (laisse vide pour « sur devis »)." };
   }
 
   const values = {
@@ -41,6 +47,7 @@ export async function saveService(formData: FormData): Promise<Result> {
     description: text(formData, "description").slice(0, 300),
     icon,
     durationMinutes: duration,
+    priceCents: price === null || price === 0 ? null : Math.round(price * 100),
     bookable: checked(formData, "bookable"),
     visible: checked(formData, "visible"),
   };

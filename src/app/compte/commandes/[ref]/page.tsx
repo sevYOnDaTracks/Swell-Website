@@ -6,7 +6,7 @@ import { Card, DashboardShell, DashboardSkeleton } from "@/components/dashboard/
 import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
-import { getMobileMoney, getMyOrder, getPaypalEmail, getTransferDetails } from "@/lib/orders";
+import { getMobileMoney, getMyOrder, getPaypalEmail, getTransferDetails, getWero } from "@/lib/orders";
 import { METHOD_LABELS } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 import { formatPrice } from "@/lib/shop-format";
@@ -77,7 +77,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
           {order.status === "pending" && (
             <Card title="Paiement à effectuer">
               <div className="text-sm">
-                <PaymentInstructions order={order} paypalEmail={getPaypalEmail()} transfer={getTransferDetails()} mobile={getMobileMoney()} />
+                <PaymentInstructions order={order} paypalEmail={getPaypalEmail()} transfer={getTransferDetails()} mobile={getMobileMoney()} wero={getWero()} />
                 <p className="mt-3 text-xs text-muted">
                   Le paiement est vérifié à la main : tes fichiers apparaîtront dans « Mes achats » dès qu&apos;il sera
                   confirmé, et tu recevras un email.

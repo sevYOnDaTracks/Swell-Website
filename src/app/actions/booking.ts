@@ -8,6 +8,8 @@ import { availability, booking, bookingStatuses, type BookingStatus } from "@/db
 import { fromMinutes, getAvailableSlots, parisNow, toMinutes } from "@/lib/booking";
 import { sendBookingEmails } from "@/lib/booking-emails";
 import { getServiceById } from "@/lib/offers";
+import { getPaymentOptions, newOrderReference } from "@/lib/orders";
+import type { PayMethod } from "@/lib/payments";
 import { hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 // Chaque action revérifie la session : on ne fait jamais confiance au client.
@@ -22,11 +24,19 @@ export async function createBooking(input: {
   date: string;
   startTime: string;
   notes: string;
+  paymentMethod?: PayMethod | null;
 }): Promise<{ error: string; needsVerification?: true } | { ok: true }> {
   const user = await requireUser();
   if (!hasConfirmedEmail(user)) return { error: "Confirme d'abord ton adresse email pour réserver.", needsVerification: true };
   const service = await getServiceById(input.serviceId);
   if (!service?.bookable) return { error: "Service inconnu." };
+
+  // Service à prix fixe : le client choisit comment payer (si au moins un moyen est ouvert).
+  const price = service.priceCents ?? null;
+  const options = getPaymentOptions();
+  const anyOpen = Object.values(options).some(Boolean);
+  const method = price && anyOpen ? input.paymentMethod : null;
+  if (price && anyOpen && !(method && options[method])) return { error: "Choisis un moyen de paiement." };
 
   // Le créneau a pu être pris entre-temps : on recalcule juste avant d'écrire.
   const slots = await getAvailableSlots(input.date, service.id);
@@ -43,6 +53,9 @@ export async function createBooking(input: {
       startTime: input.startTime,
       endTime: fromMinutes(toMinutes(input.startTime) + service.durationMinutes),
       notes: input.notes.trim().slice(0, 1000) || null,
+      priceCents: price,
+      paymentMethod: method,
+      paymentReference: price ? newOrderReference() : null,
     })
     .returning({ id: booking.id });
   after(() => sendBookingEmails(created.id, "created"));
@@ -74,6 +87,16 @@ export async function setBookingStatus(id: string, status: BookingStatus) {
     .where(eq(booking.id, id));
   if (status === "confirmed") after(() => sendBookingEmails(id, "confirmed"));
   if (status === "cancelled") after(() => sendBookingEmails(id, "cancelled_by_admin"));
+  refresh();
+}
+
+/** L'admin indique que la séance est payée (ou annule ce marquage). */
+export async function setBookingPaid(id: string, paid: boolean) {
+  await requireAdmin();
+  const [current] = await db.select({ paidAt: booking.paidAt, priceCents: booking.priceCents }).from(booking).where(eq(booking.id, id));
+  if (!current?.priceCents || !!current.paidAt === paid) return;
+  await db.update(booking).set({ paidAt: paid ? new Date() : null }).where(eq(booking.id, id));
+  if (paid) after(() => sendBookingEmails(id, "paid"));
   refresh();
 }
 

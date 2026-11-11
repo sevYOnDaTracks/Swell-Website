@@ -111,6 +111,12 @@ export const booking = sqliteTable(
     proposalNote: text("proposal_note"),
     // Rappel de la veille déjà envoyé (évite les doublons).
     reminderSentAt: integer("reminder_sent_at", { mode: "timestamp_ms" }),
+    // Paiement de la séance : prix figé à la réservation (vide = sur devis), moyen choisi,
+    // référence à recopier dans le message du paiement, et date où l'admin l'a reçu.
+    priceCents: integer("price_cents"),
+    paymentMethod: text("payment_method"),
+    paymentReference: text("payment_reference"),
+    paidAt: integer("paid_at", { mode: "timestamp_ms" }),
     ...timestamps,
   },
   (t) => [index("booking_date_idx").on(t.date), index("booking_user_id_idx").on(t.userId)],
@@ -203,6 +209,8 @@ export const service = sqliteTable("service", {
   description: text("description").notNull().default(""),
   icon: text("icon").notNull().default("sliders"),
   durationMinutes: integer("duration_minutes").notNull().default(60),
+  // Prix payé à la réservation, en centimes ; vide = sur devis (rien à payer en ligne).
+  priceCents: integer("price_cents"),
   bookable: integer("bookable", { mode: "boolean" }).notNull().default(true),
   visible: integer("visible", { mode: "boolean" }).notNull().default(true),
   position: integer("position").notNull().default(0),
@@ -253,7 +261,7 @@ export const production = sqliteTable("production", {
 
 export const orderStatuses = ["pending", "paid", "cancelled"] as const;
 // "gift" : produit offert par l'admin depuis /admin/utilisateurs (validé d'office, hors chiffre des ventes).
-export const orderMethods = ["free", "transfer", "paypal", "gift", "wave", "orange_money"] as const;
+export const orderMethods = ["free", "transfer", "paypal", "gift", "wave", "orange_money", "wero"] as const;
 
 export const shopOrder = sqliteTable(
   "shop_order",

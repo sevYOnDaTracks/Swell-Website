@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { CalendarClock, Loader2 } from "lucide-react";
-import { answerProposal, cancelMyBooking, fetchProposalSlots, proposeNewSlot, setBookingStatus } from "@/app/actions/booking";
+import { answerProposal, cancelMyBooking, fetchProposalSlots, proposeNewSlot, setBookingPaid, setBookingStatus } from "@/app/actions/booking";
 import type { BookingStatus } from "@/db/schema";
 
 const button =
@@ -170,6 +170,50 @@ export function ProposalAnswer({ id }: { id: string }) {
         Refuser
       </button>
       {error && <p className="w-full text-xs text-red-300">{error}</p>}
+    </div>
+  );
+}
+
+/** Paiement d'une séance à prix fixe, vu par l'admin : montant, moyen, référence, et bascule « payée ». */
+export function AdminBookingPayment({
+  id,
+  price,
+  method,
+  reference,
+  paid,
+}: {
+  id: string;
+  price: string;
+  method: string | null;
+  reference: string | null;
+  paid: boolean;
+}) {
+  const [pending, start] = useTransition();
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${paid ? "bg-white text-black" : "border border-dashed border-white/40 text-foreground"}`}>
+        {paid ? "Payée" : "À payer"}
+      </span>
+      <span className="text-muted">
+        {price}
+        {method && ` · ${method}`}
+        {reference && (
+          <>
+            {" · "}
+            <span className="font-mono">{reference}</span>
+          </>
+        )}
+      </span>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => {
+          if (paid ? confirm("Repasser cette séance en « À payer » ?") : true) start(() => setBookingPaid(id, !paid));
+        }}
+        className={button}
+      >
+        {paid ? "Annuler le paiement" : "Marquer payée"}
+      </button>
     </div>
   );
 }
