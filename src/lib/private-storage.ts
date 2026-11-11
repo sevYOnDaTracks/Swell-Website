@@ -12,12 +12,14 @@ const PRIVATE_DIR = path.join(process.cwd(), "storage", "private");
 
 export const MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 Go
 export const DOWNLOAD_EXTENSIONS = ["zip", "rar", "7z", "dmg", "pkg", "exe", "msi", "wav", "mp3"] as const;
+// Fichiers rendus au client après une séance : audio et archives (stems).
+export const SESSION_EXTENSIONS = ["wav", "mp3", "aif", "aiff", "flac", "m4a", "zip", "rar", "7z"] as const;
 
-const FILE_NAME = /^[a-f0-9-]{36}\.(zip|rar|7z|dmg|pkg|exe|msi|wav|mp3)$/;
+const FILE_NAME = /^[a-f0-9-]{36}\.(zip|rar|7z|dmg|pkg|exe|msi|wav|mp3|aif|aiff|flac|m4a)$/;
 
-export function extensionOf(originalName: string) {
+export function extensionOf(originalName: string, allowed: readonly string[] = DOWNLOAD_EXTENSIONS) {
   const ext = originalName.split(".").pop()?.toLowerCase() ?? "";
-  return (DOWNLOAD_EXTENSIONS as readonly string[]).includes(ext) ? ext : null;
+  return allowed.includes(ext) ? ext : null;
 }
 
 export async function savePrivateStream(body: ReadableStream<Uint8Array>, ext: string) {
