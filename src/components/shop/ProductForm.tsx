@@ -41,6 +41,8 @@ export type ProductFormValues = {
   downloadFile: string | null;
   downloadName: string | null;
   downloadSize: number | null;
+  extraUrl: string | null;
+  extraLabel: string | null;
   published: boolean;
   featured: boolean;
   trialDays: number | null;
@@ -338,6 +340,23 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
             <p className="mt-1">Crée d&apos;abord le produit : tu pourras ensuite y joindre le ZIP ou l&apos;installateur.</p>
           </div>
         )}
+
+        <div className="rounded-2xl border border-white/5 bg-surface p-5">
+          <p className="text-sm font-medium">Lien externe</p>
+          <p className="mt-1 text-xs text-muted">
+            Pour un fichier trop lourd pour le site (banque de sons, pack de plus de 2 Go) hébergé ailleurs, par exemple sur Cloudflare R2.
+            Seuls les acheteurs le voient, à côté du téléchargement.
+          </p>
+          <label className="mt-3 block text-sm">
+            Texte du bouton
+            <input name="extraLabel" maxLength={80} defaultValue={product?.extraLabel ?? ""} placeholder="Banque de sons (8 Go)" className={input} />
+          </label>
+          <label className="mt-3 block text-sm">
+            Adresse
+            <input name="extraUrl" type="url" inputMode="url" defaultValue={product?.extraUrl ?? ""} placeholder="https://…" className={input} />
+          </label>
+          <p className="mt-2 text-xs text-muted">Laisse vide pour ne rien afficher.</p>
+        </div>
 
         <div className="space-y-3 rounded-2xl border border-white/5 bg-surface p-5 text-sm">
           <label className="flex items-center gap-3">

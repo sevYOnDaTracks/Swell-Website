@@ -100,6 +100,8 @@ export async function getPurchases(userId: string) {
       downloadSize: product.downloadSize,
       installerMacSize: product.installerMacSize,
       installerWinSize: product.installerWinSize,
+      extraUrl: product.extraUrl,
+      extraLabel: product.extraLabel,
       type: product.type,
       slug: product.slug,
       coverFile: product.coverFile,

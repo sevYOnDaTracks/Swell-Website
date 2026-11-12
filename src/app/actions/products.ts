@@ -47,6 +47,10 @@ export async function saveProduct(formData: FormData): Promise<Result> {
   const videoId = videoLink ? youtubeId(videoLink) : null;
   if (videoLink && !videoId) return { error: "Lien YouTube invalide." };
 
+  const extraUrl = text(formData, "extraUrl");
+  if (extraUrl && !/^https:\/\/[^\s]+$/i.test(extraUrl)) return { error: "Le lien externe doit commencer par https://." };
+  const extraLabel = text(formData, "extraLabel").slice(0, 80);
+
   const [duplicate] = await db
     .select({ id: product.id })
     .from(product)
@@ -102,6 +106,8 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     videoUrl: videoLink === null ? (existing?.videoUrl ?? null) : videoId && `https://www.youtube.com/watch?v=${videoId}`,
     // Un lien YouTube remplace la vidéo envoyée.
     videoFile: videoId ? null : (existing?.videoFile ?? null),
+    extraUrl: extraUrl.slice(0, 1000) || null,
+    extraLabel: extraUrl ? extraLabel || null : null,
     published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
     trialDays: hasCompatibility(type) && TRIAL_DAY_CHOICES.includes(Number(text(formData, "trialDays")) as (typeof TRIAL_DAY_CHOICES)[number])
