@@ -191,6 +191,9 @@ export const product = sqliteTable(
     installerWinFile: text("installer_win_file"),
     installerWinName: text("installer_win_name"),
     installerWinSize: integer("installer_win_size"),
+    // Lien externe donné aux acheteurs en plus du fichier (gros fichiers hébergés ailleurs, ex. Cloudflare R2).
+    extraUrl: text("extra_url"),
+    extraLabel: text("extra_label"),
     published: integer("published", { mode: "boolean" }).notNull().default(false),
     featured: integer("featured", { mode: "boolean" }).notNull().default(false),
     // VST : durée de la démo offerte aux comptes connectés (null ou 0 = pas de démo).

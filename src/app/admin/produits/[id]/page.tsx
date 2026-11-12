@@ -52,6 +52,8 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           downloadFile: row.downloadFile,
           downloadName: row.downloadName,
           downloadSize: row.downloadSize,
+          extraUrl: row.extraUrl,
+          extraLabel: row.extraLabel,
           published: row.published,
           featured: row.featured,
           trialDays: row.trialDays,

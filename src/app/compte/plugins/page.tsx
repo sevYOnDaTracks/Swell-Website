@@ -9,6 +9,7 @@ import { OrderStatusBadge } from "@/components/orders/OrderStatus";
 import { PaymentInstructions } from "@/components/orders/PaymentInstructions";
 import { LicenseKey } from "@/components/licenses/LicenseKey";
 import { DownloadChoice } from "@/components/shop/DownloadChoice";
+import { ExternalLinkButton } from "@/components/shop/ExternalLinkButton";
 import { db } from "@/db";
 import { product as productTable } from "@/db/schema";
 import { getMyLicenses } from "@/lib/licenses";
@@ -75,6 +76,8 @@ async function MyPluginsContent() {
           coverFile: productTable.coverFile,
           installerMacSize: productTable.installerMacSize,
           installerWinSize: productTable.installerWinSize,
+          extraUrl: productTable.extraUrl,
+          extraLabel: productTable.extraLabel,
         })
         .from(productTable)
         .where(inArray(productTable.id, trialIds))
@@ -146,11 +149,14 @@ async function MyPluginsContent() {
                         </p>
                         </div>
                       </div>
-                      {p.productId && p.available ? (
-                        <DownloadChoice productId={p.productId} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
-                      ) : (
-                        <span className="shrink-0 text-xs text-muted">Bientôt disponible</span>
-                      )}
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        {p.productId && p.available ? (
+                          <DownloadChoice productId={p.productId} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
+                        ) : (
+                          !p.extraUrl && <span className="shrink-0 text-xs text-muted">Bientôt disponible</span>
+                        )}
+                        <ExternalLinkButton url={p.extraUrl} label={p.extraLabel} />
+                      </div>
                     </div>
                     {lic && <LicenseKey licenseKey={lic.key} maxActivations={lic.maxActivations} activations={lic.activations} revoked={!!lic.revokedAt} />}
                   </li>
@@ -208,6 +214,7 @@ async function MyPluginsContent() {
                         {running && p?.available && (
                           <DownloadChoice productId={p.id} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
                         )}
+                        {running && <ExternalLinkButton url={p?.extraUrl} label={p?.extraLabel} />}
                       </div>
                     </div>
                     {running && <LicenseKey licenseKey={t.key} maxActivations={t.maxActivations} activations={t.activations} revoked={!!t.revokedAt} />}
@@ -237,13 +244,16 @@ async function MyPluginsContent() {
                       {p.downloadSize ? <p className="text-xs text-muted">{formatBytes(p.downloadSize)}</p> : null}
                     </div>
                   </div>
-                  {p.productId && p.available ? (
-                    <a href={`/api/downloads/${p.productId}`} className={downloadButton}>
-                      <Download size={15} /> Télécharger
-                    </a>
-                  ) : (
-                    <span className="shrink-0 text-xs text-muted">Indisponible</span>
-                  )}
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {p.productId && p.available ? (
+                      <a href={`/api/downloads/${p.productId}`} className={downloadButton}>
+                        <Download size={15} /> Télécharger
+                      </a>
+                    ) : (
+                      !p.extraUrl && <span className="shrink-0 text-xs text-muted">Indisponible</span>
+                    )}
+                    <ExternalLinkButton url={p.extraUrl} label={p.extraLabel} />
+                  </div>
                 </li>
               ))}
             </ul>
