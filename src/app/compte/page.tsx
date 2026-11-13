@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
-import { AudioLines, CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug } from "lucide-react";
+import { AudioLines, CalendarPlus, CheckCircle2, ChevronRight, Clock, Download, MonitorSmartphone, Plug, ShoppingBag } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { OnboardingTour } from "@/components/dashboard/OnboardingTour";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
@@ -258,24 +258,47 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                   <ChevronRight size={16} className="text-muted" />
                 </Link>
               )}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                {[
-                  { value: pluginCount, label: `plugin${pluginCount > 1 ? "s" : ""}` },
-                  { value: activeKeys, label: `licence${activeKeys > 1 ? "s" : ""} active${activeKeys > 1 ? "s" : ""}` },
-                  { value: runningTrials, label: `essai${runningTrials > 1 ? "s" : ""} en cours` },
-                ].map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-white/5 bg-background/40 px-2 py-3">
-                    <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
-                    <p className="text-xs text-muted">{stat.label}</p>
+              {pluginCount === 0 && pending.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
+                  <p className="font-medium">Tu n&apos;as pas encore de plugin</p>
+                  <p className="mt-1 text-sm text-muted">Fais un tour sur la boutique : tes plugins et leurs licences arriveront ici.</p>
+                  <Link
+                    href="/boutique"
+                    className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                  >
+                    <ShoppingBag size={16} /> Découvrir les plugins
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    {[
+                      { value: pluginCount, label: `plugin${pluginCount > 1 ? "s" : ""}` },
+                      { value: activeKeys, label: `licence${activeKeys > 1 ? "s" : ""} active${activeKeys > 1 ? "s" : ""}` },
+                      { value: runningTrials, label: `essai${runningTrials > 1 ? "s" : ""} en cours` },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-xl border border-white/5 bg-background/40 px-2 py-3">
+                        <p className="text-2xl font-bold tracking-tight">{stat.value}</p>
+                        <p className="text-xs text-muted">{stat.label}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <Link
-                href="/compte/plugins"
-                className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
-              >
-                <Plug size={16} /> Mes plugins, téléchargements et licences
-              </Link>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    <Link
+                      href="/compte/plugins"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"
+                    >
+                      <Plug size={16} /> Mes plugins et licences
+                    </Link>
+                    <Link
+                      href="/boutique"
+                      className="flex items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-white/10"
+                    >
+                      <ShoppingBag size={16} /> Découvrir les plugins
+                    </Link>
+                  </div>
+                </>
+              )}
             </Card>
           </section>
           )}
