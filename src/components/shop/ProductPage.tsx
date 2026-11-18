@@ -177,15 +177,14 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
               </>
             )}
           </div>
-
-          {product.description && (
-            <div className="mt-8">
-              <h2 className="font-semibold">Description</h2>
-              <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground/80">{product.description}</p>
-            </div>
-          )}
         </div>
       </article>
+      {product.description && (
+        <section className="mt-16 border-t border-white/10 pt-10">
+          <h2 className="text-2xl font-bold tracking-tight">Description</h2>
+          <p className="mt-6 max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-foreground/80">{product.description}</p>
+        </section>
+      )}
       {!beat && (
         <Suspense fallback={<div className="mt-16 h-40 animate-pulse rounded-2xl bg-white/5" />}>
           <ProductReviews productId={product.id} productName={product.name} slug={product.slug} path={productPath(product)} />
