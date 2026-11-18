@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // Les fichiers du site (STORAGE_DIR) et les secrets ne font pas partie du code à tracer.
+  outputFileTracingExcludes: {
+    "/*": ["./.env*", "./storage/**/*", "./swell.db*"],
+  },
   experimental: {
     // Upload des visuels et extraits audio depuis l'admin.
     serverActions: { bodySizeLimit: "25mb" },

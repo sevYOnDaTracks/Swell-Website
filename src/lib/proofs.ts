@@ -2,11 +2,12 @@ import "server-only";
 import { createReadStream } from "node:fs";
 import { stat, unlink } from "node:fs/promises";
 import path from "node:path";
+import { storageDir } from "./storage-root";
 import { Readable } from "node:stream";
 import { writeStream } from "./storage";
 
 // Captures de paiement mobile money : privées (jamais servies par /media), lues par l'admin seulement.
-const PROOF_DIR = path.join(process.cwd(), "storage", "proofs");
+const PROOF_DIR = storageDir("proofs");
 const MAX_PROOF_BYTES = 8 * 1024 * 1024;
 const FILE_NAME = /^[a-f0-9-]{36}\.(jpg|png|webp|pdf)$/;
 
