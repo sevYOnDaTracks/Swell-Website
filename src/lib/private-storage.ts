@@ -2,13 +2,14 @@ import "server-only";
 import { createReadStream } from "node:fs";
 import { stat, unlink } from "node:fs/promises";
 import path from "node:path";
+import { storageDir } from "./storage-root";
 import { Readable } from "node:stream";
 import { writeStream } from "./storage";
 
 // Fichiers livrés aux acheteurs (packs, installateurs). Stockés hors de
 // storage/uploads pour ne jamais être accessibles par une adresse publique :
 // le téléchargement passe toujours par une route qui vérifie les droits.
-const PRIVATE_DIR = path.join(process.cwd(), "storage", "private");
+const PRIVATE_DIR = storageDir("private");
 
 export const MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 Go
 export const DOWNLOAD_EXTENSIONS = ["zip", "rar", "7z", "dmg", "pkg", "exe", "msi", "wav", "mp3"] as const;

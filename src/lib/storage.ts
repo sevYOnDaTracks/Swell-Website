@@ -2,12 +2,13 @@ import "server-only";
 import { createReadStream, createWriteStream } from "node:fs";
 import { mkdir, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { storageDir } from "./storage-root";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 // Fichiers envoyés depuis l'admin (visuels, extraits audio, vidéos), hors de
 // /public pour être servis par la route /media/[file] en dev comme en prod.
-const UPLOAD_DIR = path.join(process.cwd(), "storage", "uploads");
+const UPLOAD_DIR = storageDir("uploads");
 
 const TYPES = {
   image: {
