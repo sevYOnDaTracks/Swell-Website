@@ -6,6 +6,7 @@ import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { FreeDownloadButton } from "@/components/shop/FreeDownloadButton";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
+import { CollapsibleDescription } from "@/components/shop/CollapsibleDescription";
 import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { TrialButton } from "@/components/shop/TrialButton";
@@ -182,7 +183,7 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
       {product.description && (
         <section className="mt-16 border-t border-white/10 pt-10">
           <h2 className="text-2xl font-bold tracking-tight">Description</h2>
-          <p className="mt-6 max-w-3xl whitespace-pre-line text-[15px] leading-relaxed text-foreground/80">{product.description}</p>
+          <CollapsibleDescription text={product.description} />
         </section>
       )}
       {!beat && (
