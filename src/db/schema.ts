@@ -384,3 +384,58 @@ export const licenseActivation = sqliteTable(
   },
   (t) => [uniqueIndex("license_activation_machine_idx").on(t.licenseId, t.machineId)],
 );
+
+// --- Avis clients (fiches produit de la boutique) --------------------------
+
+// Seuls les clients vérifiés peuvent noter : acheteurs, produit offert, ou testeurs de la démo
+// (après quelques jours d'essai). Le type de vérification est affiché sur l'avis (obligation légale).
+export const reviewVerifications = ["purchase", "gift", "trial"] as const;
+export type ReviewVerification = (typeof reviewVerifications)[number];
+// "hidden" : masqué par l'admin pour une raison de modération (insulte, spam, hors sujet), jamais pour la note.
+export const reviewStatuses = ["published", "hidden"] as const;
+
+export const review = sqliteTable(
+  "review",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    productId: text("product_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull(),
+    // Contexte utile aux autres musiciens : DAW et système utilisés.
+    daw: text("daw"),
+    os: text("os"),
+    verification: text("verification", { enum: reviewVerifications }).notNull(),
+    status: text("status", { enum: reviewStatuses }).notNull().default("published"),
+    moderationNote: text("moderation_note"),
+    // Réponse publique de Swell sous l'avis.
+    reply: text("reply"),
+    repliedAt: integer("replied_at", { mode: "timestamp_ms" }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("review_user_product_idx").on(t.userId, t.productId), index("review_product_idx").on(t.productId, t.status)],
+);
+
+// Emails « Ton avis sur X ? » déjà envoyés (un seul par client et par produit).
+export const reviewRequest = sqliteTable(
+  "review_request",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => product.id, { onDelete: "cascade" }),
+    sentAt: integer("sent_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("review_request_user_product_idx").on(t.userId, t.productId)],
+);

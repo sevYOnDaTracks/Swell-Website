@@ -9,6 +9,7 @@ import { Footer } from "@/components/landing/Footer";
 import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { TrialButton } from "@/components/shop/TrialButton";
+import { ProductReviews, RatingSummaryLink } from "@/components/reviews/ProductReviews";
 import { getProductBySlug } from "@/lib/shop";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
 import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
@@ -61,6 +62,11 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
         <div>
           <p className="text-sm text-muted">{productTypeLabels[product.type]}</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{product.name}</h1>
+          {!beat && (
+            <Suspense fallback={null}>
+              <RatingSummaryLink productId={product.id} />
+            </Suspense>
+          )}
           {product.shortDescription && <p className="mt-3 text-lg text-muted">{product.shortDescription}</p>}
 
           {(product.platforms.length > 0 || product.formats.length > 0) && (
@@ -180,6 +186,11 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
           )}
         </div>
       </article>
+      {!beat && (
+        <Suspense fallback={<div className="mt-16 h-40 animate-pulse rounded-2xl bg-white/5" />}>
+          <ProductReviews productId={product.id} productName={product.name} slug={product.slug} path={productPath(product)} />
+        </Suspense>
+      )}
     </>
   );
 }
