@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/db";
 import { product } from "@/db/schema";
 import { getCurrentUser } from "@/lib/session";
@@ -12,6 +13,7 @@ import {
   savePrivateStream,
 } from "@/lib/private-storage";
 import { UploadError } from "@/lib/storage";
+import { notifyProductUpdate } from "@/lib/update-notifications";
 
 // Envoi (PUT) et téléchargement (GET) du fichier livré d'un produit, réservés à l'admin.
 // Route dédiée plutôt qu'une Server Action : le fichier est écrit en flux, sans limite de 25 Mo.
@@ -48,6 +50,12 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/admin/produc
       .where(eq(product.id, row.id));
     await deletePrivateFile(row.downloadFile);
     revalidateTag(PRODUCTS_TAG, { expire: 0 });
+    // Remplacement (pas le premier fichier) : on prévient acheteurs et testeurs, après la réponse.
+    if (row.downloadFile) {
+      after(() =>
+        notifyProductUpdate(row.id, { version: originalName }).catch((e) => console.error("[mise à jour] mail non envoyé", e)),
+      );
+    }
     return Response.json({ ok: true, name: originalName, size });
   } catch (e) {
     if (e instanceof UploadError) return Response.json({ error: e.message }, { status: 400 });
