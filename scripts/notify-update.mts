@@ -7,15 +7,19 @@
 //   node scripts/notify-update.mts <slug> --force        # renvoie même si la version a déjà été annoncée
 //
 // À lancer sur le serveur depuis le dossier de l'appli, comme send-reminders.sh :
-// lit CRON_SECRET (et SITE_URL, défaut http://localhost:3000) dans l'environnement ou dans .env.
+// lit CRON_SECRET (et SITE_URL, défaut http://localhost:3000) dans l'environnement, .env.local ou .env.
 import { existsSync, readFileSync } from "node:fs";
 
+// .env.local first, like Next.js: on the server CRON_SECRET lives there.
 function fromDotEnv(name: string) {
-  if (!existsSync(".env")) return undefined;
-  const line = readFileSync(".env", "utf8")
-    .split("\n")
-    .find((l) => l.startsWith(`${name}=`));
-  return line?.slice(name.length + 1).trim().replace(/^["']|["']$/g, "");
+  for (const file of [".env.local", ".env"]) {
+    if (!existsSync(file)) continue;
+    const line = readFileSync(file, "utf8")
+      .split("\n")
+      .find((l) => l.startsWith(`${name}=`));
+    if (line) return line.slice(name.length + 1).trim().replace(/^["']|["']$/g, "");
+  }
+  return undefined;
 }
 
 const args = process.argv.slice(2);
@@ -31,7 +35,7 @@ if (!slug) {
 }
 const secret = process.env.CRON_SECRET ?? fromDotEnv("CRON_SECRET");
 if (!secret) {
-  console.error("CRON_SECRET introuvable (environnement ou .env).");
+  console.error("CRON_SECRET introuvable (environnement, .env.local ou .env).");
   process.exit(1);
 }
 const base = process.env.SITE_URL ?? `http://localhost:${process.env.PORT ?? fromDotEnv("PORT") ?? 3000}`;
