@@ -7,12 +7,15 @@ import { Footer } from "@/components/landing/Footer";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { QuickAddButton } from "@/components/cart/QuickAddButton";
 import { getInstrumentals } from "@/lib/shop";
+import { pageMeta } from "@/lib/seo";
 import { formatPrice, mediaUrl } from "@/lib/shop-format";
+import { MIX_URL } from "@/lib/sites";
 
-export const metadata = {
+export const metadata = pageMeta({
+  url: `${MIX_URL}/instrumentales`,
   title: "Instrumentales — Swell",
   description: "Les prods de sevyondatracks : écoute les extraits et récupère tes instrumentales.",
-};
+});
 
 export default function InstrumentalsPage({ searchParams }: PageProps<"/instrumentales">) {
   return (

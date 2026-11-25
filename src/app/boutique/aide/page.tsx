@@ -1,3 +1,4 @@
+import { SHOP_URL } from "@/lib/sites";
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
 import { Apple, Download, KeyRound, Laptop, MonitorCheck, Plus, RefreshCw } from "lucide-react";
@@ -7,6 +8,7 @@ import { CopyCommand } from "@/components/shop/CopyCommand";
 import { legal } from "@/lib/legal";
 
 export const metadata = {
+  alternates: { canonical: `${SHOP_URL}/boutique/aide` },
   title: "Installer et activer un plugin — Swell",
   description: "Télécharger, installer sur Mac ou Windows, faire apparaître le plugin dans ton logiciel et coller ta clé de licence.",
 };

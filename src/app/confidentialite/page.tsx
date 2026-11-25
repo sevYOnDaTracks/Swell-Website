@@ -1,7 +1,8 @@
+import { SHOP_URL } from "@/lib/sites";
 import { LegalPage, Section, V } from "@/components/legal/LegalPage";
 import { legal } from "@/lib/legal";
 
-export const metadata = { title: "Politique de confidentialité — Swell" };
+export const metadata = { title: "Politique de confidentialité — Swell", alternates: { canonical: `${SHOP_URL}/confidentialite` } };
 
 export default function ConfidentialitePage() {
   return (

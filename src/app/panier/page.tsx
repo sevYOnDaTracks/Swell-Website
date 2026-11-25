@@ -7,7 +7,7 @@ import { CartView } from "@/components/cart/CartView";
 import { getPaymentOptions } from "@/lib/orders";
 import { isMixHost, type Site } from "@/lib/sites";
 
-export const metadata = { title: "Panier — Swell" };
+export const metadata = { title: "Panier — Swell", robots: { index: false, follow: true } };
 
 // Un panier par site (boutique sur swell-audio.fr, instrumentales sur mix.swell-audio.fr).
 export default function CartPage() {

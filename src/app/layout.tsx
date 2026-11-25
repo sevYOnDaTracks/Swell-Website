@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Geist, Geist_Mono, Unbounded } from "next/font/google";
 import { EmailVerificationPrompt } from "@/components/auth/EmailVerificationPrompt";
+import { SHOP_URL } from "@/lib/sites";
+import { SHARE_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,9 +29,13 @@ const condensed = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
+  // Les adresses relatives des balises (aperçus de partage) partent de la boutique.
+  metadataBase: new URL(SHOP_URL),
   title: "Swell — Plugins VST, AU & sons pour beatmakers",
   description:
     "Plugins Swell (VST3, AU, Standalone) et sons pour beatmakers.",
+  openGraph: { siteName: "Swell", locale: "fr_FR", type: "website", images: [SHARE_IMAGE] },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -17,7 +17,7 @@ export type ShopFilters = {
   sort?: "recent" | "price-asc" | "price-desc";
 };
 
-async function getPublishedProducts() {
+export async function getPublishedProducts() {
   "use cache";
   cacheTag(PRODUCTS_TAG);
   cacheLife("max");

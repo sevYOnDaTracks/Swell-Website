@@ -4,12 +4,16 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopFilters } from "@/components/shop/ShopFilters";
+import { pageMeta } from "@/lib/seo";
 import { getShopProducts, parseFilters } from "@/lib/shop";
+import { SHOP_URL } from "@/lib/sites";
 
-export const metadata = {
+// L'adresse canonique ignore les filtres (?genre=, ?type=...) : une seule page Boutique pour Google.
+export const metadata = pageMeta({
+  url: `${SHOP_URL}/boutique`,
   title: "Boutique — Swell",
   description: "VST, drum kits, sample packs et presets pour beatmakers.",
-};
+});
 
 export default function ShopPage({ searchParams }: PageProps<"/boutique">) {
   return (

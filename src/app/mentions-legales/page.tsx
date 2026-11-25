@@ -1,8 +1,9 @@
+import { SHOP_URL } from "@/lib/sites";
 import Link from "next/link";
 import { LegalPage, Section, V } from "@/components/legal/LegalPage";
 import { legal } from "@/lib/legal";
 
-export const metadata = { title: "Mentions légales — Swell" };
+export const metadata = { title: "Mentions légales — Swell", alternates: { canonical: `${SHOP_URL}/mentions-legales` } };
 
 export default function MentionsLegalesPage() {
   return (

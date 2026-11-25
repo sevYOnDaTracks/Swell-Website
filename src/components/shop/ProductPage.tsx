@@ -11,6 +11,8 @@ import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { TrialButton } from "@/components/shop/TrialButton";
 import { ProductReviews, RatingSummaryLink } from "@/components/reviews/ProductReviews";
+import { JsonLd } from "@/components/JsonLd";
+import { pageMeta, productJsonLd, productUrl } from "@/lib/seo";
 import { getProductBySlug } from "@/lib/shop";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
 import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
@@ -20,9 +22,13 @@ import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
 
 export async function productMetadata(slug: string) {
   const product = await getProductBySlug(slug);
-  return product
-    ? { title: `${product.name} — Swell`, description: product.shortDescription || undefined }
-    : { title: "Produit introuvable — Swell" };
+  if (!product) return { title: "Produit introuvable — Swell", robots: { index: false } };
+  return pageMeta({
+    url: productUrl(product),
+    title: `${product.name} — Swell`,
+    description: product.shortDescription || undefined,
+    image: product.coverFile ? `${SHOP_URL}${mediaUrl(product.coverFile)}` : undefined,
+  });
 }
 
 export function ProductPage({ slug, site }: { slug: Promise<string>; site: Site }) {
@@ -54,6 +60,7 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
 
   return (
     <>
+      <JsonLd data={productJsonLd(product)} />
       <Link href={listHref} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
         <ArrowLeft size={16} /> {beat ? "Instrumentales" : "Boutique"}
       </Link>

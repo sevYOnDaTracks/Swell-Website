@@ -37,6 +37,7 @@ export async function ProductReviews({ productId, productName, slug, path }: Pro
       ? {
           "@context": "https://schema.org",
           "@type": "Product",
+          "@id": `${SHOP_URL}/boutique/${slug}#product`,
           name: productName,
           url: `${SHOP_URL}/boutique/${slug}`,
           aggregateRating: { "@type": "AggregateRating", ratingValue: summary.average, reviewCount: summary.total, bestRating: 5, worstRating: 1 },
