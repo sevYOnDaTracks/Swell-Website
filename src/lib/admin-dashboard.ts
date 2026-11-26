@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, gte, inArray, isNotNull, isNull, ne, notInArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { booking, product, review, shopOrder, shopOrderItem, user } from "@/db/schema";
+import { booking, product, review, shopOrder, shopOrderItem, supportTicket, user } from "@/db/schema";
 import { getAdminSubscribers } from "./subscriptions";
 
 // Chiffres du tableau de bord de l'admin : ce qui attend une action, l'activité des 30 derniers jours
@@ -120,6 +120,7 @@ export async function getDashboardData(today: string) {
 
   const [todaySessions] = await db.select({ n: count() }).from(booking).where(and(eq(booking.date, today), eq(booking.status, "confirmed")));
   const [pendingBookings] = await db.select({ n: count() }).from(booking).where(eq(booking.status, "pending"));
+  const [openTickets] = await db.select({ n: count() }).from(supportTicket).where(eq(supportTicket.status, "open"));
   const expiring = subscribers.filter((s) => s.state === "active" && s.endsAt.getTime() - now <= 7 * DAY);
 
   return {
@@ -130,6 +131,7 @@ export async function getDashboardData(today: string) {
       bookings: pendingBookings?.n ?? 0,
       todaySessions: todaySessions?.n ?? 0,
       reviews: reviewsToAnswer[0]?.n ?? 0,
+      support: openTickets?.n ?? 0,
       expiring: expiring.length,
     },
     kpis: {

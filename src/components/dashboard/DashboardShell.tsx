@@ -9,7 +9,7 @@ import type { Site } from "@/lib/sites";
 import { Avatar } from "./Avatar";
 import { and, count, countDistinct, eq, isNotNull, notInArray } from "drizzle-orm";
 import { db } from "@/db";
-import { booking, shopOrder, shopOrderItem } from "@/db/schema";
+import { booking, shopOrder, shopOrderItem, supportTicket } from "@/db/schema";
 import { AdminFrame, type AdminCounts } from "./AdminSidebar";
 import { DashboardNav } from "./DashboardNav";
 import { SignOutButton } from "./SignOutButton";
@@ -28,9 +28,9 @@ const PUBLIC_LINKS: Record<Site, { href: string; label: string; Icon: typeof Sho
   ],
 };
 
-/** Ce qui attend une action de l'admin : demandes de séance, commandes et pass à valider. */
+/** Ce qui attend une action de l'admin : demandes de séance, commandes et pass à valider, demandes de support. */
 async function adminCounts(): Promise<AdminCounts> {
-  const [[b], [o], [p]] = await Promise.all([
+  const [[b], [o], [p], [s]] = await Promise.all([
     db.select({ n: count() }).from(booking).where(eq(booking.status, "pending")),
     db.select({ n: count() }).from(shopOrder).where(and(eq(shopOrder.status, "pending"), notInArray(shopOrder.method, ["free", "gift"]))),
     db
@@ -38,8 +38,9 @@ async function adminCounts(): Promise<AdminCounts> {
       .from(shopOrder)
       .innerJoin(shopOrderItem, eq(shopOrderItem.orderId, shopOrder.id))
       .where(and(eq(shopOrder.status, "pending"), isNotNull(shopOrderItem.subscriptionDays))),
+    db.select({ n: count() }).from(supportTicket).where(eq(supportTicket.status, "open")),
   ]);
-  return { bookings: b?.n ?? 0, orders: o?.n ?? 0, passes: p?.n ?? 0 };
+  return { bookings: b?.n ?? 0, orders: o?.n ?? 0, passes: p?.n ?? 0, support: s?.n ?? 0 };
 }
 
 export async function DashboardShell({
@@ -58,7 +59,7 @@ export async function DashboardShell({
   const site = await currentSite();
   // Le lien principal vers le catalogue : la boutique de plugins, ou les instrumentales sur mix.
   const browseLink = PUBLIC_LINKS[site][1];
-  const counts = isAdmin ? await adminCounts() : { bookings: 0, orders: 0, passes: 0 };
+  const counts = isAdmin ? await adminCounts() : { bookings: 0, orders: 0, passes: 0, support: 0 };
 
   return (
     <div className="flex min-h-full flex-1 flex-col">

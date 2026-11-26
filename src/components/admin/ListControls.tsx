@@ -13,15 +13,21 @@ export function ListSearch({
   params,
   placeholder,
   filters = [],
+  hidden = {},
 }: {
   basePath: string;
   params: ListParams;
   placeholder: string;
   filters?: Filter[];
+  // Paramètres gardés tels quels à la recherche (ex. l'onglet en cours).
+  hidden?: Record<string, string>;
 }) {
   const active = ["q", ...filters.map((f) => f.name)].some((k) => typeof params[k] === "string" && params[k]);
   return (
     <form action={basePath} method="get" className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+      {Object.entries(hidden).map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
       <label className="relative flex-1">
         <span className="sr-only">Rechercher</span>
         <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-muted" />
@@ -42,7 +48,7 @@ export function ListSearch({
       <div className="flex gap-2">
         <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-neutral-200">Rechercher</button>
         {active && (
-          <Link href={basePath} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-sm text-muted hover:text-foreground">
+          <Link href={Object.keys(hidden).length ? `${basePath}?${new URLSearchParams(hidden)}` : basePath} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-3 py-2 text-sm text-muted hover:text-foreground">
             <X size={14} /> Effacer
           </Link>
         )}

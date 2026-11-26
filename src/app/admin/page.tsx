@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { and, asc, desc, eq, gte, lte, ne } from "drizzle-orm";
-import { ArrowRight, CalendarCheck, CalendarClock, CheckCircle2, Crown, Hourglass, Receipt, Star, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowRight, Headset, CalendarCheck, CalendarClock, CheckCircle2, Crown, Hourglass, Receipt, Star, TrendingDown, TrendingUp } from "lucide-react";
 import { RevenueChart } from "@/components/admin/RevenueChart";
 import { getDashboardData } from "@/lib/admin-dashboard";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
@@ -90,6 +90,7 @@ async function AdminContent() {
   const todo = [
     { n: t.orders, label: t.orders > 1 ? "paiements à vérifier" : "paiement à vérifier", hint: t.proofs ? `dont ${t.proofs} avec capture reçue` : null, href: t.proofs ? "/admin/commandes?statut=proof" : "/admin/commandes?statut=pending", Icon: Receipt },
     { n: t.passes, label: t.passes > 1 ? "pass d'abonnement à valider" : "pass d'abonnement à valider", hint: null, href: "/admin/commandes?statut=pending", Icon: Crown },
+    { n: t.support, label: t.support > 1 ? "demandes de support à traiter" : "demande de support à traiter", hint: null, href: "/admin/support", Icon: Headset },
     { n: t.bookings, label: t.bookings > 1 ? "demandes de séance à confirmer" : "demande de séance à confirmer", hint: null, href: "#seances", Icon: CalendarClock },
     { n: t.todaySessions, label: t.todaySessions > 1 ? "séances aujourd'hui" : "séance aujourd'hui", hint: null, href: "#seances", Icon: CalendarCheck },
     { n: t.reviews, label: t.reviews > 1 ? "avis sans réponse" : "avis sans réponse", hint: "sur les 30 derniers jours", href: "/admin/avis", Icon: Star },

@@ -504,3 +504,59 @@ export const subscriptionReminder = sqliteTable(
   },
   (t) => [uniqueIndex("subscription_reminder_idx").on(t.userId, t.endsAt, t.kind)],
 );
+
+// --- Support (formulaire /support, suivi dans l'espace client et dans l'admin) ----
+
+export const supportSubjects = ["avant-achat", "licence", "paiement", "abonnement", "plugin", "autre"] as const;
+export type SupportSubject = (typeof supportSubjects)[number];
+// "open" : attend une réponse de Swell ; "answered" : Swell a répondu, au client de revenir ; "closed" : résolue.
+export const supportStatuses = ["open", "answered", "closed"] as const;
+export type SupportStatus = (typeof supportStatuses)[number];
+
+export const supportTicket = sqliteTable(
+  "support_ticket",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    // Référence donnée au client (SP-XXXXXX).
+    reference: text("reference").notNull().unique(),
+    // Compte du client ; vide pour un visiteur sans compte (suivi par le lien secret de l'email).
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    subject: text("subject", { enum: supportSubjects }).notNull(),
+    productId: text("product_id").references(() => product.id, { onDelete: "set null" }),
+    orderId: text("order_id").references(() => shopOrder.id, { onDelete: "set null" }),
+    status: text("status", { enum: supportStatuses }).notNull().default("open"),
+    // Jeton du lien de suivi envoyé par email (visiteurs sans compte).
+    token: text("token").notNull(),
+    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    ...timestamps,
+  },
+  (t) => [index("support_ticket_user_idx").on(t.userId), index("support_ticket_status_idx").on(t.status)],
+);
+
+export const supportAuthors = ["client", "admin"] as const;
+
+export const supportMessage = sqliteTable(
+  "support_message",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    ticketId: text("ticket_id")
+      .notNull()
+      .references(() => supportTicket.id, { onDelete: "cascade" }),
+    author: text("author", { enum: supportAuthors }).notNull(),
+    body: text("body").notNull(),
+    // Capture jointe (stockage privé, comme les captures de paiement).
+    attachment: text("attachment"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [index("support_message_ticket_idx").on(t.ticketId)],
+);
