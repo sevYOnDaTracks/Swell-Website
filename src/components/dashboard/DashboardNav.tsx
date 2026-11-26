@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, CalendarPlus, Gauge, Music, Plug, Settings, UserRound } from "lucide-react";
+import { AudioLines, CalendarPlus, Gauge, LifeBuoy, Music, Plug, Settings, UserRound } from "lucide-react";
 import type { Site } from "@/lib/sites";
 
 // Boutique : plugins et achats, sans réservation. Mix : réservations et instrumentales, sans plugins.
@@ -10,6 +10,7 @@ const CLIENT_LINKS: Record<Site, { href: string; label: string; Icon: typeof Use
   shop: [
     { href: "/compte", label: "Mon espace", Icon: UserRound },
     { href: "/compte/plugins", label: "Mes plugins", Icon: Plug },
+    { href: "/compte/support", label: "Mes demandes", Icon: LifeBuoy },
     { href: "/compte/profil", label: "Mon profil", Icon: Settings },
   ],
   mix: [
@@ -17,6 +18,7 @@ const CLIENT_LINKS: Record<Site, { href: string; label: string; Icon: typeof Use
     { href: "/reserver", label: "Réserver", Icon: CalendarPlus },
     { href: "/compte/sons", label: "Mes sons", Icon: Music },
     { href: "/compte/plugins", label: "Mes instrumentales", Icon: AudioLines },
+    { href: "/compte/support", label: "Mes demandes", Icon: LifeBuoy },
     { href: "/compte/profil", label: "Mon profil", Icon: Settings },
   ],
 };

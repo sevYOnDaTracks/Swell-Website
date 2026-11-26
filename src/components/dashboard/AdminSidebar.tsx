@@ -9,6 +9,7 @@ import {
   Disc3,
   ExternalLink,
   Gauge,
+  Headset,
   KeyRound,
   Megaphone,
   Menu,
@@ -24,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 
-export type AdminCounts = { bookings: number; orders: number; passes: number };
+export type AdminCounts = { bookings: number; orders: number; passes: number; support: number };
 
 type Item = { href: string; label: string; Icon: typeof Gauge; count?: keyof AdminCounts };
 
@@ -61,7 +62,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/offres", label: "Services & tarifs", Icon: Tags },
     ],
   },
-  { title: "Clients", items: [{ href: "/admin/utilisateurs", label: "Utilisateurs", Icon: Users }] },
+  {
+    title: "Clients",
+    items: [
+      { href: "/admin/support", label: "Support", Icon: Headset, count: "support" },
+      { href: "/admin/utilisateurs", label: "Utilisateurs", Icon: Users },
+    ],
+  },
 ];
 
 const STORAGE_KEY = "swell-admin-sidebar";
@@ -165,7 +172,7 @@ export function AdminFrame({ isAdmin, counts, children }: { isAdmin: boolean; co
   }, [mobileOpen]);
 
   if (!inAdmin) return <>{children}</>;
-  const waiting = counts.bookings + counts.orders + counts.passes;
+  const waiting = counts.bookings + counts.orders + counts.support;
 
   return (
     <div className="flex flex-1">

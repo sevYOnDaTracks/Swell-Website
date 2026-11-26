@@ -213,6 +213,24 @@ export async function getAdminOrders(filters: { q?: string; status?: string; met
   return { total, orders: orders.map((o) => ({ ...o, items: items.get(o.id) ?? [] })) };
 }
 
+/** Nombre de commandes par onglet de l'admin (hors commandes gratuites). */
+export async function getAdminOrderCounts() {
+  const rows = await db
+    .select({ status: shopOrder.status, method: shopOrder.method, proof: shopOrder.proofSentAt })
+    .from(shopOrder)
+    .where(ne(shopOrder.method, "free"));
+  const gift = rows.filter((r) => r.method === "gift").length;
+  const sold = rows.filter((r) => r.method !== "gift");
+  return {
+    pending: sold.filter((r) => r.status === "pending").length,
+    proof: sold.filter((r) => r.status === "pending" && r.proof).length,
+    paid: sold.filter((r) => r.status === "paid").length,
+    cancelled: sold.filter((r) => r.status === "cancelled").length,
+    gift,
+    all: rows.length,
+  };
+}
+
 /** Une commande du client, retrouvée par sa référence (SW-XXXXXX). Null si elle n'est pas à lui. */
 export async function getMyOrder(userId: string, reference: string) {
   const [order] = await db

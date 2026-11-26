@@ -9,6 +9,7 @@ export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
     { label: "Plugins & sons", href: "/boutique" },
     { label: "Abonnements", href: "/abonnement" },
     { label: "Installer un plugin", href: "/boutique/aide" },
+    { label: "Support", href: "/support" },
     { label: "FAQ", href: "/#faq" },
   ],
   mix: [
@@ -16,6 +17,7 @@ export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
     { label: "Services", href: "/#services" },
     { label: "Instrumentales", href: "/instrumentales" },
     { label: "Tarifs", href: "/#tarifs" },
+    { label: "Support", href: "/support" },
     { label: "FAQ", href: "/#faq" },
   ],
 };
