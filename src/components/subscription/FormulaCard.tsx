@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Check, ChevronDown, Piano } from "lucide-react";
-import { formatPrice, mediaUrl } from "@/lib/shop-format";
-import { PLANS, planDays, planPrice, planRegularPrice, planSalePrice, type Formula, type Plan, type SubscriptionSettings } from "@/lib/subscription-plans";
+import { formatPrice, formatPriceShort, mediaUrl } from "@/lib/shop-format";
+import { monthlyEquivalentCents, PLANS, planDays, planPrice, planRegularPrice, planSalePrice, type Formula, type Plan, type SubscriptionSettings } from "@/lib/subscription-plans";
 
 export type CardPlugin = { id: string; name: string; slug: string; coverFile: string | null; shortDescription: string; priceCents: number };
 
@@ -99,7 +99,7 @@ export function FormulaCard({
         </p>
         <p className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className={muted}>
-            {days >= 60 ? `Soit ${formatPrice(Math.round((cents * 30) / days))} par mois · ` : ""}
+            {days >= 60 ? `Soit ${formatPriceShort(monthlyEquivalentCents(cents, days))} par mois · ` : ""}
             {days} jours d&apos;accès
           </span>
           {regular && (
