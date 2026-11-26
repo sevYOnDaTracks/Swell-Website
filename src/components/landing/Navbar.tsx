@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AudioLines, CircleHelp, Crown, Disc3, Gauge, LifeBuoy, LogIn, Menu, Plug, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { CartLink } from "@/components/cart/CartLink";
+import { SearchButton } from "./SearchDialog";
 import { authClient } from "@/lib/auth-client";
 import { navLinksBySite } from "@/lib/content";
 import type { Site } from "@/lib/sites";
@@ -75,7 +76,9 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
           ))}
         </ul>
 
-        <div className={`hidden items-center gap-2 transition-opacity md:flex ${isPending ? "opacity-0" : ""}`}>
+        <div className="hidden items-center gap-2 md:flex">
+          <SearchButton site={site} />
+        <div className={`flex items-center gap-2 transition-opacity ${isPending ? "opacity-0" : ""}`}>
           <CartLink />
           {account ? (
             <IconLink href={account.href} label={account.label} Icon={account.Icon} primary />
@@ -91,8 +94,10 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
             </>
           )}
         </div>
+        </div>
 
         <div className="flex items-center gap-1 md:hidden">
+          <SearchButton site={site} compact />
           <CartLink onClick={() => setOpen(false)} />
           <button
             type="button"
