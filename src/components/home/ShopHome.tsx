@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/landing/Navbar";
 import { ShopHero } from "@/components/landing/ShopHero";
 import { Shop } from "@/components/landing/Shop";
+import { SubscriptionTeaser } from "./SubscriptionTeaser";
 import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
 import { shopFaq } from "@/lib/content";
@@ -12,6 +13,7 @@ export function ShopHome() {
       <Navbar site="shop" />
       <main className="flex-1">
         <ShopHero />
+        <SubscriptionTeaser />
         <Shop />
         <Faq items={shopFaq} />
       </main>

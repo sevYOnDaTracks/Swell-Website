@@ -295,6 +295,19 @@ export async function updateSubscriptionSettings(input: SubscriptionSettingsInpu
   return { ok: true };
 }
 
+/** Ouvre ou ferme l'abonnement tout de suite, sans toucher aux autres réglages. */
+export async function setSubscriptionEnabled(enabled: boolean): Promise<{ ok: true } | { error: string }> {
+  await requireAdmin();
+  const current = await getSubscriptionSettings();
+  if (enabled && !current.formulas.some((f) => f.visible && (f.monthEnabled || f.yearEnabled))) {
+    return { error: "Aucune formule n'est proposée à la vente : règle au moins une formule avant d'ouvrir." };
+  }
+  await saveSubscriptionSettings({ ...current, enabled });
+  updateTag(SUBSCRIPTION_TAG);
+  refresh();
+  return { ok: true };
+}
+
 /** Offre des jours d'une formule à un compte (retrouvé par son email). */
 export async function giftSubscription(
   email: string,
