@@ -9,7 +9,7 @@ import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt"
 import { PaymentMethodPicker } from "@/components/cart/PaymentMethodPicker";
 import { isMobileMethod, METHOD_LABELS, METHOD_ORDER, type PayMethod, type PaymentOptions } from "@/lib/payments";
 import { formatPrice } from "@/lib/shop-format";
-import { FormulaCard } from "./FormulaCard";
+import { FormulaCard, type CardPlugin } from "./FormulaCard";
 import {
   enabledPlans,
   PLANS,
@@ -24,7 +24,7 @@ import {
   type SubscriptionSettings,
 } from "@/lib/subscription-plans";
 
-export type PricingPlugin = { id: string; name: string; slug: string; coverFile: string | null };
+export type PricingPlugin = CardPlugin;
 export type PricingFormula = { formula: Formula; plugins: PricingPlugin[] };
 export type Viewer = {
   loggedIn: boolean;
