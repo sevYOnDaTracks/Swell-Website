@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
+import { isOnSale, withSalePrice } from "./shop-format";
 
 // Le catalogue public est mis en cache et invalidé par updateTag(PRODUCTS_TAG)
 // à chaque modification depuis l'admin.
@@ -17,11 +18,26 @@ export type ShopFilters = {
   sort?: "recent" | "price-asc" | "price-desc";
 };
 
+/**
+ * Prix barrés appliqués au catalogue mis en cache. Tant qu'une promo court, le cache expire à sa fin :
+ * le prix normal revient tout seul, sans action dans l'admin.
+ */
+function applySales<T extends Parameters<typeof withSalePrice>[0]>(rows: T[]) {
+  const now = Date.now();
+  const ends = rows.flatMap((p) => (isOnSale(p, now) && p.saleEndsAt ? [p.saleEndsAt.getTime()] : []));
+  if (ends.length > 0) {
+    const seconds = Math.max(60, Math.ceil((Math.min(...ends) - now) / 1000));
+    cacheLife({ stale: 30, revalidate: seconds, expire: seconds + 60 });
+  } else {
+    cacheLife("max");
+  }
+  return rows.map((p) => withSalePrice(p, now));
+}
+
 export async function getPublishedProducts() {
   "use cache";
   cacheTag(PRODUCTS_TAG);
-  cacheLife("max");
-  return db.select().from(product).where(eq(product.published, true)).orderBy(desc(product.createdAt));
+  return applySales(await db.select().from(product).where(eq(product.published, true)).orderBy(desc(product.createdAt)));
 }
 
 export async function getShopProducts(filters: ShopFilters) {
@@ -49,12 +65,11 @@ export async function getShopProducts(filters: ShopFilters) {
 export async function getProductBySlug(slug: string) {
   "use cache";
   cacheTag(PRODUCTS_TAG);
-  cacheLife("max");
-  const [row] = await db
+  const rows = await db
     .select()
     .from(product)
     .where(and(eq(product.slug, slug), eq(product.published, true)));
-  return row ?? null;
+  return applySales(rows)[0] ?? null;
 }
 
 /** Instrumentales publiées (page /instrumentales), filtrables par recherche et tag. */
@@ -68,6 +83,11 @@ export async function getInstrumentals(filters: { q?: string; genre?: string }) 
   );
   const genres = [...new Set(all.flatMap((p) => p.genres))].sort((a, b) => a.localeCompare(b, "fr"));
   return { items, genres, total: all.length };
+}
+
+/** Plugins compris dans l'abonnement Swell All Access : VST publiés et disponibles, sauf ceux retirés dans l'admin. */
+export async function getAllAccessPlugins(excludedProductIds: string[]) {
+  return (await getPublishedProducts()).filter((p) => p.type === "vst" && p.downloadFile && !excludedProductIds.includes(p.id));
 }
 
 /** Produits mis en avant sur la page d'accueil (à défaut, les plus récents). */

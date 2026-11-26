@@ -9,8 +9,10 @@ import { PAGE_SIZE, readPage, readParam } from "@/lib/admin-list";
 import { ProductRowActions } from "@/components/shop/ProductRowActions";
 import { db } from "@/db";
 import { product, productTypes } from "@/db/schema";
-import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels } from "@/lib/shop-format";
+import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels, isOnSale } from "@/lib/shop-format";
 import { requireAdmin } from "@/lib/session";
+
+const saleEnd = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
 export const metadata = { title: "Produits — Swell" };
 
@@ -92,6 +94,7 @@ async function AdminProductsContent({ searchParams }: Pick<PageProps<"/admin/pro
                   </p>
                   <p className="mt-0.5 text-sm text-muted">
                     {productTypeLabels[p.type]} · {formatPrice(p.priceCents)}
+                    {isOnSale(p) && ` · promo ${formatPrice(p.salePriceCents!)}${p.saleEndsAt ? ` jusqu'au ${saleEnd.format(p.saleEndsAt)}` : ""}`}
                     {p.genres.length > 0 && ` · ${p.genres.join(", ")}`}
                     {p.downloadName ? ` · ${fileFormat(p.downloadName)} ${formatBytes(p.downloadSize ?? 0)}` : " · sans fichier"}
                   </p>

@@ -7,6 +7,10 @@ import { ensureLicenses } from "./licenses";
 import { paymentInstructionText } from "./orders";
 import { formatFcfa, METHOD_LABELS } from "./payments";
 import { formatPrice } from "./shop-format";
+import { SUBSCRIPTION_NAME } from "./subscription-plans";
+import { getSubscription } from "./subscriptions";
+
+const longDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
 
 // Emails des commandes. Appelés via after() : ils partent une fois la réponse
 // envoyée, sans ralentir ni bloquer l'action.
@@ -27,7 +31,11 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
     .where(eq(shopOrder.id, orderId));
   if (!order) return;
 
-  const items = await db.select({ name: shopOrderItem.name, productId: shopOrderItem.productId }).from(shopOrderItem).where(eq(shopOrderItem.orderId, orderId));
+  const items = await db
+    .select({ name: shopOrderItem.name, productId: shopOrderItem.productId, subscriptionDays: shopOrderItem.subscriptionDays })
+    .from(shopOrderItem)
+    .where(eq(shopOrderItem.orderId, orderId));
+  const subscriptionOnly = items.length > 0 && items.every((i) => i.subscriptionDays);
   const names = items.map((i) => i.name).join(", ");
   const total = formatPrice(order.totalCents);
   const account = { label: "Voir mes plugins et achats", href: `${SITE_URL}/compte/plugins` };
@@ -43,7 +51,9 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
         paragraphs: [
           `Articles : ${names}. Total : ${total}.`,
           instruction,
-          "Dès que le paiement est vérifié, tes fichiers apparaissent dans ton espace et tu reçois un email.",
+          subscriptionOnly
+            ? "Dès que le paiement est vérifié, ton accès à tous les plugins est prolongé et tu reçois un email."
+            : "Dès que le paiement est vérifié, tes fichiers apparaissent dans ton espace et tu reçois un email.",
         ],
         cta: account,
       }),
@@ -106,7 +116,20 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
     });
   }
 
-  if (event === "paid") {
+  if (event === "paid" && subscriptionOnly) {
+    const sub = await getSubscription(order.userId);
+    await sendEmail({
+      to: order.clientEmail,
+      subject: `${SUBSCRIPTION_NAME} : ton accès est prolongé`,
+      title: "Ton abonnement est actif",
+      paragraphs: [
+        order.totalCents === 0 ? "Ta commande est validée." : `Merci ! Ton paiement de ${total} est bien reçu.`,
+        sub.endsAt ? `Tu as accès à tous les plugins Swell jusqu'au ${longDate.format(sub.endsAt)}.` : `${names} est actif.`,
+        "Tes plugins et leurs clés sont dans ton espace. Déjà installés ? Ils se débloquent tout seuls au prochain lancement.",
+      ],
+      cta: account,
+    });
+  } else if (event === "paid") {
     await sendEmail({
       to: order.clientEmail,
       subject: `Ta commande ${order.reference} est prête`,

@@ -3,8 +3,9 @@ import Link from "next/link";
 import { AudioLines, Drum, Package, Piano, SlidersVertical } from "lucide-react";
 import type { ProductType } from "@/db/schema";
 import { QuickAddButton } from "@/components/cart/QuickAddButton";
-import { formatPrice, mediaUrl, productPath, productTypeLabels, singlePlatformLabel } from "@/lib/shop-format";
+import { mediaUrl, productPath, productTypeLabels, singlePlatformLabel } from "@/lib/shop-format";
 import { PreviewButton } from "./PreviewButton";
+import { PriceTag } from "./PriceTag";
 
 export const TYPE_ICONS: Record<ProductType, typeof Drum> = {
   vst: Piano,
@@ -21,6 +22,8 @@ type CardProduct = {
   type: ProductType;
   shortDescription: string;
   priceCents: number;
+  // Prix barré (promo en cours) : priceCents est alors le prix promo.
+  compareAtCents?: number | null;
   coverFile: string | null;
   previewFile: string | null;
   platforms?: string[];
@@ -73,12 +76,14 @@ export function ProductCard({ product }: { product: CardProduct }) {
         )}
       </div>
       {/* Deux cartes par ligne sur téléphone : le prix passe sous le nom. */}
-      <div className="flex flex-col gap-1 p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-4">
+      <div
+        className={`flex flex-col gap-1 p-3 sm:p-4 ${product.compareAtCents ? "sm:gap-2" : "sm:flex-row sm:items-start sm:justify-between sm:gap-3"}`}
+      >
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold sm:text-base">{product.name}</h3>
           {product.shortDescription && <p className="mt-1 line-clamp-2 text-xs text-muted sm:text-sm">{product.shortDescription}</p>}
         </div>
-        <span className="shrink-0 text-sm font-semibold sm:text-base">{formatPrice(product.priceCents)}</span>
+        <PriceTag priceCents={product.priceCents} compareAtCents={product.compareAtCents} className="shrink-0" />
       </div>
     </Link>
   );

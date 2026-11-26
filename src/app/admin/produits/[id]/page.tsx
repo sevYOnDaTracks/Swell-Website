@@ -37,6 +37,8 @@ async function EditProductContent({ params, searchParams }: PageProps<"/admin/pr
           slug: row.slug,
           type: row.type,
           priceCents: row.priceCents,
+          salePriceCents: row.salePriceCents,
+          saleEndsAt: row.saleEndsAt,
           shortDescription: row.shortDescription,
           description: row.description,
           genres: row.genres,

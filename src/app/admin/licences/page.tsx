@@ -64,6 +64,7 @@ async function LicensesContent({ searchParams }: Pick<PageProps<"/admin/licences
                 { value: "active", label: "Actives" },
                 { value: "trial", label: "Essais" },
                 { value: "converted", label: "Achetées après essai" },
+                { value: "subscription", label: "Abonnement" },
                 { value: "revoked", label: "Désactivées" },
               ],
             },
@@ -119,7 +120,8 @@ async function LicensesContent({ searchParams }: Pick<PageProps<"/admin/licences
                               {l.revokedAt && <span className="text-red-300"> · désactivée</span>}
                               {l.trialEndsAt &&
                                 (l.trialEndsAt > now ? ` · essai jusqu'au ${date.format(l.trialEndsAt)}` : " · essai terminé")}
-                              {l.trialStartedAt && !l.trialEndsAt && " · acheté après essai"}
+                              {l.trialStartedAt && !l.trialEndsAt && !l.viaSubscription && " · acheté après essai"}
+                              {l.viaSubscription && " · abonnement"}
                               {` · ${l.activations.length} / ${l.maxActivations} ordinateur${l.maxActivations > 1 ? "s" : ""}`}
                             </p>
                             <code className="select-all break-all font-mono text-xs">{l.key}</code>

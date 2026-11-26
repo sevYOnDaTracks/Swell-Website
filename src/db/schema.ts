@@ -165,6 +165,9 @@ export const product = sqliteTable(
     shortDescription: text("short_description").notNull().default(""),
     description: text("description").notNull().default(""),
     priceCents: integer("price_cents").notNull(),
+    // Prix barré : prix promo affiché à la place du prix normal (barré), jusqu'à saleEndsAt (vide = sans fin).
+    salePriceCents: integer("sale_price_cents"),
+    saleEndsAt: integer("sale_ends_at", { mode: "timestamp_ms" }),
     genres: text("genres", { mode: "json" }).$type<string[]>().notNull().default([]),
     // Compatibilité des VST : plateformes ("windows", "mac") et formats ("vst3", "au"...).
     platforms: text("platforms", { mode: "json" }).$type<string[]>().notNull().default([]),
@@ -309,6 +312,8 @@ export const shopOrderItem = sqliteTable(
     productId: text("product_id").references(() => product.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     priceCents: integer("price_cents").notNull(),
+    // Pass d'abonnement (Swell All Access) : nombre de jours d'accès ajoutés quand la commande est payée.
+    subscriptionDays: integer("subscription_days"),
   },
   (t) => [index("shop_order_item_order_id_idx").on(t.orderId), index("shop_order_item_product_id_idx").on(t.productId)],
 );
@@ -356,6 +361,8 @@ export const license = sqliteTable(
     trialEndsAt: integer("trial_ends_at", { mode: "timestamp_ms" }),
     // Début de l'essai, gardé après l'achat pour compter les testeurs devenus clients.
     trialStartedAt: integer("trial_started_at", { mode: "timestamp_ms" }),
+    // Clé donnée par l'abonnement : valable jusqu'à la fin de l'accès. Repassée à false à l'achat du plugin.
+    viaSubscription: integer("via_subscription", { mode: "boolean" }).notNull().default(false),
     ...timestamps,
   },
   (t) => [
@@ -438,4 +445,58 @@ export const reviewRequest = sqliteTable(
       .$defaultFn(() => new Date()),
   },
   (t) => [uniqueIndex("review_request_user_product_idx").on(t.userId, t.productId)],
+);
+
+// --- Abonnement Swell All Access (prépayé) ----------------------------------
+
+// Chaque période d'accès : l'essai gratuit, un pass payé (1 commande) ou des jours offerts par l'admin.
+// L'accès d'un client court jusqu'à la fin de sa période la plus lointaine.
+export const subscriptionPeriodKinds = ["trial", "paid", "gift"] as const;
+
+export const subscriptionPeriod = sqliteTable(
+  "subscription_period",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: subscriptionPeriodKinds }).notNull(),
+    // Commande payée qui a donné cette période (une seule période par commande).
+    orderId: text("order_id").references(() => shopOrder.id, { onDelete: "set null" }),
+    days: integer("days").notNull(),
+    startsAt: integer("starts_at", { mode: "timestamp_ms" }).notNull(),
+    endsAt: integer("ends_at", { mode: "timestamp_ms" }).notNull(),
+    note: text("note"),
+    ...timestamps,
+  },
+  (t) => [index("subscription_period_user_idx").on(t.userId), uniqueIndex("subscription_period_order_idx").on(t.orderId)],
+);
+
+// Ordinateurs qui ont déjà servi à un essai gratuit : un seul essai par ordinateur, même avec un autre compte.
+export const trialMachine = sqliteTable("trial_machine", {
+  machineId: text("machine_id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+// Rappels de fin d'abonnement déjà envoyés (un par client, date de fin et type de rappel).
+export const subscriptionReminder = sqliteTable(
+  "subscription_reminder",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    endsAt: integer("ends_at", { mode: "timestamp_ms" }).notNull(),
+    kind: text("kind").notNull(),
+    sentAt: integer("sent_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("subscription_reminder_idx").on(t.userId, t.endsAt, t.kind)],
 );

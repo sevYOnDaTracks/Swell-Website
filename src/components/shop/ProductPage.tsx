@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { ArrowLeft, Gauge, Monitor } from "lucide-react";
+import { ArrowLeft, Crown, Gauge, Monitor } from "lucide-react";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { FreeDownloadButton } from "@/components/shop/FreeDownloadButton";
 import { Navbar } from "@/components/landing/Navbar";
@@ -10,15 +10,20 @@ import { CollapsibleDescription } from "@/components/shop/CollapsibleDescription
 import { ProductGallery } from "@/components/shop/ProductGallery";
 import { PreviewButton } from "@/components/shop/PreviewButton";
 import { TrialButton } from "@/components/shop/TrialButton";
+import { PriceTag } from "@/components/shop/PriceTag";
 import { ProductReviews, RatingSummaryLink } from "@/components/reviews/ProductReviews";
 import { JsonLd } from "@/components/JsonLd";
 import { pageMeta, productJsonLd, productUrl } from "@/lib/seo";
 import { getProductBySlug } from "@/lib/shop";
+import { lowestMonthlyCents, SUBSCRIPTION_NAME } from "@/lib/subscription-plans";
+import { getPublicSubscriptionSettings } from "@/lib/subscriptions";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
 import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
 
 // Fiche produit, partagée par swell-audio.fr/boutique/<slug> (plugins, sons)
 // et mix.swell-audio.fr/instrumentales/<slug> (instrumentales).
+
+const saleEndFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" });
 
 export async function productMetadata(slug: string) {
   const product = await getProductBySlug(slug);
@@ -42,6 +47,25 @@ export function ProductPage({ slug, site }: { slug: Promise<string>; site: Site 
       </main>
       <Footer site={site} />
     </>
+  );
+}
+
+/** Rappel de l'abonnement sur la fiche d'un plugin, quand il est ouvert. */
+async function AllAccessNote({ productId }: { productId: string }) {
+  const settings = await getPublicSubscriptionSettings();
+  const from = lowestMonthlyCents(settings);
+  if (!settings.enabled || !from || settings.excludedProductIds.includes(productId)) return null;
+  return (
+    <Link
+      href="/abonnement"
+      className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-background/40 px-4 py-3 text-sm transition-colors hover:border-white/30"
+    >
+      <Crown size={18} className="shrink-0" />
+      <span>
+        Inclus dans <strong>{SUBSCRIPTION_NAME}</strong> avec tous les plugins Swell, dès {formatPrice(from)} par
+        mois{settings.trialDays > 0 ? ` · ${settings.trialDays} jours d'essai gratuit` : ""}.
+      </span>
+    </Link>
   );
 }
 
@@ -141,7 +165,14 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
           )}
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-surface p-5">
-            <p className="text-3xl font-bold tracking-tight">{formatPrice(product.priceCents)}</p>
+            <p>
+              <PriceTag priceCents={product.priceCents} compareAtCents={product.compareAtCents} size="lg" />
+            </p>
+            {product.compareAtCents && (
+              <p className="mt-1 text-sm font-medium text-foreground/90">
+                Prix promo{product.saleEndsAt ? ` jusqu'au ${saleEndFormat.format(product.saleEndsAt)}` : ""}
+              </p>
+            )}
             {product.installerMacFile || product.installerWinFile ? (
               <p className="mt-1 text-sm text-muted">
                 Installateur{" "}
@@ -182,6 +213,7 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
                   Téléchargement depuis ton espace après réception du paiement.
                   {product.type === "vst" && !!product.trialDays && " Essai : avec un compte gratuit, une fois par plugin."}
                 </p>
+                {product.type === "vst" && <AllAccessNote productId={product.id} />}
               </>
             )}
           </div>

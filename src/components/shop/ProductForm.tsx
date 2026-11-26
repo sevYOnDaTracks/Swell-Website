@@ -26,6 +26,8 @@ export type ProductFormValues = {
   slug: string;
   type: ProductType;
   priceCents: number;
+  salePriceCents: number | null;
+  saleEndsAt: Date | null;
   shortDescription: string;
   description: string;
   genres: string[];
@@ -47,6 +49,9 @@ export type ProductFormValues = {
   featured: boolean;
   trialDays: number | null;
 };
+
+/** Date au format du champ date (AAAA-MM-JJ), à l'heure de Paris. */
+const dateInputValue = (d: Date) => new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(d);
 
 const input =
   "mt-1.5 block w-full rounded-lg border border-white/10 bg-background/60 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted/50 focus:border-white/50 focus:ring-2 focus:ring-white/10";
@@ -150,6 +155,31 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
               className={input}
             />
           </label>
+        </div>
+
+        <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm font-medium">Prix promo (€)</span>
+            <input
+              name="salePrice"
+              inputMode="decimal"
+              defaultValue={product?.salePriceCents ? (product.salePriceCents / 100).toString().replace(".", ",") : ""}
+              placeholder="Vide = pas de promo"
+              className={input}
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">Fin de la promo</span>
+            <input
+              type="date"
+              name="saleEndsAt"
+              defaultValue={product?.saleEndsAt ? dateInputValue(product.saleEndsAt) : ""}
+              className={`${input} [color-scheme:dark]`}
+            />
+          </label>
+          <p className="text-xs text-muted sm:col-span-2">
+            Le prix normal s&apos;affiche barré à côté du prix promo, avec la remise en %. Sans date de fin, la promo dure jusqu&apos;à ce que tu vides le champ.
+          </p>
         </div>
 
         {hasCompatibility(type) && (

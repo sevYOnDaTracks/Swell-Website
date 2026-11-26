@@ -16,6 +16,25 @@ export function formatPrice(cents: number) {
   return cents === 0 ? "Gratuit" : euros.format(cents / 100);
 }
 
+type Priced = { priceCents: number; salePriceCents?: number | null; saleEndsAt?: Date | null };
+
+/** Vrai si le prix barré du produit est en cours (prix promo plus bas que le prix normal, pas encore terminé). */
+export function isOnSale(p: Priced, now = Date.now()) {
+  return p.salePriceCents != null && p.salePriceCents > 0 && p.salePriceCents < p.priceCents && (!p.saleEndsAt || p.saleEndsAt.getTime() > now);
+}
+
+/**
+ * Prix payé aujourd'hui. priceCents devient le prix réel (promo comprise) et compareAtCents le prix barré.
+ * Appliqué partout où un client voit ou paie un prix : catalogue, panier, commande.
+ */
+export function withSalePrice<T extends Priced>(p: T, now = Date.now()) {
+  const sale = isOnSale(p, now);
+  return { ...p, priceCents: sale ? p.salePriceCents! : p.priceCents, compareAtCents: sale ? p.priceCents : null, saleEndsAt: sale ? (p.saleEndsAt ?? null) : null };
+}
+
+/** Remise affichée sur un prix barré : « -20 % ». */
+export const saleBadge = (priceCents: number, compareAtCents: number) => `-${Math.round((1 - priceCents / compareAtCents) * 100)} %`;
+
 export const mediaUrl = (file: string) => `/media/${file}`;
 
 export const MAX_GALLERY_PHOTOS = 10;

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { inArray } from "drizzle-orm";
-import { AudioLines, ChevronRight, Download, FlaskConical, KeyRound, Music, Piano } from "lucide-react";
+import { AudioLines, ChevronRight, Crown, Download, FlaskConical, KeyRound, Music, Piano } from "lucide-react";
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatus";
@@ -16,6 +16,8 @@ import { getMyLicenses } from "@/lib/licenses";
 import { getMobileMoney, getPaypalEmail, getWero, getPendingOrders, getPurchases, getTransferDetails, orderSite } from "@/lib/orders";
 import { formatBytes, formatPrice, mediaUrl, productPath } from "@/lib/shop-format";
 import { requireUser } from "@/lib/session";
+import { SUBSCRIPTION_NAME, SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
+import { getSubscription, getSubscriptionSettings, hasAccess } from "@/lib/subscriptions";
 import { currentSite } from "@/lib/site-server";
 import { MIX_URL, SHOP_URL } from "@/lib/sites";
 
@@ -58,14 +60,22 @@ async function MyPluginsContent() {
   // Boutique : plugins, essais et sons. Mix : instrumentales. Chaque site ses commandes en attente.
   const site = await currentSite();
   const mix = site === "mix";
-  const [purchases, allPending, licenses] = await Promise.all([getPurchases(user.id), getPendingOrders(user.id), getMyLicenses(user.id)]);
+  const [purchases, allPending, licenses, sub, subSettings] = await Promise.all([
+    getPurchases(user.id),
+    getPendingOrders(user.id),
+    getMyLicenses(user.id),
+    mix ? null : getSubscription(user.id),
+    getSubscriptionSettings(),
+  ]);
   const pendingOrders = allPending.filter((o) => orderSite(o) === site);
 
   const licenseByProduct = new Map(licenses.flatMap((l) => (l.productId ? [[l.productId, l] as const] : [])));
   const plugins = mix ? [] : purchases.filter((p) => p.type === "vst");
   const sounds = purchases.filter((p) => (mix ? p.type === "instrumental" : p.type !== "vst" && p.type !== "instrumental"));
-  const trials = mix ? [] : licenses.filter((l) => l.trialEndsAt);
-  const trialIds = trials.flatMap((t) => (t.productId ? [t.productId] : []));
+  const trials = mix ? [] : licenses.filter((l) => l.trialEndsAt && !l.viaSubscription);
+  // Plugins de l'abonnement (ceux achetés à l'unité restent dans « Mes plugins » avec leur clé définitive).
+  const subLicenses = mix ? [] : licenses.filter((l) => l.viaSubscription && !(l.productId && subSettings.excludedProductIds.includes(l.productId)));
+  const trialIds = [...trials, ...subLicenses].flatMap((t) => (t.productId ? [t.productId] : []));
   const trialProducts = trialIds.length
     ? await db
         .select({
@@ -85,7 +95,9 @@ async function MyPluginsContent() {
   const now = new Date();
   const transfer = getTransferDetails();
   const paypalEmail = getPaypalEmail();
-  const nothing = plugins.length + sounds.length + trials.length + pendingOrders.length === 0;
+  const nothing = plugins.length + sounds.length + trials.length + subLicenses.length + pendingOrders.length === 0;
+  const subActive = !!sub && hasAccess(sub.state);
+  const showSubscription = !mix && !!sub && (sub.state !== "none" || subSettings.enabled);
 
   return (
     <DashboardShell
@@ -120,6 +132,75 @@ async function MyPluginsContent() {
                 </div>
               </div>
             ))}
+          </Card>
+        )}
+
+        {showSubscription && sub && (
+          <Card
+            title={SUBSCRIPTION_NAME}
+            action={
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs ${
+                  subActive ? (sub.state === "grace" ? "bg-amber-300 text-black" : "bg-white text-black") : "bg-white/5 text-muted"
+                }`}
+              >
+                {SUBSCRIPTION_STATE_LABELS[sub.state]}
+              </span>
+            }
+          >
+            {sub.state === "none" ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted">
+                  Tous les plugins Swell avec un seul abonnement prépayé
+                  {subSettings.trialDays > 0 ? `, à essayer ${subSettings.trialDays} jours gratuitement` : ""}.
+                </p>
+                <Link href="/abonnement" className={downloadButton}>
+                  <Crown size={15} /> Découvrir
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm">
+                    {sub.state === "trial" && `Essai gratuit jusqu'au ${longDate.format(sub.endsAt!)}.`}
+                    {sub.state === "active" && `Accès à tous les plugins jusqu'au ${longDate.format(sub.endsAt!)}.`}
+                    {sub.state === "grace" &&
+                      `Ton accès a pris fin le ${longDate.format(sub.endsAt!)}. Tes plugins marchent encore jusqu'au ${longDate.format(sub.accessEndsAt!)} : renouvelle-le pour ne pas les perdre.`}
+                    {sub.state === "expired" && `Ton accès a pris fin le ${longDate.format(sub.endsAt!)}. Prends un pass pour réactiver tes plugins.`}
+                  </p>
+                  <Link href="/abonnement#formules" className={downloadButton}>
+                    <Crown size={15} /> {sub.state === "trial" || sub.state === "expired" ? "M'abonner" : "Prolonger"}
+                  </Link>
+                </div>
+                {subLicenses.length > 0 && (
+                  <ul className="mt-4 space-y-2">
+                    {subLicenses.map((l) => {
+                      const p = trialProducts.find((tp) => tp.id === l.productId);
+                      return (
+                        <li key={l.id} className="rounded-xl border border-white/5 bg-background/40 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-4">
+                              <Cover file={p?.coverFile} size="sm" />
+                              <p className="truncate font-semibold">{l.productName}</p>
+                            </div>
+                            {subActive && p?.available ? (
+                              <DownloadChoice productId={p.id} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
+                            ) : p ? (
+                              <Link href={productPath(p)} className="rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/10">
+                                Acheter
+                              </Link>
+                            ) : null}
+                          </div>
+                          {subActive && (
+                            <LicenseKey licenseKey={l.key} maxActivations={l.maxActivations} activations={l.activations} revoked={!!l.revokedAt} />
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </>
+            )}
           </Card>
         )}
 
