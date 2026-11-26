@@ -3,7 +3,7 @@ import { createPrivateKey, createPublicKey, sign, type KeyObject } from "node:cr
 import { and, asc, count, countDistinct, desc, eq, gt, inArray, isNotNull, isNull, like, max, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { license, licenseActivation, product, shopOrder, shopOrderItem, user } from "@/db/schema";
-import { claimTrialMachine, ensureSubscriptionLicenses, isInSubscription, subscriptionLicenseWindow } from "./subscriptions";
+import { claimTrialMachine, ensureSubscriptionLicenses, subscriptionLicenseWindow } from "./subscriptions";
 
 // Licences des VST.
 //
@@ -242,11 +242,8 @@ export async function activateLicense(input: { key: string; product: string; mac
   if (row.license.revokedAt || row.banned) return fail(403, "revoked", "Cette licence a été désactivée. Contacte Swell si c'est une erreur.");
   // Date de fin : démo du plugin et/ou abonnement (la plus lointaine des deux). Aucune pour un plugin acheté.
   const trialEndsAt = row.license.trialEndsAt;
-  // Un plugin retiré de l'abonnement dans l'admin ne s'ouvre plus avec une clé d'abonnement.
-  const sub =
-    row.license.viaSubscription && (!row.license.productId || (await isInSubscription(row.license.productId)))
-      ? await subscriptionLicenseWindow(row.license.userId)
-      : null;
+  // Accès par les formules du client qui comprennent ce plugin (un plugin retiré d'une formule ne s'ouvre plus par elle).
+  const sub = row.license.viaSubscription && row.license.productId ? await subscriptionLicenseWindow(row.license.userId, row.license.productId) : null;
   const permanent = !trialEndsAt && !row.license.viaSubscription;
   const now = new Date();
   const fromSubscription = !!sub && (!trialEndsAt || sub.endsAt > trialEndsAt);

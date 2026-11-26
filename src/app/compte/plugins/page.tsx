@@ -16,7 +16,7 @@ import { getMyLicenses } from "@/lib/licenses";
 import { getMobileMoney, getPaypalEmail, getWero, getPendingOrders, getPurchases, getTransferDetails, orderSite } from "@/lib/orders";
 import { formatBytes, formatPrice, mediaUrl, productPath } from "@/lib/shop-format";
 import { requireUser } from "@/lib/session";
-import { SUBSCRIPTION_NAME, SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
+import { formulaIncludes, SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
 import { getSubscription, getSubscriptionSettings, hasAccess } from "@/lib/subscriptions";
 import { currentSite } from "@/lib/site-server";
 import { MIX_URL, SHOP_URL } from "@/lib/sites";
@@ -74,7 +74,11 @@ async function MyPluginsContent() {
   const sounds = purchases.filter((p) => (mix ? p.type === "instrumental" : p.type !== "vst" && p.type !== "instrumental"));
   const trials = mix ? [] : licenses.filter((l) => l.trialEndsAt && !l.viaSubscription);
   // Plugins de l'abonnement (ceux achetés à l'unité restent dans « Mes plugins » avec leur clé définitive).
-  const subLicenses = mix ? [] : licenses.filter((l) => l.viaSubscription && !(l.productId && subSettings.excludedProductIds.includes(l.productId)));
+  // Formules en cours (essai, actif ou marge) : elles ouvrent le téléchargement et les clés de leurs plugins.
+  const openFormulas = (sub?.formulas ?? []).filter((f) => hasAccess(f.state) && f.formula);
+  const pluginOpen = (productId: string | null) => !!productId && openFormulas.some((f) => formulaIncludes(f.formula!, productId));
+  const everHad = (sub?.formulas ?? []).flatMap((f) => (f.formula ? [f.formula] : []));
+  const subLicenses = mix ? [] : licenses.filter((l) => l.viaSubscription && !!l.productId && everHad.some((f) => formulaIncludes(f, l.productId!)));
   const trialIds = [...trials, ...subLicenses].flatMap((t) => (t.productId ? [t.productId] : []));
   const trialProducts = trialIds.length
     ? await db
@@ -96,8 +100,9 @@ async function MyPluginsContent() {
   const transfer = getTransferDetails();
   const paypalEmail = getPaypalEmail();
   const nothing = plugins.length + sounds.length + trials.length + subLicenses.length + pendingOrders.length === 0;
-  const subActive = !!sub && hasAccess(sub.state);
   const showSubscription = !mix && !!sub && (sub.state !== "none" || subSettings.enabled);
+  const stateStyle = (state: string) =>
+    state === "grace" ? "bg-amber-300 text-black" : state === "active" || state === "trial" ? "bg-white text-black" : "bg-white/5 text-muted";
 
   return (
     <DashboardShell
@@ -137,21 +142,13 @@ async function MyPluginsContent() {
 
         {showSubscription && sub && (
           <Card
-            title={SUBSCRIPTION_NAME}
-            action={
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs ${
-                  subActive ? (sub.state === "grace" ? "bg-amber-300 text-black" : "bg-white text-black") : "bg-white/5 text-muted"
-                }`}
-              >
-                {SUBSCRIPTION_STATE_LABELS[sub.state]}
-              </span>
-            }
+            title="Mon abonnement"
+            action={<span className={`rounded-full px-2.5 py-0.5 text-xs ${stateStyle(sub.state)}`}>{SUBSCRIPTION_STATE_LABELS[sub.state]}</span>}
           >
             {sub.state === "none" ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-muted">
-                  Tous les plugins Swell avec un seul abonnement prépayé
+                  Les plugins Swell en abonnement prépayé
                   {subSettings.trialDays > 0 ? `, à essayer ${subSettings.trialDays} jours gratuitement` : ""}.
                 </p>
                 <Link href="/abonnement" className={downloadButton}>
@@ -160,22 +157,33 @@ async function MyPluginsContent() {
               </div>
             ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm">
-                    {sub.state === "trial" && `Essai gratuit jusqu'au ${longDate.format(sub.endsAt!)}.`}
-                    {sub.state === "active" && `Accès à tous les plugins jusqu'au ${longDate.format(sub.endsAt!)}.`}
-                    {sub.state === "grace" &&
-                      `Ton accès a pris fin le ${longDate.format(sub.endsAt!)}. Tes plugins marchent encore jusqu'au ${longDate.format(sub.accessEndsAt!)} : renouvelle-le pour ne pas les perdre.`}
-                    {sub.state === "expired" && `Ton accès a pris fin le ${longDate.format(sub.endsAt!)}. Prends un pass pour réactiver tes plugins.`}
-                  </p>
-                  <Link href="/abonnement#formules" className={downloadButton}>
-                    <Crown size={15} /> {sub.state === "trial" || sub.state === "expired" ? "M'abonner" : "Prolonger"}
-                  </Link>
-                </div>
+                <ul className="space-y-2">
+                  {sub.formulas.map((f) => (
+                    <li key={f.formulaId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 font-semibold">
+                          {f.name}
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-normal ${stateStyle(f.state)}`}>{SUBSCRIPTION_STATE_LABELS[f.state]}</span>
+                        </p>
+                        <p className="text-sm text-muted">
+                          {f.state === "trial" && `Essai gratuit jusqu'au ${longDate.format(f.endsAt)}.`}
+                          {f.state === "active" && `Jusqu'au ${longDate.format(f.endsAt)}.`}
+                          {f.state === "grace" &&
+                            `Terminé le ${longDate.format(f.endsAt)}. Tes plugins marchent encore jusqu'au ${longDate.format(f.accessEndsAt)} : renouvelle pour ne pas les perdre.`}
+                          {f.state === "expired" && `Terminé le ${longDate.format(f.endsAt)}.`}
+                        </p>
+                      </div>
+                      <Link href="/abonnement#formules" className={downloadButton}>
+                        <Crown size={15} /> {f.state === "trial" || f.state === "expired" ? "M'abonner" : "Prolonger"}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
                 {subLicenses.length > 0 && (
                   <ul className="mt-4 space-y-2">
                     {subLicenses.map((l) => {
                       const p = trialProducts.find((tp) => tp.id === l.productId);
+                      const open = pluginOpen(l.productId);
                       return (
                         <li key={l.id} className="rounded-xl border border-white/5 bg-background/40 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -183,7 +191,7 @@ async function MyPluginsContent() {
                               <Cover file={p?.coverFile} size="sm" />
                               <p className="truncate font-semibold">{l.productName}</p>
                             </div>
-                            {subActive && p?.available ? (
+                            {open && p?.available ? (
                               <DownloadChoice productId={p.id} installers={{ mac: p.installerMacSize, win: p.installerWinSize }} />
                             ) : p ? (
                               <Link href={productPath(p)} className="rounded-lg border border-white/10 px-3 py-2 text-sm transition-colors hover:bg-white/10">
@@ -191,7 +199,7 @@ async function MyPluginsContent() {
                               </Link>
                             ) : null}
                           </div>
-                          {subActive && (
+                          {open && (
                             <LicenseKey licenseKey={l.key} maxActivations={l.maxActivations} activations={l.activations} revoked={!!l.revokedAt} />
                           )}
                         </li>

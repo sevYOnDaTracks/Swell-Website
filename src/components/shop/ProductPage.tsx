@@ -15,7 +15,7 @@ import { ProductReviews, RatingSummaryLink } from "@/components/reviews/ProductR
 import { JsonLd } from "@/components/JsonLd";
 import { pageMeta, productJsonLd, productUrl } from "@/lib/seo";
 import { getProductBySlug } from "@/lib/shop";
-import { lowestMonthlyCents, SUBSCRIPTION_NAME } from "@/lib/subscription-plans";
+import { cheapestFormulaFor, findFormula, formulaIncludes } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings } from "@/lib/subscriptions";
 import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
 import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
@@ -53,8 +53,9 @@ export function ProductPage({ slug, site }: { slug: Promise<string>; site: Site 
 /** Rappel de l'abonnement sur la fiche d'un plugin, quand il est ouvert. */
 async function AllAccessNote({ productId }: { productId: string }) {
   const settings = await getPublicSubscriptionSettings();
-  const from = lowestMonthlyCents(settings);
-  if (!settings.enabled || !from || settings.excludedProductIds.includes(productId)) return null;
+  // La formule la moins chère qui comprend ce plugin.
+  const best = settings.enabled ? cheapestFormulaFor(settings, productId) : null;
+  if (!best) return null;
   return (
     <Link
       href="/abonnement"
@@ -62,8 +63,12 @@ async function AllAccessNote({ productId }: { productId: string }) {
     >
       <Crown size={18} className="shrink-0" />
       <span>
-        Inclus dans <strong>{SUBSCRIPTION_NAME}</strong> avec tous les plugins Swell, dès {formatPrice(from)} par
-        mois{settings.trialDays > 0 ? ` · ${settings.trialDays} jours d'essai gratuit` : ""}.
+        Inclus dans l&apos;abonnement <strong>{best.formula.name}</strong>
+        {best.formula.allPlugins ? " avec tous les plugins Swell" : ""}, dès {formatPrice(best.monthly)} par mois
+        {settings.trialDays > 0 && formulaIncludes(findFormula(settings, settings.trialFormulaId) ?? best.formula, productId)
+          ? ` · ${settings.trialDays} jours d'essai gratuit`
+          : ""}
+        .
       </span>
     </Link>
   );

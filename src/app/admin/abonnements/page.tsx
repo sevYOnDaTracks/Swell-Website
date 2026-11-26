@@ -4,7 +4,7 @@ import { GiftSubscriptionForm, SubscriptionSettingsForm } from "@/components/adm
 import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
 import { requireAdmin } from "@/lib/session";
 import { formatPrice } from "@/lib/shop-format";
-import { SUBSCRIPTION_NAME, SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
+import { SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
 import { getAdminSubscribers, getSubscriptionRevenue30d, getSubscriptionSettings, getVstPlugins } from "@/lib/subscriptions";
 
 export const metadata = { title: "Abonnements — Swell" };
@@ -36,19 +36,21 @@ async function SubscriptionsAdminContent() {
     getVstPlugins(),
   ]);
   const countOf = (state: keyof typeof STATE_STYLES) => subscribers.filter((s) => s.state === state).length;
-  const trials = subscribers.filter((s) => s.trial > 0);
-  const converted = trials.filter((s) => s.convertedFromTrial).length;
+  const trialUsers = new Set(subscribers.filter((s) => s.trial).map((s) => s.userId));
+  const convertedUsers = new Set(subscribers.filter((s) => s.convertedFromTrial).map((s) => s.userId));
+  const trials = [...trialUsers];
+  const converted = convertedUsers.size;
 
   return (
     <DashboardShell
       user={admin}
       title="Abonnements"
-      subtitle={`${SUBSCRIPTION_NAME} : pass prépayés validés depuis les commandes, essai gratuit, jours offerts.`}
+      subtitle="Formules d'abonnement prépayées : pass validés depuis les commandes, essai gratuit, jours offerts."
     >
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-4">
           {[
-            ["Abonnés actifs", String(countOf("active"))],
+            ["Abonnements actifs", String(countOf("active"))],
             ["En essai", String(countOf("trial"))],
             ["À renouveler", String(countOf("grace"))],
             ["Pass payés (30 j)", `${Number(revenue.total) > 0 ? formatPrice(Number(revenue.total)) : "0 €"} · ${revenue.count}`],
@@ -82,9 +84,11 @@ async function SubscriptionsAdminContent() {
           ) : (
             <ul className="divide-y divide-white/5">
               {subscribers.map((s) => (
-                <li key={s.userId} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <li key={`${s.userId}:${s.formulaId}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{s.name}</p>
+                    <p className="truncate font-medium">
+                      {s.name} <span className="font-normal text-muted">· {s.formulaName}</span>
+                    </p>
                     <p className="truncate text-xs text-muted">
                       {s.email} · depuis le {date.format(s.since)}
                       {s.paid > 0 && ` · ${s.paid} pass payé${s.paid > 1 ? "s" : ""}`}
@@ -112,7 +116,7 @@ async function SubscriptionsAdminContent() {
           <Card title="Offrir des jours">
             <p className="mt-1 text-sm text-muted">Les jours s&apos;ajoutent à la suite de l&apos;accès en cours du client.</p>
             <div className="mt-4">
-              <GiftSubscriptionForm />
+              <GiftSubscriptionForm formulas={settings.formulas.map((f) => ({ id: f.id, name: f.name }))} />
             </div>
           </Card>
         </div>
