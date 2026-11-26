@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Geist, Geist_Mono, Unbounded } from "next/font/google";
+import { Suspense } from "react";
+import { PageViews } from "@/components/analytics/PageViews";
 import { EmailVerificationPrompt } from "@/components/auth/EmailVerificationPrompt";
 import { SHOP_URL } from "@/lib/sites";
 import { SHARE_IMAGE } from "@/lib/seo";
@@ -47,6 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         <EmailVerificationPrompt />
+        <Suspense>
+          <PageViews />
+        </Suspense>
       </body>
     </html>
   );

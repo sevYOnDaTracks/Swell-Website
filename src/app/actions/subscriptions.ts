@@ -11,6 +11,7 @@ import { getPaymentOptions, newOrderReference } from "@/lib/orders";
 import type { PayMethod } from "@/lib/payments";
 import { resolvePromo } from "@/lib/promos";
 import { slugify } from "@/lib/shop";
+import { recordOrder } from "@/lib/analytics";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin } from "@/lib/session";
 import {
   findFormula,
@@ -147,6 +148,7 @@ export async function createSubscriptionOrder(
   });
 
   if (coveredByPromo) await syncSubscriptionOrders(user.id);
+  await recordOrder(user.role, "/abonnement");
   after(() => sendOrderEmails(orderId, coveredByPromo ? "paid" : "created"));
   return { ok: true, reference, paid: coveredByPromo };
 }

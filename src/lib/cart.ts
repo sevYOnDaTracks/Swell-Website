@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { track } from "@/components/analytics/track";
 
 // Panier de la boutique, gardé dans le navigateur (localStorage) : il survit aux
 // rechargements, sans compte. Produits numériques : chaque produit au plus une fois.
@@ -52,7 +53,9 @@ export function useCart() {
     count: ids.length,
     has: (id: string) => ids.includes(id),
     add: (id: string) => {
-      if (!read().includes(id)) write([...read(), id]);
+      if (read().includes(id)) return;
+      write([...read(), id]);
+      track("cart");
     },
     remove: (id: string) => write(read().filter((v) => v !== id)),
     clear: () => write([]),
