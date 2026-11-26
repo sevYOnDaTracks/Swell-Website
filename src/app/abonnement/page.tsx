@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { Crown } from "lucide-react";
+import { FlaskConical } from "lucide-react";
+import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
-import { ProductCard } from "@/components/shop/ProductCard";
-import { SubscribeForm, type FormulaCard, type Viewer } from "@/components/subscription/SubscribeForm";
+import { PricingTable, type PricingFormula, type Viewer } from "@/components/subscription/PricingTable";
+import { subscriptionFaq } from "@/lib/content";
 import { getPaymentOptions } from "@/lib/orders";
 import { getCurrentUser } from "@/lib/session";
 import { getSubscribablePlugins } from "@/lib/shop";
@@ -14,7 +14,7 @@ import { getPublicSubscriptionSettings, getSubscription } from "@/lib/subscripti
 
 export const metadata = {
   title: `${SUBSCRIPTION_NAME} — les plugins Swell en formule prépayée`,
-  description: "Tous les plugins Swell avec un seul abonnement prépayé, sans engagement ni prélèvement automatique.",
+  description: "Les plugins Swell en abonnement prépayé : choisis ta formule, sans engagement ni prélèvement automatique.",
 };
 
 const longDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
@@ -24,99 +24,90 @@ export default function SubscriptionPage() {
     <>
       <Navbar />
       <main className="flex-1">
-        <Suspense fallback={<div className="mx-auto mt-16 h-64 max-w-6xl animate-pulse rounded-2xl bg-white/5" />}>
+        <Suspense fallback={<div className="mx-auto mt-16 h-64 max-w-6xl animate-pulse rounded-3xl bg-white/5" />}>
           <SubscriptionContent />
         </Suspense>
+        <Faq items={subscriptionFaq} />
       </main>
       <Footer />
     </>
   );
 }
 
+const STEPS = [
+  ["Choisis ta formule", "Un pass d'un mois ou d'un an, selon les plugins qu'il te faut."],
+  ["Paie avec ta référence", "PayPal, Wero, virement, Wave ou Orange Money, comme une commande."],
+  ["Tes plugins s'activent", "Dès que le paiement est vérifié : téléchargements et clés dans ton espace."],
+];
+
 async function SubscriptionContent() {
   const settings = await getPublicSubscriptionSettings();
   const formulas = visibleFormulas(settings);
-  // Plugins compris dans au moins une formule proposée.
-  const plugins = (await getSubscribablePlugins()).filter((p) => formulas.some((f) => formulaIncludes(f, p.id)));
   const prices = formulas.flatMap((f) => lowestMonthlyCents(settings, f) ?? []);
   const fromCents = prices.length ? Math.min(...prices) : null;
   const everything = formulas.some((f) => f.allPlugins);
+  const trialFormula = formulas.find((f) => f.id === settings.trialFormulaId);
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-white/5">
-        <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-16 sm:px-6">
-          <p className="inline-flex items-center gap-2 text-sm font-medium text-accent">
-            <Crown size={16} /> Abonnement
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">{SUBSCRIPTION_NAME}</h1>
-          <p className="mt-3 max-w-xl text-muted">
-            {everything ? "Tous les plugins Swell" : "Les plugins Swell"} avec un abonnement
-            {settings.enabled && fromCents ? `, dès ${formatPrice(fromCents)} par mois` : ""}. Prépayé, sans engagement et sans prélèvement automatique.
-          </p>
-          {settings.enabled && settings.trialDays > 0 && (
-            <p className="mt-4 inline-flex rounded-full border border-white/15 px-3 py-1 text-sm">{settings.trialDays} jours d&apos;essai gratuit</p>
+      <section className="mx-auto max-w-6xl px-4 pt-16 pb-12 text-center sm:px-6 sm:pt-20">
+        <h1 className="font-condensed text-6xl leading-[0.95] tracking-tight text-balance uppercase sm:text-7xl lg:text-[5.5rem]">
+          {everything ? (
+            <>
+              Tous tes plugins.
+              <br />
+              Un seul pass.
+            </>
+          ) : (
+            <>
+              Tes plugins.
+              <br />
+              En un pass.
+            </>
           )}
-        </div>
+        </h1>
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-foreground/85">
+          Prépayé, sans engagement et sans prélèvement automatique
+          {settings.enabled && fromCents ? `, dès ${formatPrice(fromCents)} par mois` : ""}. Tu prolonges quand tu veux.
+        </p>
+        {settings.enabled && settings.trialDays > 0 && trialFormula && (
+          <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-1.5 text-sm">
+            <FlaskConical size={15} /> {settings.trialDays} jours d&apos;essai gratuit sur {trialFormula.name}
+          </p>
+        )}
       </section>
 
-      <div id="formules" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-10 sm:px-6">
-        <Suspense fallback={<div className="h-80 animate-pulse rounded-2xl bg-white/5" />}>
-          <SubscribeSection />
+      <section id="formules" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-20 sm:px-6">
+        <Suspense fallback={<div className="h-[520px] animate-pulse rounded-3xl bg-white/5" />}>
+          <Pricing />
         </Suspense>
+      </section>
 
-        {plugins.length > 0 && (
-          <section className="mt-14">
-            <h2 className="text-xl font-semibold">
-              {plugins.length} plugin{plugins.length > 1 ? "s" : ""} compris
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              {formulas.length > 1 ? "Selon la formule choisie." : ""}
-              {everything ? " Chaque nouveau plugin Swell rejoint l'abonnement dès sa sortie." : ""}
-            </p>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {plugins.map((p) => (
-                <ProductCard key={p.id} product={{ ...p, id: undefined }} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="mt-14 grid gap-6 text-sm sm:grid-cols-3">
-          {[
-            ["Comment ça marche ?", "Tu choisis une formule et un pass d'un mois ou d'un an, et tu le paies comme une commande (PayPal, Wero, virement, Wave, Orange Money). Dès que le paiement est vérifié, les plugins de ta formule sont dans ton espace avec leur clé."],
-            ["Et à la fin du pass ?", "Rien n'est prélevé. Tu reçois un rappel quelques jours avant : prends un nouveau pass et les plugins continuent de marcher, sans rien réinstaller. Sinon, ils s'arrêtent simplement."],
-            ["Et si j'achète un plugin ?", "Un plugin acheté à l'unité est à toi pour toujours, abonnement ou pas. Sa clé devient définitive."],
-          ].map(([title, body]) => (
-            <div key={title} className="rounded-2xl border border-white/5 bg-surface p-5">
-              <h3 className="font-semibold">{title}</h3>
-              <p className="mt-2 leading-relaxed text-muted">{body}</p>
-            </div>
-          ))}
-        </section>
-      </div>
+      <section className="border-y border-white/5 bg-surface/40 py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-condensed text-5xl leading-none tracking-tight uppercase">Comment ça marche</h2>
+          <ol className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
+            {STEPS.map(([title, body], i) => (
+              <li key={title} className="border-t border-white/15 pt-5">
+                <p className="font-condensed text-3xl leading-none text-muted tabular-nums">{i + 1}</p>
+                <h3 className="mt-3 text-lg font-semibold">{title}</h3>
+                <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-muted">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
     </>
   );
 }
 
 /**
- * Partie liée au visiteur : son abonnement, l'essai et le paiement. Toujours rendue à la demande
- * (elle lit la session) : ouvrir ou fermer l'abonnement dans l'admin s'y voit tout de suite.
+ * Formules et paiement, liés au visiteur (son abonnement, l'essai). Toujours rendus à la demande
+ * (ils lisent la session) : ouvrir ou fermer l'abonnement dans l'admin s'y voit tout de suite.
  */
-async function SubscribeSection() {
+async function Pricing() {
   const user = await getCurrentUser();
   const settings = await getPublicSubscriptionSettings();
-  if (!settings.enabled) {
-    return (
-      <div className="rounded-2xl border border-dashed border-white/10 px-6 py-14 text-center">
-        <p className="font-medium">L&apos;abonnement arrive très bientôt</p>
-        <p className="mt-1 text-sm text-muted">En attendant, chaque plugin s&apos;achète à l&apos;unité et beaucoup ont une démo gratuite.</p>
-        <Link href="/boutique?type=vst" className="mt-5 inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-black hover:bg-neutral-200">
-          Voir les plugins
-        </Link>
-      </div>
-    );
-  }
   const sub = user ? await getSubscription(user.id) : null;
   const viewer: Viewer = {
     loggedIn: !!user,
@@ -124,9 +115,9 @@ async function SubscribeSection() {
     access: (sub?.formulas ?? []).map((f) => ({ formulaId: f.formulaId, name: f.name, state: f.state, endsLabel: longDate.format(f.endsAt) })),
   };
   const plugins = await getSubscribablePlugins();
-  const formulas: FormulaCard[] = visibleFormulas(settings).map((f) => ({
+  const formulas: PricingFormula[] = visibleFormulas(settings).map((f) => ({
     formula: f,
-    pluginNames: plugins.filter((p) => formulaIncludes(f, p.id)).map((p) => p.name),
+    plugins: plugins.filter((p) => formulaIncludes(f, p.id)).map((p) => ({ id: p.id, name: p.name, slug: p.slug, coverFile: p.coverFile })),
   }));
-  return <SubscribeForm settings={settings} formulas={formulas} payments={getPaymentOptions()} viewer={viewer} />;
+  return <PricingTable settings={settings} formulas={formulas} payments={getPaymentOptions()} viewer={viewer} />;
 }

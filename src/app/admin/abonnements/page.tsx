@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { GiftSubscriptionForm, SubscriptionSettingsForm } from "@/components/admin/SubscriptionAdmin";
-import { Card, DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
+import { and, countDistinct, eq, isNotNull } from "drizzle-orm";
+import { SubscriptionAdminPanel, type AdminStats, type AdminSubscriber } from "@/components/admin/SubscriptionAdmin";
+import { DashboardShell, DashboardSkeleton } from "@/components/dashboard/DashboardShell";
+import { db } from "@/db";
+import { shopOrder, shopOrderItem } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
-import { formatPrice } from "@/lib/shop-format";
-import { SUBSCRIPTION_STATE_LABELS } from "@/lib/subscription-plans";
 import { getAdminSubscribers, getSubscriptionRevenue30d, getSubscriptionSettings, getVstPlugins } from "@/lib/subscriptions";
 
 export const metadata = { title: "Abonnements — Swell" };
@@ -19,108 +19,52 @@ export default function SubscriptionsAdminPage() {
   );
 }
 
-const STATE_STYLES = {
-  none: "bg-white/5 text-muted",
-  trial: "bg-white/15 text-foreground",
-  active: "bg-white text-black",
-  grace: "bg-amber-300 text-black",
-  expired: "bg-white/5 text-muted",
-} as const;
-
 async function SubscriptionsAdminContent() {
   const admin = await requireAdmin();
-  const [settings, subscribers, revenue, plugins] = await Promise.all([
+  const [settings, subscribers, revenue, plugins, [pending]] = await Promise.all([
     getSubscriptionSettings(),
     getAdminSubscribers(),
     getSubscriptionRevenue30d(),
     getVstPlugins(),
+    // Pass commandés mais pas encore payés : à valider dans Commandes.
+    db
+      .select({ total: countDistinct(shopOrder.id) })
+      .from(shopOrder)
+      .innerJoin(shopOrderItem, eq(shopOrderItem.orderId, shopOrder.id))
+      .where(and(eq(shopOrder.status, "pending"), isNotNull(shopOrderItem.subscriptionDays))),
   ]);
-  const countOf = (state: keyof typeof STATE_STYLES) => subscribers.filter((s) => s.state === state).length;
   const trialUsers = new Set(subscribers.filter((s) => s.trial).map((s) => s.userId));
   const convertedUsers = new Set(subscribers.filter((s) => s.convertedFromTrial).map((s) => s.userId));
-  const trials = [...trialUsers];
-  const converted = convertedUsers.size;
+  const stats: AdminStats = {
+    active: subscribers.filter((s) => s.state === "active").length,
+    trial: subscribers.filter((s) => s.state === "trial").length,
+    grace: subscribers.filter((s) => s.state === "grace").length,
+    revenueCents: Number(revenue.total),
+    passCount: Number(revenue.count),
+    trials: trialUsers.size,
+    converted: convertedUsers.size,
+    pendingPasses: pending?.total ?? 0,
+  };
+  const rows: AdminSubscriber[] = subscribers.map((s) => ({
+    key: `${s.userId}:${s.formulaId}`,
+    name: s.name,
+    email: s.email,
+    formulaName: s.formulaName,
+    state: s.state,
+    endsLabel: date.format(s.endsAt),
+    sinceLabel: date.format(s.since),
+    paid: s.paid,
+    gifts: s.gifts,
+  }));
 
   return (
-    <DashboardShell
-      user={admin}
-      title="Abonnements"
-      subtitle="Formules d'abonnement prépayées : pass validés depuis les commandes, essai gratuit, jours offerts."
-    >
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-4">
-          {[
-            ["Abonnements actifs", String(countOf("active"))],
-            ["En essai", String(countOf("trial"))],
-            ["À renouveler", String(countOf("grace"))],
-            ["Pass payés (30 j)", `${Number(revenue.total) > 0 ? formatPrice(Number(revenue.total)) : "0 €"} · ${revenue.count}`],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-white/5 bg-surface p-4">
-              <p className="text-xs text-muted">{label}</p>
-              <p className="mt-1 text-xl font-semibold">{value}</p>
-            </div>
-          ))}
-        </div>
-        {trials.length > 0 && (
-          <p className="text-sm text-muted">
-            {trials.length} essai{trials.length > 1 ? "s" : ""} lancé{trials.length > 1 ? "s" : ""},{" "}
-            <strong className="text-foreground">
-              {converted} abonné{converted > 1 ? "s" : ""} ensuite
-            </strong>{" "}
-            ({Math.round((converted / trials.length) * 100)} %).
-          </p>
-        )}
-
-        <Card
-          title="Abonnés"
-          action={
-            <Link href="/admin/commandes?statut=pending" className="text-xs text-muted underline underline-offset-4 hover:text-foreground">
-              Pass à valider dans Commandes
-            </Link>
-          }
-        >
-          {subscribers.length === 0 ? (
-            <EmptyState>Personne n&apos;a encore d&apos;abonnement ni d&apos;essai.</EmptyState>
-          ) : (
-            <ul className="divide-y divide-white/5">
-              {subscribers.map((s) => (
-                <li key={`${s.userId}:${s.formulaId}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {s.name} <span className="font-normal text-muted">· {s.formulaName}</span>
-                    </p>
-                    <p className="truncate text-xs text-muted">
-                      {s.email} · depuis le {date.format(s.since)}
-                      {s.paid > 0 && ` · ${s.paid} pass payé${s.paid > 1 ? "s" : ""}`}
-                      {s.gifts > 0 && ` · ${s.gifts} cadeau${s.gifts > 1 ? "x" : ""}`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted">
-                      {s.state === "expired" ? "fini le" : "jusqu'au"} {date.format(s.endsAt)}
-                    </span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs ${STATE_STYLES[s.state]}`}>{SUBSCRIPTION_STATE_LABELS[s.state]}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <Card title="Réglages">
-            <div className="mt-4">
-              <SubscriptionSettingsForm settings={settings} plugins={plugins.map((p) => ({ id: p.id, name: p.name }))} />
-            </div>
-          </Card>
-          <Card title="Offrir des jours">
-            <p className="mt-1 text-sm text-muted">Les jours s&apos;ajoutent à la suite de l&apos;accès en cours du client.</p>
-            <div className="mt-4">
-              <GiftSubscriptionForm formulas={settings.formulas.map((f) => ({ id: f.id, name: f.name }))} />
-            </div>
-          </Card>
-        </div>
-      </div>
+    <DashboardShell user={admin} title="Abonnements" subtitle="Formules prépayées : les pass se valident depuis les commandes, comme un achat.">
+      <SubscriptionAdminPanel
+        settings={settings}
+        plugins={plugins.map((p) => ({ id: p.id, name: p.name, coverFile: p.coverFile }))}
+        subscribers={rows}
+        stats={stats}
+      />
     </DashboardShell>
   );
 }

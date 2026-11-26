@@ -62,6 +62,34 @@ export const faq = [
 ];
 
 // FAQ de la boutique (swell-audio.fr).
+// FAQ de la page /abonnement.
+export const subscriptionFaq = [
+  {
+    q: "Est-ce que je suis prélevé tous les mois ?",
+    a: "Non. Chaque pass est payé une fois, comme une commande. À la fin, rien n'est prélevé : tu reçois un rappel par email et tu choisis de prolonger ou non.",
+  },
+  {
+    q: "Que se passe-t-il à la fin de mon pass ?",
+    a: "Tu as quelques jours de marge pour renouveler. Si tu prends un nouveau pass, tes plugins se débloquent tout seuls au prochain lancement, sans rien réinstaller. Sinon, les plugins de l'abonnement s'arrêtent.",
+  },
+  {
+    q: "Je peux renouveler avant la fin ?",
+    a: "Oui. Le nouveau pass s'ajoute à la suite de ton accès en cours : tu ne perds aucun jour.",
+  },
+  {
+    q: "Je peux avoir plusieurs formules ?",
+    a: "Oui. Tu as accès aux plugins de toutes les formules que tu as en cours. Une nouvelle formule commence dès que son paiement est validé.",
+  },
+  {
+    q: "Et si j'achète un plugin à l'unité ?",
+    a: "Il est à toi pour toujours, abonnement ou pas : sa clé devient définitive.",
+  },
+  {
+    q: "Sur combien d'ordinateurs ?",
+    a: "Chaque plugin s'active sur 3 ordinateurs. Tu gères tes ordinateurs depuis ton espace.",
+  },
+];
+
 export const shopFaq = [
   {
     q: "Comment j'active un plugin ?",
