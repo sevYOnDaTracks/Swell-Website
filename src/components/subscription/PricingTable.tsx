@@ -1,15 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-import { ArrowRight, Check, FlaskConical, Loader2, Lock, Piano } from "lucide-react";
+import { ArrowRight, Check, FlaskConical, Loader2, Lock } from "lucide-react";
 import { checkSubscriptionPromo, createSubscriptionOrder, startAllAccessTrial } from "@/app/actions/subscriptions";
 import { askEmailVerification } from "@/components/auth/EmailVerificationPrompt";
 import { PaymentMethodPicker } from "@/components/cart/PaymentMethodPicker";
 import { isMobileMethod, METHOD_LABELS, METHOD_ORDER, type PayMethod, type PaymentOptions } from "@/lib/payments";
-import { formatPrice, mediaUrl } from "@/lib/shop-format";
+import { formatPrice } from "@/lib/shop-format";
+import { FormulaCard } from "./FormulaCard";
 import {
   enabledPlans,
   PLANS,
@@ -34,35 +34,6 @@ export type Viewer = {
 };
 
 const STATE_TEXT = { trial: "Essai en cours", active: "Actif", grace: "À renouveler", expired: "Terminé", none: "" } as const;
-
-/** Petites pochettes empilées des plugins d'une formule. */
-function CoverStack({ plugins, inverted }: { plugins: PricingPlugin[]; inverted: boolean }) {
-  const shown = plugins.slice(0, 6);
-  const rest = plugins.length - shown.length;
-  const ring = inverted ? "ring-white" : "ring-surface";
-  return (
-    <div className="flex items-center">
-      {shown.map((p, i) => (
-        <span key={p.id} className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-2 ring-2 ${ring} ${i > 0 ? "-ml-2.5" : ""}`} title={p.name}>
-          {p.coverFile ? (
-            <Image src={mediaUrl(p.coverFile)} alt="" fill sizes="40px" unoptimized className="object-cover" />
-          ) : (
-            <Piano size={16} className="absolute inset-0 m-auto text-white/60" />
-          )}
-        </span>
-      ))}
-      {rest > 0 && (
-        <span
-          className={`-ml-2.5 flex h-10 min-w-10 items-center justify-center rounded-lg px-1.5 text-xs font-semibold tabular-nums ring-2 ${ring} ${
-            inverted ? "bg-black text-white" : "bg-surface-2 text-foreground"
-          }`}
-        >
-          +{rest}
-        </span>
-      )}
-    </div>
-  );
-}
 
 /** Tableau des formules (bascule mois / an), puis l'étape de paiement de la formule choisie. */
 export function PricingTable({
@@ -99,9 +70,6 @@ export function PricingTable({
   const selected = formulas.find((f) => f.formula.id === selectedId);
   const canTrial = open && settings.trialDays > 0 && !viewer.trialUsed && viewer.access.length === 0;
   const bestSaving = Math.max(0, ...formulas.map((f) => yearlySaving(settings, f.formula)));
-  const saleEndLabel = settings.saleEndsAt
-    ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", timeZone: "Europe/Paris" }).format(new Date(settings.saleEndsAt))
-    : null;
   const current = viewer.access.filter((a) => a.state !== "expired");
 
   /** Pass affiché pour une formule : la durée choisie en haut, sinon celle qu'elle propose. */
@@ -182,125 +150,60 @@ export function PricingTable({
         </div>
       )}
 
-      <div className={`grid gap-4 ${formulas.length === 1 ? "mx-auto max-w-md" : formulas.length === 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+      <div className={`grid gap-4 ${formulas.length === 1 ? "mx-auto max-w-md" : formulas.length === 2 ? "mx-auto max-w-4xl md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`}>
         {formulas.map(({ formula: f, plugins }) => {
-          const p = shownPlan(f);
-          const cents = planPrice(settings, f, p);
-          const regular = planSalePrice(settings, f, p) ? planRegularPrice(f, p) : null;
-          const days = planDays(f, p);
-          const inv = f.highlighted;
           const mine = current.find((a) => a.formulaId === f.id);
           const isTrialFormula = canTrial && f.id === settings.trialFormulaId;
-          const muted = inv ? "text-black/60" : "text-muted";
+          const inv = f.highlighted;
           return (
-            <article
+            <FormulaCard
               key={f.id}
-              className={`relative flex flex-col rounded-3xl border p-6 sm:p-7 ${
-                inv ? "border-white bg-primary text-black" : "border-white/10 bg-surface"
-              } ${selectedId === f.id ? (inv ? "ring-4 ring-white/30" : "ring-2 ring-white/60") : ""}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="font-condensed text-4xl leading-none tracking-tight uppercase">{f.name}</h3>
-                {mine ? (
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${inv ? "bg-black text-white" : "bg-white text-black"}`}>Ta formule</span>
-                ) : (
-                  f.highlighted && <span className="rounded-full bg-black px-2.5 py-1 text-xs font-medium text-white">Le plus choisi</span>
-                )}
-              </div>
-              {f.description && <p className={`mt-2 text-sm leading-relaxed ${muted}`}>{f.description}</p>}
-
-              <div className="mt-6">
-                <p className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight tabular-nums">{formatPrice(cents)}</span>
-                  <span className={muted}>/ {PLANS[p].short}</span>
-                  {regular && <s className={`text-lg tabular-nums ${muted}`}>{formatPrice(regular)}</s>}
-                </p>
-                <p className={`mt-1.5 text-sm ${muted}`}>
-                  {days >= 60 ? `Soit ${formatPrice(Math.round((cents * 30) / days))} par mois · ` : ""}
-                  {days} jours d&apos;accès
-                  {p !== period && ` · pass ${PLANS[p].label} uniquement`}
-                  {regular && saleEndLabel ? ` · promo jusqu'au ${saleEndLabel}` : ""}
-                </p>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-2">
-                {open ? (
+              settings={settings}
+              formula={f}
+              plugins={plugins}
+              plan={shownPlan(f)}
+              mine={!!mine}
+              selected={selectedId === f.id}
+              cta={
+                open ? (
                   <button
                     type="button"
                     onClick={() => choose(f)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 font-medium transition-colors ${
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-4 font-semibold transition-colors ${
                       inv ? "bg-black text-white hover:bg-neutral-800" : "bg-primary text-black hover:bg-neutral-200"
                     }`}
                   >
                     {mine ? "Prolonger" : `Choisir ${f.name}`} <ArrowRight size={17} />
                   </button>
                 ) : (
-                  <span className={`inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-3.5 text-sm ${inv ? "border-black/20" : "border-white/15 text-muted"}`}>
+                  <span className={`inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-4 text-sm ${inv ? "border-black/20" : "border-white/15 text-muted"}`}>
                     <Lock size={15} /> Bientôt disponible
                   </span>
-                )}
-                {isTrialFormula && (
-                  <button
-                    type="button"
-                    onClick={onTrial}
-                    disabled={startingTrial}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-medium transition-colors disabled:opacity-50 ${
-                      inv ? "border-black/25 hover:bg-black/5" : "border-white/20 hover:bg-white/5"
-                    }`}
-                  >
-                    {startingTrial ? <Loader2 size={16} className="animate-spin" /> : <FlaskConical size={16} />}
-                    Essayer {settings.trialDays} jours gratuitement
-                  </button>
-                )}
-                {isTrialFormula && trialError && (
-                  <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
-                    {trialError}
-                  </p>
-                )}
-              </div>
-
-              <div className={`mt-7 border-t pt-6 ${inv ? "border-black/10" : "border-white/10"}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <CoverStack plugins={plugins} inverted={inv} />
-                  <p className="text-right text-sm font-medium">
-                    {plugins.length} plugin{plugins.length > 1 ? "s" : ""}
-                  </p>
-                </div>
-                <ul className="mt-5 space-y-2 text-sm">
-                  {f.allPlugins && (
-                    <li className="flex gap-2.5">
-                      <Check size={16} className="mt-0.5 shrink-0" /> Tous les plugins Swell, et les prochains dès leur sortie
-                    </li>
-                  )}
-                  {plugins.slice(0, f.allPlugins ? 3 : 5).map((pl) => (
-                    <li key={pl.id} className="flex gap-2.5">
-                      <Check size={16} className="mt-0.5 shrink-0" />
-                      <Link href={`/boutique/${pl.slug}`} className="underline-offset-4 hover:underline">
-                        {pl.name.replace(/^Swell\s+/, "")}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                {plugins.length > (f.allPlugins ? 3 : 5) && (
-                  <details className="group mt-2 text-sm">
-                    <summary className={`cursor-pointer list-none py-1 underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden ${muted}`}>
-                      <span className="group-open:hidden">Voir les {plugins.length} plugins</span>
-                      <span className="hidden group-open:inline">Masquer la liste</span>
-                    </summary>
-                    <ul className="mt-2 space-y-2">
-                      {plugins.slice(f.allPlugins ? 3 : 5).map((pl) => (
-                        <li key={pl.id} className="flex gap-2.5">
-                          <Check size={16} className="mt-0.5 shrink-0" />
-                          <Link href={`/boutique/${pl.slug}`} className="underline-offset-4 hover:underline">
-                            {pl.name.replace(/^Swell\s+/, "")}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            </article>
+                )
+              }
+              extra={
+                isTrialFormula ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onTrial}
+                      disabled={startingTrial}
+                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-medium transition-colors disabled:opacity-50 ${
+                        inv ? "border-black/25 hover:bg-black/5" : "border-white/20 hover:bg-white/5"
+                      }`}
+                    >
+                      {startingTrial ? <Loader2 size={16} className="animate-spin" /> : <FlaskConical size={16} />}
+                      Essayer {settings.trialDays} jours gratuitement
+                    </button>
+                    {trialError && (
+                      <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                        {trialError}
+                      </p>
+                    )}
+                  </>
+                ) : null
+              }
+            />
           );
         })}
       </div>
