@@ -194,9 +194,145 @@ function SlideEditor({ value, onChange, products }: { value: Slide; onChange: (v
   );
 }
 
+/** Réglages du grand bandeau campagne. */
+function CampaignEditor({
+  value: c,
+  set,
+}: {
+  value: HomeInput["campaign"];
+  set: <K extends keyof HomeInput["campaign"]>(k: K, v: HomeInput["campaign"][K]) => void;
+}) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, startUpload] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const offers = [0, 1, 2].map((i) => c.offers[i] ?? "");
+  const setOffer = (i: number, v: string) => set("offers", offers.map((o, k) => (k === i ? v : o)));
+
+  function upload(file: File) {
+    setUploadError(null);
+    const data = new FormData();
+    data.set("image", file);
+    startUpload(async () => {
+      const result = await uploadHomeImage(data);
+      if ("error" in result) return setUploadError(result.error);
+      set("imageFile", result.file);
+    });
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="font-medium">Grand titre</span>
+            <input value={c.title} onChange={(e) => set("title", e.target.value)} maxLength={40} placeholder="Black Friday" className={field} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Pastille au-dessus du titre</span>
+            <input value={c.subtitle} onChange={(e) => set("subtitle", e.target.value)} maxLength={40} placeholder="C'est parti !" className={field} />
+          </label>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <label className="block text-sm">
+            <span className="font-medium">Ligne au-dessus du prix</span>
+            <input value={c.lead} onChange={(e) => set("lead", e.target.value)} maxLength={60} placeholder="27 plugins à" className={field} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Prix géant</span>
+            <input value={c.price} onChange={(e) => set("price", e.target.value)} maxLength={14} placeholder="9,99 €" className={field} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Après le prix</span>
+            <input value={c.priceNote} onChange={(e) => set("priceNote", e.target.value)} maxLength={20} placeholder="chacun" className={field} />
+          </label>
+        </div>
+        <div>
+          <p className="text-sm font-medium">Offres sous le prix (facultatif)</p>
+          <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+            {offers.map((o, i) => (
+              <input
+                key={i}
+                aria-label={`Offre ${i + 1}`}
+                value={o}
+                onChange={(e) => setOffer(i, e.target.value)}
+                maxLength={40}
+                placeholder={["3 plugins pour 24 €", "6 plugins pour 45 €", ""][i] || "Offre"}
+                className={`${field} mt-0`}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_170px]">
+          <label className="block text-sm">
+            <span className="font-medium">Texte du bouton</span>
+            <input value={c.ctaLabel} onChange={(e) => set("ctaLabel", e.target.value)} maxLength={30} className={field} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Lien du bouton</span>
+            <input value={c.href} onChange={(e) => set("href", e.target.value)} placeholder="/boutique" className={field} />
+          </label>
+          <label className="block text-sm">
+            <span className="font-medium">Fin</span>
+            <input type="date" value={c.endsAt} onChange={(e) => set("endsAt", e.target.value)} className={`${field} [color-scheme:dark]`} />
+          </label>
+        </div>
+        <label className="block text-sm">
+          <span className="font-medium">Conditions (en petit sous le bouton)</span>
+          <input value={c.fineprint} onChange={(e) => set("fineprint", e.target.value)} maxLength={240} placeholder="Offre valable jusqu'au 1er décembre, hors abonnements." className={field} />
+        </label>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm font-medium">Fond</p>
+          <div className="relative mt-1.5 aspect-[16/9] overflow-hidden rounded-xl border border-white/10 bg-black">
+            {c.imageFile && <Image src={mediaUrl(c.imageFile)} alt="" fill sizes="400px" unoptimized className="object-cover opacity-40" />}
+            <div className="relative flex h-full flex-col items-center justify-center px-3 text-center">
+              <p className="font-condensed text-3xl leading-none uppercase">{c.title || "Titre"}</p>
+              {c.price && (
+                <p className="mt-1 font-condensed text-5xl leading-none">{c.price}</p>
+              )}
+              <span className="mt-2 rounded bg-primary px-3 py-1 text-[11px] font-medium text-black">
+                {c.ctaLabel || "Voir la promo"}
+              </span>
+            </div>
+            {c.imageFile && (
+              <button type="button" onClick={() => set("imageFile", null)} aria-label="Retirer l'image de fond" className="absolute top-2 right-2 rounded-full bg-black/70 p-1.5 text-white hover:bg-black">
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) upload(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5 disabled:opacity-50"
+          >
+            {uploading ? <Loader2 size={15} className="animate-spin" /> : <ImagePlus size={15} />} {c.imageFile ? "Changer l'image" : "Envoyer une image de fond"}
+          </button>
+          <p className="mt-1 text-xs text-muted">Sans image : une mosaïque des visuels de tes plugins, en noir et blanc et très discrète. Image large conseillée (1920 × 1080).</p>
+          {uploadError && <p className="mt-1 text-sm text-red-400">{uploadError}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Bannière promo, annonces du premier écran et nouveautés de l'accueil. */
 export function HomeAdmin({ settings, products }: { settings: HomeSettings; products: AdminProduct[] }) {
   const initial: HomeInput = {
+    campaign: { ...settings.campaign, endsAt: dateValue(settings.campaign.endsAt) },
     bar: { ...settings.bar, endsAt: dateValue(settings.bar.endsAt) },
     slides: settings.slides.map((s) => ({ ...s, endsAt: dateValue(s.endsAt) })),
     newProductIds: settings.newProductIds,
@@ -208,6 +344,8 @@ export function HomeAdmin({ settings, products }: { settings: HomeSettings; prod
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [saving, startSave] = useTransition();
   const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+  const setCampaign = <K extends keyof HomeInput["campaign"]>(k: K, v: HomeInput["campaign"][K]) =>
+    setDraft((d) => ({ ...d, campaign: { ...d.campaign, [k]: v } }));
   const setBar = <K extends keyof HomeInput["bar"]>(k: K, v: HomeInput["bar"][K]) => setDraft((d) => ({ ...d, bar: { ...d.bar, [k]: v } }));
   const setSlide = (i: number, v: Slide) => setDraft((d) => ({ ...d, slides: d.slides.map((s, k) => (k === i ? v : s)) }));
   const byId = new Map(products.map((p) => [p.id, p]));
@@ -241,6 +379,14 @@ export function HomeAdmin({ settings, products }: { settings: HomeSettings; prod
           Voir l&apos;accueil <ExternalLink size={13} />
         </Link>
       </p>
+
+      <Section
+        title="Bandeau campagne"
+        description="Le grand bandeau tout en haut de l'accueil, au-dessus des annonces : Black Friday, sortie d'un plugin… Titre, prix géant, offres et un gros bouton."
+        action={<Switch checked={draft.campaign.enabled} onChange={(v) => setCampaign("enabled", v)} label="Afficher le bandeau campagne" />}
+      >
+        <CampaignEditor value={draft.campaign} set={setCampaign} />
+      </Section>
 
       <Section
         title="Bannière promo"

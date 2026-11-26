@@ -14,6 +14,7 @@ export async function getHomeSettings(): Promise<HomeSettings> {
   try {
     const raw = JSON.parse(row.value) as Partial<HomeSettings>;
     return {
+      campaign: { ...DEFAULT_HOME_SETTINGS.campaign, ...raw.campaign },
       bar: { ...DEFAULT_HOME_SETTINGS.bar, ...raw.bar },
       slides: Array.isArray(raw.slides) ? raw.slides : [],
       newProductIds: Array.isArray(raw.newProductIds) ? raw.newProductIds : [],
@@ -37,7 +38,7 @@ export async function getPublicHomeSettings(): Promise<HomeSettings> {
   cacheTag(HOME_TAG);
   const settings = await getHomeSettings();
   const now = Date.now();
-  const ends = [settings.bar.endsAt, ...settings.slides.map((s) => s.endsAt)]
+  const ends = [settings.campaign.endsAt, settings.bar.endsAt, ...settings.slides.map((s) => s.endsAt)]
     .flatMap((e) => (e ? [new Date(e).getTime()] : []))
     .filter((t) => t > now);
   if (ends.length > 0) {
@@ -47,7 +48,9 @@ export async function getPublicHomeSettings(): Promise<HomeSettings> {
     cacheLife("max");
   }
   const bar = settings.bar;
+  const campaign = settings.campaign;
   return {
+    campaign: { ...campaign, enabled: campaign.enabled && !!campaign.title.trim() && notEnded(campaign.endsAt, now) },
     bar: { ...bar, enabled: bar.enabled && !!bar.text.trim() && notEnded(bar.endsAt, now) },
     slides: settings.slides.filter((s) => s.enabled && s.title.trim() && notEnded(s.endsAt, now)),
     newProductIds: settings.newProductIds,
