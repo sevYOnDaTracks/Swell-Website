@@ -3,6 +3,7 @@ import { FlaskConical } from "lucide-react";
 import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
+import { AnnouncementBar } from "@/components/home/AnnouncementBar";
 import { PricingTable, type PricingFormula, type Viewer } from "@/components/subscription/PricingTable";
 import { subscriptionFaq } from "@/lib/content";
 import { getPaymentOptions } from "@/lib/orders";
@@ -22,6 +23,7 @@ const longDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long
 export default function SubscriptionPage() {
   return (
     <>
+      <AnnouncementBar />
       <Navbar />
       <main className="flex-1">
         <Suspense fallback={<div className="mx-auto mt-16 h-64 max-w-6xl animate-pulse rounded-3xl bg-white/5" />}>

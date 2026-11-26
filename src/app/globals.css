@@ -74,8 +74,19 @@ body {
   mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
 }
 
+/* Carrousel d'annonces de l'accueil : la barre de l'annonce en cours se remplit jusqu'à la suivante. */
+@keyframes hero-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.hero-progress {
+  animation: hero-progress linear forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .covers-scroll { animation: none; }
+  .hero-progress { animation: none; width: 100%; }
   .wave-bar { animation: none; }
   html { scroll-behavior: auto; }
 }

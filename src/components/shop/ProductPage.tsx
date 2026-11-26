@@ -5,6 +5,7 @@ import { ArrowLeft, Crown, Gauge, Monitor } from "lucide-react";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { FreeDownloadButton } from "@/components/shop/FreeDownloadButton";
 import { Navbar } from "@/components/landing/Navbar";
+import { AnnouncementBar } from "@/components/home/AnnouncementBar";
 import { Footer } from "@/components/landing/Footer";
 import { CollapsibleDescription } from "@/components/shop/CollapsibleDescription";
 import { ProductGallery } from "@/components/shop/ProductGallery";
@@ -39,6 +40,7 @@ export async function productMetadata(slug: string) {
 export function ProductPage({ slug, site }: { slug: Promise<string>; site: Site }) {
   return (
     <>
+      {site === "shop" && <AnnouncementBar />}
       <Navbar site={site} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
         <Suspense fallback={<div className="mt-6 aspect-[2/1] animate-pulse rounded-2xl bg-white/5" />}>

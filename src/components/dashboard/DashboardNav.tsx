@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AudioLines, Star, CalendarPlus, Crown, Clock, Disc3, Gauge, KeyRound, Music, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import { Megaphone, AudioLines, Star, CalendarPlus, Crown, Clock, Disc3, Gauge, KeyRound, Music, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
 import type { Site } from "@/lib/sites";
 
 // Boutique : plugins et achats, sans réservation. Mix : réservations et instrumentales, sans plugins.
@@ -26,6 +26,7 @@ const ADMIN_LINKS = [
   { href: "/admin/disponibilites", label: "Disponibilités", Icon: Clock },
   { href: "/admin/productions", label: "Productions", Icon: Disc3 },
   { href: "/admin/produits", label: "Boutique", Icon: ShoppingBag },
+  { href: "/admin/accueil", label: "Accueil et annonces", Icon: Megaphone },
   { href: "/admin/utilisateurs", label: "Utilisateurs", Icon: Users },
   { href: "/admin/commandes", label: "Commandes", Icon: Receipt },
   { href: "/admin/abonnements", label: "Abonnements", Icon: Crown },

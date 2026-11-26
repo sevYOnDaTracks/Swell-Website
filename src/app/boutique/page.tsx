@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PackageOpen } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
+import { AnnouncementBar } from "@/components/home/AnnouncementBar";
 import { Footer } from "@/components/landing/Footer";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { ShopFilters } from "@/components/shop/ShopFilters";
@@ -18,6 +19,7 @@ export const metadata = pageMeta({
 export default function ShopPage({ searchParams }: PageProps<"/boutique">) {
   return (
     <>
+      <AnnouncementBar />
       <Navbar />
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-white/5">
