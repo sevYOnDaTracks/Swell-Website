@@ -24,7 +24,7 @@ async function AdminOffersContent() {
       title="Services & tarifs"
       subtitle="Ce que tu modifies ici s'affiche directement sur l'accueil et la page de réservation."
     >
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card title="Services">
           <p className="-mt-2 mb-4 text-sm text-muted">
             Affichés dans la section « Services » de l&apos;accueil. La durée bloque le créneau à la réservation.

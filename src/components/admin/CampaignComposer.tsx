@@ -60,7 +60,7 @@ export function CampaignComposer({ audiences }: { audiences: AudienceOption[] })
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <div className="space-y-4">
         <label className="block text-sm">
           <span className="font-medium">Objet</span>
@@ -75,7 +75,7 @@ export function CampaignComposer({ audiences }: { audiences: AudienceOption[] })
           <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={10} className={`${field} resize-y`} />
           <span className="mt-1 block text-xs text-muted">Une ligne vide sépare les paragraphes. {"{prenom}"} est remplacé par le prénom de chaque destinataire.</span>
         </label>
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
           <label className="block text-sm">
             <span className="font-medium">Bouton (facultatif)</span>
             <input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} maxLength={40} placeholder="Découvrir" className={field} />

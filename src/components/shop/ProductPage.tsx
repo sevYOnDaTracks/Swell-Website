@@ -95,7 +95,7 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
       <Link href={listHref} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
         <ArrowLeft size={16} /> {beat ? "Instrumentales" : "Boutique"}
       </Link>
-      <article className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
+      <article className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         <ProductGallery product={product} />
 
         <div>

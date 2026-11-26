@@ -110,7 +110,7 @@ export async function DashboardShell({
       </header>
 
       <AdminFrame isAdmin={isAdmin} counts={counts}>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-10 sm:px-6">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
           {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
           <div className="mt-8">{children}</div>
@@ -144,7 +144,7 @@ export function DashboardSkeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 animate-pulse px-4 py-24 sm:px-6">
       <div className="h-8 w-64 rounded-lg bg-white/5" />
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+      <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-32 rounded-2xl bg-white/5" />
         ))}

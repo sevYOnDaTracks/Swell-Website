@@ -119,7 +119,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
       {savedId && <input type="hidden" name="id" value={savedId} />}
 
       <div className="space-y-5 rounded-2xl border border-white/5 bg-surface p-6">
@@ -128,7 +128,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           <input name="name" required defaultValue={product?.name} placeholder="Swell Drums Vol. 2" className={input} />
         </label>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">Type *</span>
             <select
@@ -157,7 +157,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           </label>
         </div>
 
-        <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">Prix promo (€)</span>
             <input
@@ -183,7 +183,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         </div>
 
         {hasCompatibility(type) && (
-          <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
             <fieldset>
               <legend className="text-sm font-medium">Plateformes</legend>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -222,7 +222,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
         )}
 
         {isInstrumental(type) && (
-          <div className="grid gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-medium">BPM</span>
               <input name="bpm" inputMode="numeric" defaultValue={product?.bpm ?? ""} placeholder="140" className={input} />
@@ -257,7 +257,7 @@ export function ProductForm({ product }: { product?: ProductFormValues }) {
           />
         </label>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">Genres / tags</span>
             <input name="genres" defaultValue={product?.genres.join(", ")} placeholder="trap, drill, afro" className={input} />

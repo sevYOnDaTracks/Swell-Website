@@ -150,7 +150,7 @@ export default function PluginHelpPage() {
               Double-clique sur l&apos;installateur et laisse-toi guider : il place le plugin au bon endroit tout seul. Tu
               n&apos;as aucun fichier à déplacer.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Platform title="Mac" Icon={Apple}>
                 <p>
                   Les plugins Swell ne sont pas encore validés par Apple : la première fois, macOS refuse d&apos;ouvrir

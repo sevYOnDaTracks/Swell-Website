@@ -107,7 +107,7 @@ export function ReviewForm({ productId, existing }: { productId: string; existin
           className={input}
         />
       </label>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block text-sm">
           DAW <span className="text-muted">(facultatif)</span>
           <select name="daw" defaultValue={existing?.daw ?? ""} className={input}>

@@ -295,7 +295,7 @@ function Checkout(props: {
   const total = price - discount;
 
   return (
-    <section aria-label="Paiement" className="mt-10 grid gap-6 rounded-3xl border border-white/15 bg-surface p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+    <section aria-label="Paiement" className="mt-10 grid grid-cols-1 gap-6 rounded-3xl border border-white/15 bg-surface p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
       <div>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -308,7 +308,7 @@ function Checkout(props: {
         </div>
 
         {plans.length > 1 && (
-          <div role="radiogroup" aria-label="Durée du pass" className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div role="radiogroup" aria-label="Durée du pass" className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {plans.map((p) => {
               const cents = planPrice(settings, f, p);
               const regular = planSalePrice(settings, f, p) ? planRegularPrice(f, p) : null;

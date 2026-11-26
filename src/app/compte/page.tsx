@@ -100,7 +100,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           {site === "mix" && (
           <Card title="Mes réservations" action={<span className="text-xs text-muted">{active.length} à venir</span>}>
@@ -283,7 +283,7 @@ async function AccountContent({ searchParams }: Pick<PageProps<"/compte">, "sear
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Link
                       href="/compte/plugins"
                       className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-neutral-200"

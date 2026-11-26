@@ -87,9 +87,9 @@ function SlideEditor({ value, onChange, products }: { value: Slide; onChange: (v
   }
 
   return (
-    <div className="grid gap-6 border-t border-white/10 px-5 py-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 border-t border-white/10 px-5 py-6 lg:grid-cols-2">
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
           <label className="block text-sm">
             <span className="font-medium">Pastille</span>
             <input value={value.badge} onChange={(e) => set("badge")(e.target.value)} maxLength={30} placeholder="Nouveau, -30 %…" className={field} />
@@ -104,7 +104,7 @@ function SlideEditor({ value, onChange, products }: { value: Slide; onChange: (v
           <textarea value={value.text} onChange={(e) => set("text")(e.target.value)} maxLength={220} rows={3} placeholder="Une ou deux phrases sous le titre." className={`${field} resize-none`} />
           <span className="mt-1 block text-right text-xs text-muted tabular-nums">{value.text.length} / 220</span>
         </label>
-        <div className="grid gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[160px_minmax(0,1fr)]">
           <label className="block text-sm">
             <span className="font-medium">Texte du bouton</span>
             <input value={value.ctaLabel} onChange={(e) => set("ctaLabel")(e.target.value)} maxLength={30} className={field} />
@@ -220,9 +220,9 @@ function CampaignEditor({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="font-medium">Grand titre</span>
             <input value={c.title} onChange={(e) => set("title", e.target.value)} maxLength={40} placeholder="Black Friday" className={field} />
@@ -232,7 +232,7 @@ function CampaignEditor({
             <input value={c.subtitle} onChange={(e) => set("subtitle", e.target.value)} maxLength={40} placeholder="C'est parti !" className={field} />
           </label>
         </div>
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label className="block text-sm">
             <span className="font-medium">Ligne au-dessus du prix</span>
             <input value={c.lead} onChange={(e) => set("lead", e.target.value)} maxLength={60} placeholder="27 plugins à" className={field} />
@@ -248,7 +248,7 @@ function CampaignEditor({
         </div>
         <div>
           <p className="text-sm font-medium">Offres sous le prix (facultatif)</p>
-          <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
+          <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {offers.map((o, i) => (
               <input
                 key={i}
@@ -262,7 +262,7 @@ function CampaignEditor({
             ))}
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_170px]">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_170px]">
           <label className="block text-sm">
             <span className="font-medium">Texte du bouton</span>
             <input value={c.ctaLabel} onChange={(e) => set("ctaLabel", e.target.value)} maxLength={30} className={field} />
@@ -393,7 +393,7 @@ export function HomeAdmin({ settings, products }: { settings: HomeSettings; prod
         description="Une ligne tout en haut de l'accueil, de la boutique, des fiches produits et des abonnements."
         action={<Switch checked={draft.bar.enabled} onChange={(v) => setBar("enabled", v)} label="Afficher la bannière" />}
       >
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.3fr)_170px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1.3fr)_170px]">
           <label className="block text-sm">
             <span className="font-medium">Texte</span>
             <input value={draft.bar.text} onChange={(e) => setBar("text", e.target.value)} maxLength={120} placeholder="-30 % sur tous les plugins jusqu'à dimanche" className={field} />
@@ -522,7 +522,7 @@ export function HomeAdmin({ settings, products }: { settings: HomeSettings; prod
           <span className="sr-only">Chercher un produit</span>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Chercher un produit" className={`${field} mt-0 pl-9`} />
         </label>
-        <div className="mt-3 grid max-h-[320px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 max-h-[320px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
           {shownProducts.map((p) => {
             const on = draft.newProductIds.includes(p.id);
             return (

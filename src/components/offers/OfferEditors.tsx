@@ -175,7 +175,7 @@ function ServiceFields({ s }: { s?: ServiceRow }) {
   return (
     <>
       {s && <input type="hidden" name="id" value={s.id} />}
-      <div className="grid gap-4 sm:grid-cols-[1fr_160px_120px_120px]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px_120px_120px]">
         <label className="block text-sm font-medium">
           Nom
           <input name="name" required defaultValue={s?.name} placeholder="Mixing & Mastering" className={input} />
@@ -278,7 +278,7 @@ function PlanFields({ p, services }: { p?: PlanRow; services: ServiceRow[] }) {
   return (
     <>
       {p && <input type="hidden" name="id" value={p.id} />}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <label className="block text-sm font-medium">
           Nom
           <input name="name" required defaultValue={p?.name} placeholder="Mix + Master" className={input} />

@@ -25,7 +25,7 @@ export function PromoManager({ promos }: { promos: AdminPromo[] }) {
   return (
     <div className="space-y-4">
       <form
-        className="grid gap-3 rounded-2xl border border-white/5 bg-surface p-5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_0.8fr_0.8fr_1fr_auto] lg:items-end"
+        className="grid grid-cols-1 gap-3 rounded-2xl border border-white/5 bg-surface p-5 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_0.8fr_0.8fr_1fr_auto] lg:items-end"
         onSubmit={(e) => {
           e.preventDefault();
           const form = e.currentTarget;

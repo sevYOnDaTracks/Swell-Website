@@ -82,7 +82,7 @@ export function SupportForm({
           Connecté en tant que <span className="text-foreground">{viewer.name}</span> ({viewer.email}). La réponse arrive dans ton espace et par email.
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="font-medium">Ton nom</span>
             <input name="name" required maxLength={80} autoComplete="name" className={field} />
@@ -96,7 +96,7 @@ export function SupportForm({
 
       <div>
         <p className="text-sm font-medium">Sujet</p>
-        <div role="radiogroup" className="mt-1.5 grid gap-2 sm:grid-cols-3">
+        <div role="radiogroup" className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {SUPPORT_SUBJECTS.map((s) => (
             <label
               key={s.value}
@@ -113,7 +113,7 @@ export function SupportForm({
       </div>
 
       {(askProduct || (askOrder && viewer)) && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {askProduct && (
             <label className="block text-sm">
               <span className="font-medium">Plugin concerné</span>

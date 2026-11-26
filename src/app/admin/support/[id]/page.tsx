@@ -43,7 +43,7 @@ async function TicketAdminContent({ params }: Pick<PageProps<"/admin/support/[id
         <TicketStatusButton ticketId={ticket.id} closed={ticket.status === "closed"} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
           <TicketThread messages={messages} clientName={ticket.name} viewer="admin" />
           <div className="mt-6">

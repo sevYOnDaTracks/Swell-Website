@@ -130,7 +130,7 @@ function FormulaEditor({ value, onChange, plugins }: { value: FormulaInput; onCh
     set("includedProductIds")(on ? [...new Set([...value.includedProductIds, id])] : value.includedProductIds.filter((x) => x !== id));
 
   return (
-    <div className="grid gap-8 border-t border-white/10 px-5 py-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-1 gap-8 border-t border-white/10 px-5 py-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <div className="space-y-6">
         <div className="space-y-4">
           <label className="block text-sm">
@@ -232,7 +232,7 @@ function FormulaEditor({ value, onChange, plugins }: { value: FormulaInput; onCh
             Tout décocher
           </button>
         </div>
-        <div className="mt-3 grid max-h-[360px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 max-h-[360px] gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
           {shown.map((p) => {
             const on = value.includedProductIds.includes(p.id);
             return (
@@ -473,7 +473,7 @@ export function SubscriptionAdminPanel({
         {tab === "abonnes" && <Subscribers subscribers={subscribers} stats={stats} />}
 
         {tab === "reglages" && (
-          <div className="grid max-w-3xl gap-x-8 gap-y-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 max-w-3xl gap-x-8 gap-y-6 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="font-medium">Essai gratuit (jours)</span>
               <input inputMode="numeric" value={draft.trialDays} onChange={(e) => set("trialDays", e.target.value)} className={`${field} tabular-nums`} />
@@ -656,7 +656,7 @@ function GiftSubscriptionForm({ formulas }: { formulas: { id: string; name: stri
         <span className="font-medium">Email du compte</span>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@exemple.com" className={field} />
       </label>
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_120px]">
         <label className="block text-sm">
           <span className="font-medium">Formule</span>
           <select value={formulaId} onChange={(e) => setFormulaId(e.target.value)} className={`${field} [color-scheme:dark]`}>

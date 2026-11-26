@@ -40,7 +40,7 @@ async function OrderContent({ params }: Pick<PageProps<"/compte/commandes/[ref]"
         <ArrowLeft size={15} /> Retour à mon espace
       </Link>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card title="Détail" action={<OrderStatusBadge status={order.status} free={free} gift={gift} />}>
             <ul className="divide-y divide-white/5 text-sm">

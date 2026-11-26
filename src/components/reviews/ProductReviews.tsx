@@ -57,7 +57,7 @@ export async function ProductReviews({ productId, productName, slug, path }: Pro
       {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       <h2 className="text-2xl font-bold tracking-tight">Avis clients</h2>
 
-      <div className="mt-6 grid gap-10 lg:grid-cols-[320px_1fr]">
+      <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[320px_1fr]">
         <aside className="space-y-6">
           {summary.total > 0 && summary.average !== null ? (
             <div>
