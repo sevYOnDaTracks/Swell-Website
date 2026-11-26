@@ -40,6 +40,15 @@ export async function saveProduct(formData: FormData): Promise<Result> {
   if (!slug) return { error: "L'adresse (slug) est invalide." };
   if (!productTypes.includes(type)) return { error: "Choisis un type de produit." };
   if (!/^\d+(\.\d{1,2})?$/.test(price)) return { error: "Prix invalide (ex : 29 ou 29,99)." };
+  const salePrice = text(formData, "salePrice").replace(",", ".");
+  if (salePrice && !/^\d+(\.\d{1,2})?$/.test(salePrice)) return { error: "Prix promo invalide (ex : 3,99)." };
+  const salePriceCents = salePrice ? Math.round(Number(salePrice) * 100) : null;
+  if (salePriceCents !== null && (salePriceCents <= 0 || salePriceCents >= Math.round(Number(price) * 100))) {
+    return { error: "Le prix promo doit être plus bas que le prix normal, et supérieur à 0." };
+  }
+  const saleEnd = text(formData, "saleEndsAt");
+  const saleEndsAt = salePriceCents !== null && saleEnd ? new Date(`${saleEnd}T23:59:59`) : null;
+  if (saleEndsAt && Number.isNaN(saleEndsAt.getTime())) return { error: "Date de fin de promo invalide." };
   const bpm = isInstrumental(type) ? text(formData, "bpm") : "";
   if (bpm && !/^\d{2,3}$/.test(bpm)) return { error: "BPM invalide (ex : 140)." };
   // Le champ n'est envoyé que sur l'onglet YouTube : ailleurs, le lien ne bouge pas.
@@ -93,6 +102,8 @@ export async function saveProduct(formData: FormData): Promise<Result> {
     slug,
     type,
     priceCents: Math.round(Number(price) * 100),
+    salePriceCents,
+    saleEndsAt,
     shortDescription: text(formData, "shortDescription").slice(0, 160),
     description: text(formData, "description").slice(0, 5000),
     genres,

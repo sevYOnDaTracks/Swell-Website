@@ -133,7 +133,10 @@ export function CartView({
               <p className="text-xs text-muted">{productTypeLabels[p.type]}</p>
               {p.shortDescription && !drawer && <p className="mt-1 line-clamp-1 text-sm text-muted">{p.shortDescription}</p>}
             </div>
-            <p className="shrink-0 font-semibold">{formatPrice(p.priceCents)}</p>
+            <p className="shrink-0 text-right">
+              <span className="block font-semibold">{formatPrice(p.priceCents)}</span>
+              {p.compareAtCents && <s className="block text-xs text-muted">{formatPrice(p.compareAtCents)}</s>}
+            </p>
             <button
               type="button"
               onClick={() => cart.remove(p.id)}

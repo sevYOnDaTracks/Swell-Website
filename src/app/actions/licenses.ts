@@ -8,6 +8,7 @@ import { license, licenseActivation, product } from "@/db/schema";
 import { sendEmail, SITE_URL } from "@/lib/email";
 import { newLicenseKey } from "@/lib/licenses";
 import { hasPurchased } from "@/lib/orders";
+import { hasSubscriptionAccess } from "@/lib/subscriptions";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 /** Le client retire un de ses ordinateurs pour activer le plugin ailleurs. */
@@ -58,9 +59,11 @@ export async function startTrial(productId: string): Promise<TrialResult> {
   if (await hasPurchased(user.id, row.id)) return { error: `Tu possèdes déjà ${row.name} : il est dans ton espace.` };
 
   const [existing] = await db
-    .select({ trialEndsAt: license.trialEndsAt })
+    .select({ trialEndsAt: license.trialEndsAt, viaSubscription: license.viaSubscription })
     .from(license)
     .where(and(eq(license.userId, user.id), eq(license.productSlug, row.slug)));
+  // Déjà compris dans l'abonnement en cours : rien à lancer, le plugin est dans son espace.
+  if (existing?.viaSubscription && (await hasSubscriptionAccess(user.id))) return { ok: true };
   if (existing) {
     if (existing.trialEndsAt && existing.trialEndsAt > new Date()) return { ok: true }; // essai déjà en cours
     return { error: `Tu as déjà profité de l'essai de ${row.name}.` };

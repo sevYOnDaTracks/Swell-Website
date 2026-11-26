@@ -66,6 +66,20 @@ export default function CgvPage() {
           La compatibilité (système et formats) est indiquée sur chaque fiche produit ; il appartient au client de la
           vérifier avant l&apos;achat.
         </p>
+        <p>
+          <strong>Abonnement Swell All Access.</strong> L&apos;abonnement donne accès, pendant la durée du pass acheté (1 mois de
+          30 jours ou 1 an de 365 jours), au téléchargement et à l&apos;utilisation de tous les plugins Swell proposés dans
+          l&apos;abonnement, aux mêmes conditions de licence que ci-dessus. Le pass est prépayé et ne se renouvelle pas
+          automatiquement : aucun prélèvement n&apos;est effectué sans une nouvelle commande du client, qui peut donc arrêter
+          à tout moment en ne renouvelant pas. L&apos;accès commence à la validation du paiement ; un pass acheté avant la fin
+          de l&apos;accès en cours s&apos;ajoute à sa suite. À la fin de l&apos;accès, et après quelques jours de marge, les
+          plugins de l&apos;abonnement cessent de fonctionner, sauf ceux achetés à l&apos;unité, qui restent acquis.
+        </p>
+        <p>
+          Un essai gratuit peut être proposé aux nouveaux abonnés, une seule fois par compte et par ordinateur. Il ne se
+          transforme jamais en abonnement payant sans commande du client. Swell peut faire évoluer la liste des plugins
+          compris et le prix des pass ; un pass déjà payé reste valable au prix et pour la durée achetés.
+        </p>
       </Section>
 
       <Section title="7. Droit de rétractation">

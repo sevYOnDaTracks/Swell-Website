@@ -112,6 +112,7 @@ async function InstrumentalList({ searchParams }: Pick<PageProps<"/instrumentale
                 className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold transition-colors hover:bg-white/5"
               >
                 {formatPrice(p.priceCents)}
+                {p.compareAtCents && <s className="ml-1.5 text-xs font-normal text-muted">{formatPrice(p.compareAtCents)}</s>}
               </Link>
               {p.downloadFile && <QuickAddButton productId={p.id} name={p.name} variant="inline" />}
             </li>

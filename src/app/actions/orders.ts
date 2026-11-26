@@ -9,6 +9,8 @@ import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaymentOptions, hasPurchased, newOrderReference } from "@/lib/orders";
 import type { PayMethod } from "@/lib/payments";
 import { resolvePromo } from "@/lib/promos";
+import { withSalePrice } from "@/lib/shop-format";
+import { syncSubscriptionOrders } from "@/lib/subscriptions";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 const MAX_PENDING_ORDERS = 5;
@@ -50,7 +52,9 @@ export async function createOrder(
   const wanted = [...new Set(productIds.filter((id) => typeof id === "string"))].slice(0, 50);
   if (wanted.length === 0) return { error: "Ton panier est vide." };
 
-  const rows = await db.select().from(product).where(and(inArray(product.id, wanted), eq(product.published, true)));
+  // Prix relus en base, prix barré en cours compris : c'est le prix payé qui est gardé sur la commande.
+  const now = Date.now();
+  const rows = (await db.select().from(product).where(and(inArray(product.id, wanted), eq(product.published, true)))).map((p) => withSalePrice(p, now));
   const payable = rows.filter((p) => p.priceCents > 0);
 
   // Gratuits : ceux déjà possédés sont simplement retirés du panier, ceux sans fichier y restent.
@@ -179,7 +183,9 @@ async function settleOrder(orderId: string, status: "paid" | "cancelled") {
     .update(shopOrder)
     .set({ status, paidAt: status === "paid" ? new Date() : null })
     .where(and(eq(shopOrder.id, orderId), eq(shopOrder.status, "pending")))
-    .returning({ id: shopOrder.id });
+    .returning({ id: shopOrder.id, userId: shopOrder.userId });
+  // Pass d'abonnement payé : la période d'accès est ajoutée tout de suite, avant l'email de confirmation.
+  if (updated.length > 0 && status === "paid") await syncSubscriptionOrders(updated[0].userId);
   if (updated.length > 0) after(() => sendOrderEmails(orderId, status));
   refresh();
 }

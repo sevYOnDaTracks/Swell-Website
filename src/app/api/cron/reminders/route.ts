@@ -3,8 +3,9 @@ import { db } from "@/db";
 import { booking } from "@/db/schema";
 import { addDays, parisNow } from "@/lib/booking";
 import { sendBookingEmails } from "@/lib/booking-emails";
+import { sendSubscriptionReminders } from "@/lib/subscription-emails";
 
-// Rappel la veille des sessions confirmées. Appelée chaque soir par le cron
+// Rappel la veille des sessions confirmées, et rappels de fin d'abonnement. Appelée chaque soir par le cron
 // du serveur avec l'en-tête Authorization: Bearer <CRON_SECRET>.
 export async function POST(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -22,5 +23,7 @@ export async function POST(request: Request) {
     await sendBookingEmails(id, "reminder");
     await db.update(booking).set({ reminderSentAt: new Date() }).where(eq(booking.id, id));
   }
-  return Response.json({ date: tomorrow, sent: due.length });
+  // Rappels de fin d'abonnement (Swell All Access).
+  const subscriptionReminders = await sendSubscriptionReminders();
+  return Response.json({ date: tomorrow, sent: due.length, subscriptionReminders });
 }

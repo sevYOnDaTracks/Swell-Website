@@ -13,7 +13,7 @@ export type Site = "shop" | "mix";
 export const isMixHost = (host: string | null | undefined) => !!host && host.toLowerCase().startsWith("mix.");
 
 // Pages propres à chaque site : ouvertes sur l'autre adresse, elles y renvoient.
-export const SHOP_ONLY_PATHS = ["/boutique"];
+export const SHOP_ONLY_PATHS = ["/boutique", "/abonnement"];
 export const MIX_ONLY_PATHS = ["/reserver", "/instrumentales"];
 
 export const matchesPath = (pathname: string, paths: string[]) => paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));

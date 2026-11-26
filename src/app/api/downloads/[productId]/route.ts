@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { product } from "@/db/schema";
 import { hasActiveTrial } from "@/lib/licenses";
 import { hasPurchased } from "@/lib/orders";
+import { hasSubscriptionAccess, isInSubscription } from "@/lib/subscriptions";
 import { openPrivateFile } from "@/lib/private-storage";
 import { getCurrentUser, hasConfirmedEmail } from "@/lib/session";
 
@@ -18,13 +19,16 @@ export async function GET(request: Request, ctx: RouteContext<"/api/downloads/[p
   if (!hasConfirmedEmail(user)) return new Response("Confirme ton adresse email pour télécharger.", { status: 403 });
 
   const { productId } = await ctx.params;
-  // Acheté, ou essai en cours (démo d'un VST).
-  if (user.role !== "admin" && !(await hasPurchased(user.id, productId)) && !(await hasActiveTrial(user.id, productId))) {
-    return new Response("Accès refusé", { status: 403 });
-  }
-
   const [row] = await db.select().from(product).where(eq(product.id, productId));
   if (!row) return new Response("Fichier introuvable", { status: 404 });
+
+  // Acheté, essai en cours (démo d'un VST), ou plugin compris dans l'abonnement en cours.
+  const allowed =
+    user.role === "admin" ||
+    (await hasPurchased(user.id, productId)) ||
+    (await hasActiveTrial(user.id, productId)) ||
+    (row.type === "vst" && row.published && (await isInSubscription(row.id)) && (await hasSubscriptionAccess(user.id)));
+  if (!allowed) return new Response("Accès refusé", { status: 403 });
   const os = new URL(request.url).searchParams.get("os");
   const choice =
     os === "mac" && row.installerMacFile
