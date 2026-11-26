@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { Suspense, useState } from "react";
 import { AudioLines, CircleHelp, Crown, Headset, Disc3, Gauge, LifeBuoy, LogIn, Menu, Plug, SlidersHorizontal, Tags, UserRound, X } from "lucide-react";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { CartLink } from "@/components/cart/CartLink";
@@ -51,6 +52,35 @@ function IconLink({
   );
 }
 
+type NavLink = { label: string; short?: string; href: string };
+
+/** Le lien de la page en cours (ou d'une sous-page, le plus précis l'emporte) ; les ancres ne s'allument pas. */
+function activeHref(links: NavLink[], pathname: string) {
+  return links
+    .filter((l) => !l.href.includes("#") && (pathname === l.href || pathname.startsWith(`${l.href}/`)))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+}
+
+function TextLinks({ links, pathname }: { links: NavLink[]; pathname: string }) {
+  const active = activeHref(links, pathname);
+  return links.map((link) => (
+    <li key={link.href}>
+      <Link
+        href={link.href}
+        aria-current={link.href === active ? "page" : undefined}
+        title={link.short ? link.label : undefined}
+        className={`rounded-lg px-3 py-2 text-sm transition-colors hover:text-foreground ${link.href === active ? "text-foreground" : "text-muted"}`}
+      >
+        {link.short ?? link.label}
+      </Link>
+    </li>
+  ));
+}
+
+function ActiveTextLinks({ links }: { links: NavLink[] }) {
+  return <TextLinks links={links} pathname={usePathname()} />;
+}
+
 export function Navbar({ site = "shop" }: { site?: Site }) {
   const navLinks = navLinksBySite[site];
   const [open, setOpen] = useState(false);
@@ -69,12 +99,18 @@ export function Navbar({ site = "shop" }: { site?: Site }) {
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Logo />
 
-        <ul className="hidden items-center gap-1 md:flex">
+        {/* Tablette et petit portable : icônes (place comptée). Ordinateur : les noms en toutes lettres. */}
+        <ul className="hidden items-center gap-1 md:flex xl:hidden">
           {navLinks.map((link) => (
             <li key={link.href}>
               <IconLink href={link.href} label={link.label} Icon={ICONS[link.href] ?? CircleHelp} />
             </li>
           ))}
+        </ul>
+        <ul className="hidden items-center gap-1 xl:flex">
+          <Suspense fallback={<TextLinks links={navLinks} pathname="" />}>
+            <ActiveTextLinks links={navLinks} />
+          </Suspense>
         </ul>
 
         <div className="hidden items-center gap-2 md:flex">
