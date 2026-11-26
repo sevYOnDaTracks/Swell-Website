@@ -1,10 +1,11 @@
 "use server";
 
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, ne } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/db";
-import { product, shopOrder, shopOrderItem, user as userTable } from "@/db/schema";
+import { license, product, shopOrder, shopOrderItem, subscriptionPeriod, user as userTable } from "@/db/schema";
+import { deleteProof } from "@/lib/proofs";
 import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaymentOptions, hasPurchased, newOrderReference } from "@/lib/orders";
 import type { PayMethod } from "@/lib/payments";
@@ -211,5 +212,52 @@ export async function cancelMyOrder(orderId: string): Promise<{ ok: true } | { e
   refresh();
   if (updated.length === 0) return { error: "Cette commande ne peut plus être annulée." };
   after(() => sendOrderEmails(orderId, "cancelled_by_client"));
+  return { ok: true };
+}
+
+/**
+ * Supprime une commande (tests, erreurs). Une commande payée ou offerte demande de retaper sa référence,
+ * et ce qu'elle donnait au client est retiré : la période d'abonnement de ce pass, et les clés de licence
+ * des produits qu'il n'a pas par une autre commande payée (les clés de démo et d'abonnement restent).
+ */
+export async function deleteOrder(orderId: string, typedReference: string): Promise<{ ok: true } | { error: string }> {
+  await requireAdmin();
+  const [order] = await db.select().from(shopOrder).where(eq(shopOrder.id, orderId));
+  if (!order) return { error: "Cette commande n'existe plus." };
+  const granted = order.status === "paid";
+  if (granted && typedReference.trim().toUpperCase() !== order.reference) return { error: `Retape la référence ${order.reference} pour confirmer.` };
+
+  const items = await db.select({ productId: shopOrderItem.productId }).from(shopOrderItem).where(eq(shopOrderItem.orderId, order.id));
+  const productIds = items.flatMap((i) => (i.productId ? [i.productId] : []));
+  // Produits que le client garde par une autre commande payée.
+  const kept = granted && productIds.length
+    ? await db
+        .selectDistinct({ productId: shopOrderItem.productId })
+        .from(shopOrderItem)
+        .innerJoin(shopOrder, eq(shopOrderItem.orderId, shopOrder.id))
+        .where(and(eq(shopOrder.userId, order.userId), eq(shopOrder.status, "paid"), ne(shopOrder.id, order.id), inArray(shopOrderItem.productId, productIds)))
+    : [];
+  const toRevoke = productIds.filter((id) => !kept.some((k) => k.productId === id));
+
+  db.transaction((tx) => {
+    if (granted) {
+      tx.delete(subscriptionPeriod).where(eq(subscriptionPeriod.orderId, order.id)).run();
+      if (toRevoke.length) {
+        tx.delete(license)
+          .where(
+            and(
+              eq(license.userId, order.userId),
+              inArray(license.productId, toRevoke),
+              eq(license.viaSubscription, false),
+              isNull(license.trialEndsAt),
+            ),
+          )
+          .run();
+      }
+    }
+    tx.delete(shopOrder).where(eq(shopOrder.id, order.id)).run();
+  });
+  await deleteProof(order.proofFile);
+  refresh();
   return { ok: true };
 }
