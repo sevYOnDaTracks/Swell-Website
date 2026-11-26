@@ -15,6 +15,7 @@ export type ProfileValues = {
   image: string | null;
   phone: string | null;
   birthDate: string | null;
+  marketing: boolean;
 };
 
 export function ProfileForm({ profile }: { profile: ProfileValues }) {
@@ -125,6 +126,14 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
           />
         </label>
       </div>
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-background/40 p-4">
+        <input type="checkbox" name="marketing" defaultChecked={profile.marketing} className="mt-0.5 h-4 w-4 accent-white" />
+        <span>
+          <span className="block text-sm font-medium">Recevoir les nouveautés et les promos par email</span>
+          <span className="block text-xs text-muted">Nouveaux plugins, mises à jour et offres. Un email de temps en temps, désinscription en un clic.</span>
+        </span>
+      </label>
 
       <div className="flex flex-wrap items-center gap-3">
         <button

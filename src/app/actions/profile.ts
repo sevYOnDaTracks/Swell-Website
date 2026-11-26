@@ -1,5 +1,6 @@
 "use server";
 
+import { receivesMarketing, setMarketingConsent } from "@/lib/marketing";
 import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
@@ -63,6 +64,9 @@ export async function updateProfile(formData: FormData): Promise<Result> {
     .update(user)
     .set({ name: name.slice(0, 80), phone, birthDate, image })
     .where(eq(user.id, me.id));
+  // Emails de nouveautés et de promos : la case suit ce que le client reçoit vraiment.
+  const wanted = formData.get("marketing") === "on";
+  if (wanted !== (await receivesMarketing(me.id))) await setMarketingConsent(me.id, wanted);
   refresh();
   return { ok: true };
 }

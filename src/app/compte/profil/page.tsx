@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Card, DashboardShell, DashboardSkeleton } from "@/components/dashboard/DashboardShell";
 import { PasswordForm } from "@/components/profile/PasswordForm";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { receivesMarketing } from "@/lib/marketing";
 import { db } from "@/db";
 import { account, user as userTable } from "@/db/schema";
 import { requireUser } from "@/lib/session";
@@ -30,6 +31,8 @@ async function ProfileContent() {
         image: userTable.image,
         phone: userTable.phone,
         birthDate: userTable.birthDate,
+        marketingConsentAt: userTable.marketingConsentAt,
+        marketingOptOutAt: userTable.marketingOptOutAt,
       })
       .from(userTable)
       .where(eq(userTable.id, me.id)),
@@ -39,12 +42,13 @@ async function ProfileContent() {
       .where(and(eq(account.userId, me.id), eq(account.providerId, "credential"))),
   ]);
 
+  const marketing = await receivesMarketing(me.id);
   return (
     <DashboardShell user={me} title="Mon profil" subtitle="Tes informations et la sécurité de ton compte.">
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card title="Informations personnelles">
-            <ProfileForm profile={profile} />
+            <ProfileForm profile={{ ...profile, marketing }} />
           </Card>
 
           <Card title="Mot de passe">
