@@ -1,11 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Check, Piano } from "lucide-react";
+import { Check, ChevronDown, Piano } from "lucide-react";
 import { formatPrice, mediaUrl } from "@/lib/shop-format";
 import { PLANS, planDays, planPrice, planRegularPrice, planSalePrice, type Formula, type Plan, type SubscriptionSettings } from "@/lib/subscription-plans";
 
-export type CardPlugin = { id: string; name: string; slug: string; coverFile: string | null };
+export type CardPlugin = { id: string; name: string; slug: string; coverFile: string | null; shortDescription: string; priceCents: number };
+
+/** Ce qu'il faut à une carte pour un produit : nom, visuel, phrase courte et prix à l'unité. */
+export const toCardPlugin = (p: CardPlugin): CardPlugin => ({
+  id: p.id,
+  name: p.name,
+  slug: p.slug,
+  coverFile: p.coverFile,
+  shortDescription: p.shortDescription,
+  priceCents: p.priceCents,
+});
 
 const short = (name: string) => name.replace(/^Swell\s+/, "");
 
@@ -40,8 +50,34 @@ export function FormulaCard({
   const days = planDays(f, plan);
   const muted = inv ? "text-black/60" : "text-muted";
   const line = inv ? "border-black/10" : "border-white/10";
-  const shown = plugins.slice(0, maxPlugins);
-  const rest = plugins.length - shown.length;
+  // Replier la liste ne vaut le coup que pour 3 plugins ou plus : en dessous, tout est affiché.
+  const cut = plugins.length > maxPlugins + 2 ? maxPlugins : plugins.length;
+  const shown = plugins.slice(0, cut);
+  const hidden = plugins.slice(cut);
+  const rest = hidden.length;
+  // Ce que coûteraient les mêmes plugins achetés un par un (prix normal).
+  const value = plugins.reduce((sum, p) => sum + p.priceCents, 0);
+
+  const item = (p: CardPlugin) => (
+    <li key={p.id}>
+      <Link href={`/boutique/${p.slug}`} className="group flex items-start gap-3.5">
+        <span className={`relative mt-0.5 h-11 w-11 shrink-0 overflow-hidden rounded-lg ${inv ? "bg-black/10" : "bg-surface-2"}`}>
+          {p.coverFile ? (
+            <Image src={mediaUrl(p.coverFile)} alt="" fill sizes="44px" unoptimized className="object-cover" />
+          ) : (
+            <Piano size={16} className="absolute inset-0 m-auto opacity-60" />
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 truncate font-medium underline-offset-4 group-hover:underline">{short(p.name)}</span>
+            <Check size={17} className="shrink-0" />
+          </span>
+          {p.shortDescription && <span className={`mt-0.5 line-clamp-2 text-sm leading-snug ${muted}`}>{p.shortDescription}</span>}
+        </span>
+      </Link>
+    </li>
+  );
 
   return (
     <article
@@ -81,29 +117,33 @@ export function FormulaCard({
 
       {f.description && <p className={`mt-6 text-sm leading-relaxed ${muted}`}>{f.description}</p>}
 
-      <ul className="mt-6 space-y-2.5">
-        {shown.map((p) => (
-          <li key={p.id}>
-            <Link href={`/boutique/${p.slug}`} className="group flex items-center gap-3.5">
-              <span className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-lg ${inv ? "bg-black/10" : "bg-surface-2"}`}>
-                {p.coverFile ? (
-                  <Image src={mediaUrl(p.coverFile)} alt="" fill sizes="40px" unoptimized className="object-cover" />
-                ) : (
-                  <Piano size={16} className="absolute inset-0 m-auto opacity-60" />
-                )}
-              </span>
-              <span className="min-w-0 flex-1 truncate font-medium underline-offset-4 group-hover:underline">{short(p.name)}</span>
-              <Check size={18} className="shrink-0" />
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {(rest > 0 || f.allPlugins) && (
-        <p className={`mt-4 text-sm ${muted}`}>
-          {rest > 0 ? `+ ${rest} autre${rest > 1 ? "s" : ""} plugin${rest > 1 ? "s" : ""}` : ""}
-          {f.allPlugins ? `${rest > 0 ? ", et" : "Et"} chaque nouveau plugin dès sa sortie` : ""}
-        </p>
+      {plugins.length > 0 && (
+        <div className={`mt-6 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t pt-5 ${line}`}>
+          <p className="font-semibold">
+            {plugins.length} plugin{plugins.length > 1 ? "s" : ""} compris
+          </p>
+          {value > cents && <p className={`text-sm ${muted}`}>Valeur à l&apos;unité : {formatPrice(value)}</p>}
+        </div>
       )}
+
+      <ul className="mt-4 space-y-3.5">{shown.map(item)}</ul>
+      {rest > 0 && (
+        <details className="group/more mt-3.5">
+          <summary
+            className={`flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors [&::-webkit-details-marker]:hidden ${
+              inv ? "border-black/15 hover:bg-black/5" : "border-white/10 hover:bg-white/5"
+            }`}
+          >
+            <span className="group-open/more:hidden">
+              Voir les {rest} autres plugins
+            </span>
+            <span className="hidden group-open/more:inline">Réduire la liste</span>
+            <ChevronDown size={16} className="transition-transform group-open/more:rotate-180" />
+          </summary>
+          <ul className="mt-3.5 space-y-3.5">{hidden.map(item)}</ul>
+        </details>
+      )}
+      {f.allPlugins && <p className={`mt-4 text-sm ${muted}`}>Et chaque nouveau plugin dès sa sortie.</p>}
     </article>
   );
 }

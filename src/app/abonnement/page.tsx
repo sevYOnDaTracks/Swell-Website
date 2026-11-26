@@ -4,6 +4,7 @@ import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
 import { AnnouncementBar } from "@/components/home/AnnouncementBar";
+import { toCardPlugin } from "@/components/subscription/FormulaCard";
 import { PricingTable, type PricingFormula, type Viewer } from "@/components/subscription/PricingTable";
 import { subscriptionFaq } from "@/lib/content";
 import { getPaymentOptions } from "@/lib/orders";
@@ -119,7 +120,7 @@ async function Pricing() {
   const plugins = await getSubscribablePlugins();
   const formulas: PricingFormula[] = visibleFormulas(settings).map((f) => ({
     formula: f,
-    plugins: plugins.filter((p) => formulaIncludes(f, p.id)).map((p) => ({ id: p.id, name: p.name, slug: p.slug, coverFile: p.coverFile })),
+    plugins: plugins.filter((p) => formulaIncludes(f, p.id)).map(toCardPlugin),
   }));
   return <PricingTable settings={settings} formulas={formulas} payments={getPaymentOptions()} viewer={viewer} />;
 }

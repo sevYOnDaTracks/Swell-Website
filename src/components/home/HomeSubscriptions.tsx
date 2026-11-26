@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Bell, CalendarCheck, FlaskConical } from "lucide-react";
-import { FormulaCard } from "@/components/subscription/FormulaCard";
+import { FormulaCard, toCardPlugin } from "@/components/subscription/FormulaCard";
 import { getSubscribablePlugins } from "@/lib/shop";
 import { enabledPlans, formulaIncludes, visibleFormulas } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings } from "@/lib/subscriptions";
@@ -42,7 +42,7 @@ export async function HomeSubscriptions() {
                 formula={f}
                 plan={plan}
                 maxPlugins={6}
-                plugins={plugins.filter((p) => formulaIncludes(f, p.id)).map((p) => ({ id: p.id, name: p.name, slug: p.slug, coverFile: p.coverFile }))}
+                plugins={plugins.filter((p) => formulaIncludes(f, p.id)).map(toCardPlugin)}
                 cta={
                   <Link
                     href="/abonnement#formules"
