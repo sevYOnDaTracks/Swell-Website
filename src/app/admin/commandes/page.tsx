@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Crown, Gift, ImageIcon } from "lucide-react";
 import { ListSearch, Pagination } from "@/components/admin/ListControls";
 import { DashboardShell, DashboardSkeleton, EmptyState } from "@/components/dashboard/DashboardShell";
+import { DeleteOrderButton } from "@/components/orders/DeleteOrderButton";
 import { OrderActions } from "@/components/orders/OrderActions";
 import { listHref, PAGE_SIZE, readPage, readParam } from "@/lib/admin-list";
 import { getAdminOrderCounts, getAdminOrders, getPaymentOptions } from "@/lib/orders";
@@ -192,7 +193,18 @@ async function OrdersContent({ searchParams }: Pick<PageProps<"/admin/commandes"
                   ) : (
                     o.status === "pending" && mobile && <p className="text-xs text-muted">Capture pas encore envoyée</p>
                   )}
-                  {o.status === "pending" && <OrderActions orderId={o.id} reference={o.reference} />}
+                  <div className="flex items-center gap-2 lg:justify-end">
+                    {o.status === "pending" && <OrderActions orderId={o.id} reference={o.reference} />}
+                    <DeleteOrderButton
+                      orderId={o.id}
+                      reference={o.reference}
+                      clientName={o.clientName}
+                      amount={o.method === "gift" ? "offerte" : formatPrice(o.totalCents)}
+                      items={o.items.map((i) => i.name)}
+                      status={o.status}
+                      gift={o.method === "gift"}
+                    />
+                  </div>
                 </div>
               </li>
             );
