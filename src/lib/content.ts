@@ -4,11 +4,11 @@
 import type { Site } from "./sites";
 
 // Menus des deux sites (voir src/lib/sites.ts). Aucun lien de l'un vers l'autre : seuls le compte et l'admin sont communs.
-export const navLinksBySite: Record<Site, { label: string; href: string }[]> = {
+export const navLinksBySite: Record<Site, { label: string; short?: string; href: string }[]> = {
   shop: [
-    { label: "Plugins & sons", href: "/boutique" },
+    { label: "Plugins & sons", short: "Plugins", href: "/boutique" },
     { label: "Abonnements", href: "/abonnement" },
-    { label: "Installer un plugin", href: "/boutique/aide" },
+    { label: "Installer un plugin", short: "Installation", href: "/boutique/aide" },
     { label: "Support", href: "/support" },
     { label: "FAQ", href: "/#faq" },
   ],
