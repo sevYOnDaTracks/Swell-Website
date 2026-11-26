@@ -1,7 +1,7 @@
 import { ShopHero } from "@/components/landing/ShopHero";
 import { getPublicHomeSettings } from "@/lib/home";
 import { getPublishedProducts } from "@/lib/shop";
-import { formatPrice, mediaUrl, productPath, saleBadge } from "@/lib/shop-format";
+import { formatPrice, formatPriceShort, mediaUrl, productPath, saleBadge } from "@/lib/shop-format";
 import { lowestMonthlyCents, visibleFormulas } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings } from "@/lib/subscriptions";
 import { HeroSlider, type HeroSlide } from "./HeroSlider";
@@ -53,7 +53,7 @@ export async function HomeHero() {
         id: "auto-subscription",
         badge: sub.trialDays > 0 ? `${sub.trialDays} jours gratuits` : "Abonnement",
         title: "Tous tes plugins. Un seul pass.",
-        text: `Choisis ta formule dès ${formatPrice(Math.min(...prices))} par mois. Prépayé, sans engagement, sans prélèvement automatique.`,
+        text: `Choisis ta formule dès ${formatPriceShort(Math.min(...prices))} par mois. Prépayé, sans engagement, sans prélèvement automatique.`,
         ctaLabel: "Voir les formules",
         href: "/abonnement",
         mode: "mosaic",

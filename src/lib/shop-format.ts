@@ -16,6 +16,13 @@ export function formatPrice(cents: number) {
   return cents === 0 ? "Gratuit" : euros.format(cents / 100);
 }
 
+const wholeEuros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+/** Comme formatPrice, sans « ,00 » pour un montant rond (« dès 4 € par mois »). */
+export function formatPriceShort(cents: number) {
+  return cents % 100 === 0 && cents !== 0 ? wholeEuros.format(cents / 100) : formatPrice(cents);
+}
+
 type Priced = { priceCents: number; salePriceCents?: number | null; saleEndsAt?: Date | null; id?: string; type?: string };
 
 /**

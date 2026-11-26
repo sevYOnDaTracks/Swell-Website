@@ -18,7 +18,7 @@ import { pageMeta, productJsonLd, productUrl } from "@/lib/seo";
 import { getProductBySlug } from "@/lib/shop";
 import { cheapestFormulaFor, findFormula, formulaIncludes } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings } from "@/lib/subscriptions";
-import { fileFormat, formatBytes, formatLabel, formatPrice, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
+import { fileFormat, formatBytes, formatLabel, formatPrice, formatPriceShort, isInstrumental, mediaUrl, platformLabel, productPath, productTypeLabels } from "@/lib/shop-format";
 import { MIX_URL, SHOP_URL, type Site } from "@/lib/sites";
 
 // Fiche produit, partagée par swell-audio.fr/boutique/<slug> (plugins, sons)
@@ -66,7 +66,7 @@ async function AllAccessNote({ productId }: { productId: string }) {
       <Crown size={18} className="shrink-0" />
       <span>
         Inclus dans l&apos;abonnement <strong>{best.formula.name}</strong>
-        {best.formula.allPlugins ? " avec tous les plugins Swell" : ""}, dès {formatPrice(best.monthly)} par mois
+        {best.formula.allPlugins ? " avec tous les plugins Swell" : ""}, dès {formatPriceShort(best.monthly)} par mois
         {settings.trialDays > 0 && formulaIncludes(findFormula(settings, settings.trialFormulaId) ?? best.formula, productId)
           ? ` · ${settings.trialDays} jours d'essai gratuit`
           : ""}

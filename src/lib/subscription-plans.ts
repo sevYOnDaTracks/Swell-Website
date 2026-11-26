@@ -121,9 +121,18 @@ export function planSalePrice(s: SubscriptionSettings, f: Formula, plan: Plan, n
 /** Prix payé aujourd'hui pour ce pass (promo comprise). */
 export const planPrice = (s: SubscriptionSettings, f: Formula, plan: Plan, now?: number) => planSalePrice(s, f, plan, now) ?? planRegularPrice(f, plan);
 
+/**
+ * Prix ramené au mois : divisé par le nombre de mois que couvre le pass (365 jours = 12 mois, 30 jours = 1 mois).
+ * Un pass annuel à 48 € donne donc 4 € par mois, et non 48 × 30 / 365 = 3,95 €.
+ */
+export function monthlyEquivalentCents(cents: number, days: number) {
+  const months = Math.max(1, Math.round(days / (365 / 12)));
+  return Math.round(cents / months);
+}
+
 /** Prix mensuel le plus bas d'une formule (« dès X € par mois »). */
 export function lowestMonthlyCents(s: SubscriptionSettings, f: Formula) {
-  const prices = enabledPlans(f).map((p) => Math.round((planPrice(s, f, p) * 30) / planDays(f, p)));
+  const prices = enabledPlans(f).map((p) => monthlyEquivalentCents(planPrice(s, f, p), planDays(f, p)));
   return prices.length ? Math.min(...prices) : null;
 }
 

@@ -10,7 +10,7 @@ import { subscriptionFaq } from "@/lib/content";
 import { getPaymentOptions } from "@/lib/orders";
 import { getCurrentUser } from "@/lib/session";
 import { getSubscribablePlugins } from "@/lib/shop";
-import { formatPrice } from "@/lib/shop-format";
+import { formatPrice, formatPriceShort } from "@/lib/shop-format";
 import { formulaIncludes, lowestMonthlyCents, SUBSCRIPTION_NAME, visibleFormulas } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings, getSubscription } from "@/lib/subscriptions";
 
@@ -71,7 +71,7 @@ async function SubscriptionContent() {
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-foreground/85">
           Prépayé, sans engagement et sans prélèvement automatique
-          {settings.enabled && fromCents ? `, dès ${formatPrice(fromCents)} par mois` : ""}. Tu prolonges quand tu veux.
+          {settings.enabled && fromCents ? `, dès ${formatPriceShort(fromCents)} par mois` : ""}. Tu prolonges quand tu veux.
         </p>
         {settings.enabled && settings.trialDays > 0 && trialFormula && (
           <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-1.5 text-sm">
