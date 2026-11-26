@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Megaphone, AudioLines, Star, CalendarPlus, Crown, Clock, Disc3, Gauge, KeyRound, Music, Plug, Receipt, Settings, ShoppingBag, Tags, TicketPercent, UserRound, Users } from "lucide-react";
+import { AudioLines, CalendarPlus, Gauge, Music, Plug, Settings, UserRound } from "lucide-react";
 import type { Site } from "@/lib/sites";
 
 // Boutique : plugins et achats, sans réservation. Mix : réservations et instrumentales, sans plugins.
@@ -21,25 +21,13 @@ const CLIENT_LINKS: Record<Site, { href: string; label: string; Icon: typeof Use
   ],
 };
 
-const ADMIN_LINKS = [
-  { href: "/admin", label: "Tableau de bord", Icon: Gauge },
-  { href: "/admin/disponibilites", label: "Disponibilités", Icon: Clock },
-  { href: "/admin/productions", label: "Productions", Icon: Disc3 },
-  { href: "/admin/produits", label: "Boutique", Icon: ShoppingBag },
-  { href: "/admin/accueil", label: "Accueil et annonces", Icon: Megaphone },
-  { href: "/admin/utilisateurs", label: "Utilisateurs", Icon: Users },
-  { href: "/admin/commandes", label: "Commandes", Icon: Receipt },
-  { href: "/admin/abonnements", label: "Abonnements", Icon: Crown },
-  { href: "/admin/avis", label: "Avis clients", Icon: Star },
-  { href: "/admin/licences", label: "Licences", Icon: KeyRound },
-  { href: "/admin/promos", label: "Codes promo", Icon: TicketPercent },
-  { href: "/admin/offres", label: "Services & tarifs", Icon: Tags },
-];
+// L'admin a sa propre barre latérale (AdminSidebar) : ici, un seul lien pour y aller.
+const ADMIN_LINK = { href: "/admin", label: "Administration", Icon: Gauge };
 
-/** Menu de l'espace connecté : icônes avec info-bulle, la page active en blanc. */
+/** Menu de l'espace connecté : icônes avec info-bulle, la page active en blanc. L'admin y a un lien vers son espace. */
 export function DashboardNav({ isAdmin, site }: { isAdmin: boolean; site: Site }) {
   const pathname = usePathname();
-  const isActive = (href: string) => (href === "/admin" || href === "/compte" ? pathname === href : pathname.startsWith(href));
+  const isActive = (href: string) => (href === "/compte" ? pathname === href : pathname.startsWith(href));
 
   const renderLinks = (links: (typeof CLIENT_LINKS)["shop"]) =>
     links.map(({ href, label, Icon }) => {
@@ -68,7 +56,7 @@ export function DashboardNav({ isAdmin, site }: { isAdmin: boolean; site: Site }
       {isAdmin && (
         <>
           <span aria-hidden className="mx-1.5 h-5 w-px bg-white/15" />
-          {renderLinks(ADMIN_LINKS)}
+          {renderLinks([ADMIN_LINK])}
         </>
       )}
     </div>

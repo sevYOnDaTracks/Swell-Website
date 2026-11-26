@@ -7,6 +7,10 @@ import { Logo } from "@/components/landing/Logo";
 import { currentSite } from "@/lib/site-server";
 import type { Site } from "@/lib/sites";
 import { Avatar } from "./Avatar";
+import { and, count, countDistinct, eq, isNotNull, notInArray } from "drizzle-orm";
+import { db } from "@/db";
+import { booking, shopOrder, shopOrderItem } from "@/db/schema";
+import { AdminFrame, type AdminCounts } from "./AdminSidebar";
 import { DashboardNav } from "./DashboardNav";
 import { SignOutButton } from "./SignOutButton";
 
@@ -24,6 +28,20 @@ const PUBLIC_LINKS: Record<Site, { href: string; label: string; Icon: typeof Sho
   ],
 };
 
+/** Ce qui attend une action de l'admin : demandes de séance, commandes et pass à valider. */
+async function adminCounts(): Promise<AdminCounts> {
+  const [[b], [o], [p]] = await Promise.all([
+    db.select({ n: count() }).from(booking).where(eq(booking.status, "pending")),
+    db.select({ n: count() }).from(shopOrder).where(and(eq(shopOrder.status, "pending"), notInArray(shopOrder.method, ["free", "gift"]))),
+    db
+      .select({ n: countDistinct(shopOrder.id) })
+      .from(shopOrder)
+      .innerJoin(shopOrderItem, eq(shopOrderItem.orderId, shopOrder.id))
+      .where(and(eq(shopOrder.status, "pending"), isNotNull(shopOrderItem.subscriptionDays))),
+  ]);
+  return { bookings: b?.n ?? 0, orders: o?.n ?? 0, passes: p?.n ?? 0 };
+}
+
 export async function DashboardShell({
   user,
   title,
@@ -40,12 +58,13 @@ export async function DashboardShell({
   const site = await currentSite();
   // Le lien principal vers le catalogue : la boutique de plugins, ou les instrumentales sur mix.
   const browseLink = PUBLIC_LINKS[site][1];
+  const counts = isAdmin ? await adminCounts() : { bookings: 0, orders: 0, passes: 0 };
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <CartDrawer browseHref={browseLink.href} />
       <header className="border-b border-white/5 bg-surface/60 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className={`mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6 ${isAdmin ? "max-w-none" : "max-w-6xl"}`}>
           <div className="flex items-center gap-4 lg:gap-6">
             <Logo />
             <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
@@ -89,11 +108,13 @@ export async function DashboardShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
-        <div className="mt-8">{children}</div>
-      </main>
+      <AdminFrame isAdmin={isAdmin} counts={counts}>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+          {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
+          <div className="mt-8">{children}</div>
+        </main>
+      </AdminFrame>
     </div>
   );
 }
