@@ -13,6 +13,7 @@ import { resolvePromo } from "@/lib/promos";
 import { getMassSale } from "@/lib/mass-sale";
 import { withSalePrice } from "@/lib/shop-format";
 import { syncSubscriptionOrders } from "@/lib/subscriptions";
+import { recordOrder } from "@/lib/analytics";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
 
 const MAX_PENDING_ORDERS = 5;
@@ -126,6 +127,7 @@ export async function createOrder(
     }
   });
 
+  await recordOrder(user.role, "/panier");
   after(() => sendOrderEmails(orderId, coveredByPromo ? "paid" : "created"));
   return { ok: true, doneIds: [...payable.map((p) => p.id), ...freeDoneIds] };
 }

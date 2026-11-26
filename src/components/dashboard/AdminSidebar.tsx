@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
+  ChartColumn,
   Clock,
   Crown,
   Disc3,
@@ -32,7 +33,13 @@ type Item = { href: string; label: string; Icon: typeof Gauge; count?: keyof Adm
 
 // Pages de l'admin, rangées par usage. Le compteur signale ce qui attend une action.
 const GROUPS: { title: string; items: Item[] }[] = [
-  { title: "Pilotage", items: [{ href: "/admin", label: "Tableau de bord", Icon: Gauge, count: "bookings" }] },
+  {
+    title: "Pilotage",
+    items: [
+      { href: "/admin", label: "Tableau de bord", Icon: Gauge, count: "bookings" },
+      { href: "/admin/statistiques", label: "Statistiques", Icon: ChartColumn },
+    ],
+  },
   {
     title: "Ventes",
     items: [

@@ -608,3 +608,29 @@ export const emailLog = sqliteTable(
   },
   (t) => [index("email_log_user_idx").on(t.userId), index("email_log_campaign_idx").on(t.campaignId)],
 );
+
+// Mesure d'audience maison, sans cookie : une ligne par page vue, ajout au panier ou commande passée.
+// « visitor » est une empreinte brouillée qui change chaque jour (on ne peut ni suivre ni retrouver quelqu'un).
+// Pas d'adresse IP ; lignes effacées au bout de 13 mois.
+export const analyticsKinds = ["view", "cart", "order"] as const;
+
+export const analyticsEvent = sqliteTable(
+  "analytics_event",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    kind: text("kind", { enum: analyticsKinds }).notNull(),
+    site: text("site", { enum: ["shop", "mix"] }).notNull(),
+    path: text("path").notNull(),
+    visitor: text("visitor").notNull(),
+    // Seulement à l'arrivée sur le site (page d'entrée) : Instagram, Google, Direct, Emails...
+    source: text("source"),
+    utmCampaign: text("utm_campaign"),
+    device: text("device", { enum: ["mobile", "tablet", "desktop"] }).notNull(),
+    country: text("country"),
+    day: text("day").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [index("analytics_day_kind_idx").on(t.day, t.kind), index("analytics_created_idx").on(t.createdAt)],
+);

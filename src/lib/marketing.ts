@@ -109,7 +109,17 @@ export async function getAudience(audience: string): Promise<Recipient[]> {
 
 export type Message = { subject: string; title: string; body: string; ctaLabel?: string | null; ctaHref?: string | null };
 
-const cta = (m: Message) => (m.ctaLabel && m.ctaHref ? { label: m.ctaLabel, href: m.ctaHref } : undefined);
+/** Lien du bouton, marqué pour la page Statistiques quand il mène vers le site (?utm_source=email). */
+function tagged(href: string, campaign?: string) {
+  if (!href.startsWith(SITE_URL)) return href;
+  const url = new URL(href);
+  url.searchParams.set("utm_source", "email");
+  url.searchParams.set("utm_medium", campaign ? "campagne" : "personnel");
+  if (campaign) url.searchParams.set("utm_campaign", campaign);
+  return url.toString();
+}
+
+const cta = (m: Message, campaign?: string) => (m.ctaLabel && m.ctaHref ? { label: m.ctaLabel, href: tagged(m.ctaHref, campaign) } : undefined);
 
 /** Email personnel à un compte (journalisé). */
 export async function sendDirect(to: Recipient, m: Message) {
@@ -143,7 +153,7 @@ export async function deliverCampaign(campaignId: string, recipients: Recipient[
       subject: personalize(m.subject, r.name),
       title: personalize(m.title, r.name),
       paragraphs: toParagraphs(personalize(m.body, r.name)),
-      cta: cta(m),
+      cta: cta(m, campaignId),
       unsubscribeUrl: unsubscribeUrl(r.id),
     });
     if (ok) sent += 1;

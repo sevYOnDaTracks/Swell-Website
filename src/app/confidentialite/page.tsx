@@ -1,6 +1,7 @@
 import { SHOP_URL } from "@/lib/sites";
 import { LegalPage, Section, V } from "@/components/legal/LegalPage";
 import { legal } from "@/lib/legal";
+import { StatsOptOut } from "@/components/analytics/StatsOptOut";
 
 export const metadata = { title: "Politique de confidentialité — Swell", alternates: { canonical: `${SHOP_URL}/confidentialite` } };
 
@@ -34,6 +35,7 @@ export default function ConfidentialitePage() {
             ton profil à tout moment.
           </li>
           <li>Sécuriser le site et prévenir les abus (intérêt légitime).</li>
+          <li>Mesurer l&apos;audience du site de façon anonyme, pour l&apos;améliorer (intérêt légitime, voir « Mesure d&apos;audience »).</li>
           <li>Respecter nos obligations comptables et fiscales (obligation légale).</li>
         </ul>
         <p>Aucune donnée n&apos;est vendue ni utilisée à des fins publicitaires.</p>
@@ -63,6 +65,21 @@ export default function ConfidentialitePage() {
           cookie publicitaire ou de mesure d&apos;audience n&apos;est déposé, c&apos;est pourquoi aucun bandeau de
           consentement n&apos;est affiché.
         </p>
+      </Section>
+
+      <Section title="Mesure d'audience">
+        <p>
+          Pour savoir combien de personnes visitent le site, d&apos;où elles arrivent et quelles pages elles regardent,
+          {" "}{legal.brand} utilise sa propre mesure d&apos;audience, hébergée sur son serveur. Elle ne dépose aucun cookie
+          et n&apos;enregistre pas ton adresse IP : une visite est reconnue seulement le temps d&apos;une journée, par une
+          empreinte brouillée qui ne permet pas de t&apos;identifier ni de te suivre sur d&apos;autres sites. Les données
+          servent uniquement à des statistiques, ne sont transmises à personne et sont effacées au bout de 13 mois.
+        </p>
+        <p className="mt-3">
+          Tu peux refuser d&apos;être compté. Ton choix est gardé dans ce navigateur. Si ton navigateur envoie le signal
+          « Global Privacy Control » ou « Ne pas me pister », tes visites ne sont jamais comptées.
+        </p>
+        <StatsOptOut />
       </Section>
 
       <Section title="Tes droits">
