@@ -11,10 +11,31 @@ import { db } from "@/db";
 import { product, productTypes } from "@/db/schema";
 import { fileFormat, formatBytes, formatPrice, mediaUrl, productTypeLabels, isOnSale } from "@/lib/shop-format";
 import { requireAdmin } from "@/lib/session";
+import { getMassSale } from "@/lib/mass-sale";
+import { MassSaleCard, type SaleProduct } from "@/components/admin/MassSaleCard";
 
 const saleEnd = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
 export const metadata = { title: "Produits — Swell" };
+
+/** Promo de masse : réglages, produits concernables (avec leur prix promo encore valable) et état. */
+async function massSaleOverview(all: (typeof product.$inferSelect)[]) {
+  const sale = await getMassSale();
+  const now = Date.now();
+  const saleProducts: SaleProduct[] = all
+    .filter((p) => p.published && p.priceCents > 0)
+    .map((p) => ({ id: p.id, name: p.name, type: p.type, priceCents: p.priceCents, coverFile: p.coverFile, ownSaleCents: isOnSale(p, now) ? p.salePriceCents : null }));
+  const starts = sale.startsAt ? new Date(sale.startsAt).getTime() : null;
+  const ends = sale.endsAt ? new Date(sale.endsAt).getTime() : null;
+  const saleStatus = !sale.enabled
+    ? { label: "Désactivée", running: false }
+    : ends !== null && ends <= now
+      ? { label: "Terminée", running: false }
+      : starts !== null && starts > now
+        ? { label: `Programmée le ${saleEnd.format(starts)}`, running: false }
+        : { label: ends !== null ? `En cours jusqu'au ${saleEnd.format(ends)}` : "En cours", running: true };
+  return { sale, saleProducts, saleStatus };
+}
 
 export default function AdminProductsPage({ searchParams }: PageProps<"/admin/produits">) {
   return (
@@ -40,9 +61,11 @@ async function AdminProductsContent({ searchParams }: Pick<PageProps<"/admin/pro
       (!state || (state === "published" ? p.published : state === "draft" ? !p.published : state === "nofile" ? !p.downloadFile : true)),
   );
   const products = matching.slice(offset, offset + PAGE_SIZE);
+  const { sale, saleProducts, saleStatus } = await massSaleOverview(all);
 
   return (
     <DashboardShell user={admin} title="Boutique" subtitle="Ajoute, modifie et publie tes VST, drum kits et packs.">
+      <MassSaleCard sale={sale} products={saleProducts} status={saleStatus} />
       <Card
         title={`Produits (${matching.length})`}
         action={

@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { product, productTypes, type ProductType } from "@/db/schema";
+import { getMassSale } from "./mass-sale";
 import { isOnSale, withSalePrice } from "./shop-format";
 
 // Le catalogue public est mis en cache et invalidé par updateTag(PRODUCTS_TAG)
@@ -19,19 +20,24 @@ export type ShopFilters = {
 };
 
 /**
- * Prix barrés appliqués au catalogue mis en cache. Tant qu'une promo court, le cache expire à sa fin :
- * le prix normal revient tout seul, sans action dans l'admin.
+ * Prix barrés (produit par produit et promo de masse) appliqués au catalogue mis en cache.
+ * Le cache expire au prochain changement (fin d'une promo, début ou fin de la promo de masse) :
+ * les prix changent tout seuls, sans action dans l'admin.
  */
-function applySales<T extends Parameters<typeof withSalePrice>[0]>(rows: T[]) {
+async function applySales<T extends Parameters<typeof withSalePrice>[0]>(rows: T[]) {
+  const mass = await getMassSale();
   const now = Date.now();
-  const ends = rows.flatMap((p) => (isOnSale(p, now) && p.saleEndsAt ? [p.saleEndsAt.getTime()] : []));
-  if (ends.length > 0) {
-    const seconds = Math.max(60, Math.ceil((Math.min(...ends) - now) / 1000));
+  const changes = rows.flatMap((p) => (isOnSale(p, now) && p.saleEndsAt ? [p.saleEndsAt.getTime()] : []));
+  if (mass.enabled) {
+    for (const d of [mass.startsAt, mass.endsAt]) if (d && new Date(d).getTime() > now) changes.push(new Date(d).getTime());
+  }
+  if (changes.length > 0) {
+    const seconds = Math.max(60, Math.ceil((Math.min(...changes) - now) / 1000));
     cacheLife({ stale: 30, revalidate: seconds, expire: seconds + 60 });
   } else {
     cacheLife("max");
   }
-  return rows.map((p) => withSalePrice(p, now));
+  return rows.map((p) => withSalePrice(p, now, mass));
 }
 
 export async function getPublishedProducts() {
@@ -69,7 +75,7 @@ export async function getProductBySlug(slug: string) {
     .select()
     .from(product)
     .where(and(eq(product.slug, slug), eq(product.published, true)));
-  return applySales(rows)[0] ?? null;
+  return (await applySales(rows))[0] ?? null;
 }
 
 /** Instrumentales publiées (page /instrumentales), filtrables par recherche et tag. */

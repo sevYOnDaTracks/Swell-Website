@@ -9,6 +9,7 @@ import { sendOrderEmails } from "@/lib/order-emails";
 import { getPaymentOptions, hasPurchased, newOrderReference } from "@/lib/orders";
 import type { PayMethod } from "@/lib/payments";
 import { resolvePromo } from "@/lib/promos";
+import { getMassSale } from "@/lib/mass-sale";
 import { withSalePrice } from "@/lib/shop-format";
 import { syncSubscriptionOrders } from "@/lib/subscriptions";
 import { getCurrentUser, hasConfirmedEmail, requireAdmin, requireUser } from "@/lib/session";
@@ -54,7 +55,8 @@ export async function createOrder(
 
   // Prix relus en base, prix barré en cours compris : c'est le prix payé qui est gardé sur la commande.
   const now = Date.now();
-  const rows = (await db.select().from(product).where(and(inArray(product.id, wanted), eq(product.published, true)))).map((p) => withSalePrice(p, now));
+  const mass = await getMassSale();
+  const rows = (await db.select().from(product).where(and(inArray(product.id, wanted), eq(product.published, true)))).map((p) => withSalePrice(p, now, mass));
   const payable = rows.filter((p) => p.priceCents > 0);
 
   // Gratuits : ceux déjà possédés sont simplement retirés du panier, ceux sans fichier y restent.

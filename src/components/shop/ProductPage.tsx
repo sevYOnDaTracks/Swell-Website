@@ -177,7 +177,8 @@ async function ProductDetail({ slug, site }: { slug: string; site: Site }) {
             </p>
             {product.compareAtCents && (
               <p className="mt-1 text-sm font-medium text-foreground/90">
-                Prix promo{product.saleEndsAt ? ` jusqu'au ${saleEndFormat.format(product.saleEndsAt)}` : ""}
+                {product.saleLabel ?? "Prix promo"}
+                {product.saleEndsAt ? ` jusqu'au ${saleEndFormat.format(product.saleEndsAt)}` : ""}
               </p>
             )}
             {product.installerMacFile || product.installerWinFile ? (
