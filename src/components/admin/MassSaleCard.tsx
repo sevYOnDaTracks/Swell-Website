@@ -107,7 +107,7 @@ export function MassSaleCard({ sale, products, status }: { sale: MassSale; produ
 
       {open && (
         <div className="border-t border-white/10 px-5 py-5">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
             <div className="space-y-5">
               <label className="flex items-center gap-3 text-sm">
                 <Switch checked={d.enabled} onChange={(v) => set("enabled", v)} label="Activer la promo de masse" />
@@ -115,7 +115,7 @@ export function MassSaleCard({ sale, products, status }: { sale: MassSale; produ
                 <span className="text-muted">· elle s&apos;applique entre les dates choisies</span>
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <div>
                   <p className="text-sm font-medium">Remise</p>
                   <div className="mt-1.5 flex gap-2">
@@ -149,7 +149,7 @@ export function MassSaleCard({ sale, products, status }: { sale: MassSale; produ
                 </span>
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="block text-sm">
                   <span className="font-medium">Début</span>
                   <input type="date" value={d.startsAt} onChange={(e) => set("startsAt", e.target.value)} className={`${field} [color-scheme:dark]`} />

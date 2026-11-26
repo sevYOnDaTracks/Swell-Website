@@ -40,7 +40,7 @@ export function PasswordForm() {
         <span className="text-sm font-medium">Mot de passe actuel</span>
         <input name="currentPassword" type="password" required autoComplete="current-password" className={input} />
       </label>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium">Nouveau mot de passe</span>
           <input name="newPassword" type="password" required minLength={8} autoComplete="new-password" className={input} />

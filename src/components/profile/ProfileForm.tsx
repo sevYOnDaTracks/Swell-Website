@@ -73,7 +73,7 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
         </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm font-medium">Nom *</span>
           <input name="name" required minLength={2} maxLength={80} defaultValue={profile.name} autoComplete="name" className={input} />
@@ -84,7 +84,7 @@ export function ProfileForm({ profile }: { profile: ProfileValues }) {
         </label>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
           <span className="text-sm font-medium">Téléphone</span>
           <div className="mt-1.5 flex gap-2">

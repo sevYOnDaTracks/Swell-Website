@@ -88,7 +88,7 @@ async function SubscriptionContent() {
       <section className="border-y border-white/5 bg-surface/40 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="font-condensed text-5xl leading-none tracking-tight uppercase">Comment ça marche</h2>
-          <ol className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
+          <ol className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-3 sm:gap-6">
             {STEPS.map(([title, body], i) => (
               <li key={title} className="border-t border-white/15 pt-5">
                 <p className="font-condensed text-3xl leading-none text-muted tabular-nums">{i + 1}</p>

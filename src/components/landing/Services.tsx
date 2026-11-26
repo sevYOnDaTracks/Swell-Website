@@ -33,7 +33,7 @@ export async function Services() {
           })}
         </div>
 
-        <ol className="mt-16 grid gap-6 sm:grid-cols-3">
+        <ol className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {steps.map((step, i) => (
             <li key={step.title} className="flex gap-4">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 font-mono text-sm text-accent">

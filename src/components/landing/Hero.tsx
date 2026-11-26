@@ -62,7 +62,7 @@ export async function Hero() {
     <>
       {/* Sur grand écran, la hero tient en un seul écran (hauteur de la fenêtre moins le menu). */}
       <section className="relative overflow-hidden lg:flex lg:h-[calc(100svh-4rem)] lg:min-h-[600px] lg:flex-col lg:justify-center">
-          <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 lg:h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-14 lg:py-0">
+          <div className="relative mx-auto grid grid-cols-1 w-full max-w-6xl items-center gap-12 px-4 pt-14 pb-16 sm:px-6 lg:h-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:gap-14 lg:py-0">
             <div>
               <p className="text-sm tracking-wide text-muted">#FAITCHEZSWELL</p>
 

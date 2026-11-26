@@ -40,7 +40,7 @@ export function DirectEmailForm({ userId, name, email, onDone }: { userId: strin
         <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={7} className={`${field} resize-y`} />
         <span className="mt-1 block text-xs text-muted">Une ligne vide sépare les paragraphes.</span>
       </label>
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
         <label className="block text-sm">
           <span className="font-medium">Bouton (facultatif)</span>
           <input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="Voir mes plugins" maxLength={40} className={field} />

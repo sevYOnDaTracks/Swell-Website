@@ -42,7 +42,7 @@ export function ProductionForm({ production }: { production?: ProductionFormValu
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
       {production && <input type="hidden" name="id" value={production.id} />}
 
       <div className="space-y-5 rounded-2xl border border-white/5 bg-surface p-6">
@@ -51,7 +51,7 @@ export function ProductionForm({ production }: { production?: ProductionFormValu
           <input name="title" required maxLength={120} defaultValue={production?.title} placeholder="Nom du titre" className={input} />
         </label>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">Artiste</span>
             <input name="artist" maxLength={120} defaultValue={production?.artist} placeholder="Nom de l'artiste" className={input} />

@@ -117,7 +117,7 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
 
       {adding && (
         <form
-          className="grid gap-3 rounded-2xl border border-white/10 bg-surface p-5 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_1fr_1fr_130px_auto]"
+          className="grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-surface p-5 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_1fr_1fr_130px_auto]"
           onSubmit={(e) => {
             e.preventDefault();
             const form = e.currentTarget;
@@ -295,7 +295,7 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
 
               {editing === u.id && (
                 <form
-                  className="mt-4 grid gap-3 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2"
+                  className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-white/10 bg-background/40 p-4 sm:grid-cols-2"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const data = new FormData(e.currentTarget);
@@ -406,7 +406,7 @@ function GiftForm({
       {products.length === 0 ? (
         <p className="text-sm text-muted">Aucun produit dans la boutique.</p>
       ) : (
-        <ul className="grid gap-1.5 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {products.map((p) => {
             const has = owned.has(p.id);
             return (

@@ -86,7 +86,7 @@ async function SupportContent({ searchParams }: Pick<PageProps<"/support">, "sea
 
         <section className="mx-auto max-w-5xl px-4 sm:px-6">
           <h2 className="text-sm font-medium text-muted">Souvent, la réponse est déjà là</h2>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {QUICK.map(({ Icon, title, text, href }) => (
               <li key={title}>
                 <Link href={href} className="group flex items-start gap-4 rounded-xl border border-white/10 px-4 py-3.5 transition-colors hover:border-white/30">
@@ -102,7 +102,7 @@ async function SupportContent({ searchParams }: Pick<PageProps<"/support">, "sea
           </ul>
         </section>
 
-        <section className="mx-auto grid max-w-5xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <section className="mx-auto grid grid-cols-1 max-w-5xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           <div>
             <h2 className="mb-4 text-xl font-semibold">Écrire au support</h2>
             <SupportForm viewer={user ? { name: user.name, email: user.email } : null} products={products} orders={orderOptions} defaultSubject={defaultSubject} />

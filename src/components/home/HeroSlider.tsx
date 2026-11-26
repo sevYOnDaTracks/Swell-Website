@@ -79,7 +79,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                   <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/75 to-black/10" />
                 </>
               )}
-              <div className="mx-auto grid h-full w-full max-w-6xl items-center gap-10 px-4 pt-10 pb-28 sm:px-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-14 lg:py-0">
+              <div className="mx-auto grid grid-cols-1 h-full w-full max-w-6xl items-center gap-10 px-4 pt-10 pb-28 sm:px-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:gap-14 lg:py-0">
                 <div className="max-w-xl">
                   {s.badge && <p className="inline-flex rounded-full bg-primary px-3 py-1 text-sm font-semibold text-black">{s.badge}</p>}
                   <h2 className="mt-5 font-condensed text-6xl leading-[0.92] tracking-tight text-balance uppercase sm:text-7xl lg:text-[6rem]">{s.title}</h2>

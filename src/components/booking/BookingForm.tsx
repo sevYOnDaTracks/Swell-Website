@@ -72,10 +72,10 @@ export function BookingForm({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-8">
         <Step n={1} title="Service">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {services.map((s) => (
               <button
                 key={s.id}

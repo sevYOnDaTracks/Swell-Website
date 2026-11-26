@@ -39,7 +39,7 @@ async function EmailsContent() {
         <CampaignComposer audiences={audiences} />
       </Card>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Campagnes envoyées">
           {campaigns.length === 0 ? (
             <EmptyState>Aucune campagne pour l&apos;instant.</EmptyState>
