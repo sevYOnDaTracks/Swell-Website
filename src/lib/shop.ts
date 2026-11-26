@@ -85,9 +85,9 @@ export async function getInstrumentals(filters: { q?: string; genre?: string }) 
   return { items, genres, total: all.length };
 }
 
-/** Plugins compris dans l'abonnement Swell All Access : VST publiés et disponibles, sauf ceux retirés dans l'admin. */
-export async function getAllAccessPlugins(excludedProductIds: string[]) {
-  return (await getPublishedProducts()).filter((p) => p.type === "vst" && p.downloadFile && !excludedProductIds.includes(p.id));
+/** VST publiés et disponibles, dans l'ordre du catalogue (plugins que les formules d'abonnement peuvent comprendre). */
+export async function getSubscribablePlugins() {
+  return (await getPublishedProducts()).filter((p) => p.type === "vst" && p.downloadFile);
 }
 
 /** Produits mis en avant sur la page d'accueil (à défaut, les plus récents). */

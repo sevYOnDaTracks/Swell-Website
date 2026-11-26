@@ -4,16 +4,16 @@ import { Crown } from "lucide-react";
 import { Footer } from "@/components/landing/Footer";
 import { Navbar } from "@/components/landing/Navbar";
 import { ProductCard } from "@/components/shop/ProductCard";
-import { SubscribeForm, type Viewer } from "@/components/subscription/SubscribeForm";
+import { SubscribeForm, type FormulaCard, type Viewer } from "@/components/subscription/SubscribeForm";
 import { getPaymentOptions } from "@/lib/orders";
 import { getCurrentUser } from "@/lib/session";
-import { getAllAccessPlugins } from "@/lib/shop";
+import { getSubscribablePlugins } from "@/lib/shop";
 import { formatPrice } from "@/lib/shop-format";
-import { lowestMonthlyCents, SUBSCRIPTION_NAME } from "@/lib/subscription-plans";
+import { formulaIncludes, lowestMonthlyCents, SUBSCRIPTION_NAME, visibleFormulas } from "@/lib/subscription-plans";
 import { getPublicSubscriptionSettings, getSubscription } from "@/lib/subscriptions";
 
 export const metadata = {
-  title: `${SUBSCRIPTION_NAME} — tous les plugins Swell`,
+  title: `${SUBSCRIPTION_NAME} — les plugins Swell en formule prépayée`,
   description: "Tous les plugins Swell avec un seul abonnement prépayé, sans engagement ni prélèvement automatique.",
 };
 
@@ -35,8 +35,12 @@ export default function SubscriptionPage() {
 
 async function SubscriptionContent() {
   const settings = await getPublicSubscriptionSettings();
-  const plugins = await getAllAccessPlugins(settings.excludedProductIds);
-  const fromCents = lowestMonthlyCents(settings);
+  const formulas = visibleFormulas(settings);
+  // Plugins compris dans au moins une formule proposée.
+  const plugins = (await getSubscribablePlugins()).filter((p) => formulas.some((f) => formulaIncludes(f, p.id)));
+  const prices = formulas.flatMap((f) => lowestMonthlyCents(settings, f) ?? []);
+  const fromCents = prices.length ? Math.min(...prices) : null;
+  const everything = formulas.some((f) => f.allPlugins);
 
   return (
     <>
@@ -47,8 +51,8 @@ async function SubscriptionContent() {
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">{SUBSCRIPTION_NAME}</h1>
           <p className="mt-3 max-w-xl text-muted">
-            Tous les plugins Swell avec un seul abonnement{settings.enabled && fromCents ? `, dès ${formatPrice(fromCents)} par mois` : ""}. Prépayé, sans
-            engagement et sans prélèvement automatique.
+            {everything ? "Tous les plugins Swell" : "Les plugins Swell"} avec un abonnement
+            {settings.enabled && fromCents ? `, dès ${formatPrice(fromCents)} par mois` : ""}. Prépayé, sans engagement et sans prélèvement automatique.
           </p>
           {settings.enabled && settings.trialDays > 0 && (
             <p className="mt-4 inline-flex rounded-full border border-white/15 px-3 py-1 text-sm">{settings.trialDays} jours d&apos;essai gratuit</p>
@@ -66,7 +70,10 @@ async function SubscriptionContent() {
             <h2 className="text-xl font-semibold">
               {plugins.length} plugin{plugins.length > 1 ? "s" : ""} compris
             </h2>
-            <p className="mt-1 text-sm text-muted">Et chaque nouveau plugin Swell rejoint l&apos;abonnement dès sa sortie.</p>
+            <p className="mt-1 text-sm text-muted">
+              {formulas.length > 1 ? "Selon la formule choisie." : ""}
+              {everything ? " Chaque nouveau plugin Swell rejoint l'abonnement dès sa sortie." : ""}
+            </p>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
               {plugins.map((p) => (
                 <ProductCard key={p.id} product={{ ...p, id: undefined }} />
@@ -77,7 +84,7 @@ async function SubscriptionContent() {
 
         <section className="mt-14 grid gap-6 text-sm sm:grid-cols-3">
           {[
-            ["Comment ça marche ?", "Tu choisis un pass d'un mois ou d'un an et tu le paies comme une commande (PayPal, Wero, virement, Wave, Orange Money). Dès que le paiement est vérifié, tous les plugins sont dans ton espace avec leur clé."],
+            ["Comment ça marche ?", "Tu choisis une formule et un pass d'un mois ou d'un an, et tu le paies comme une commande (PayPal, Wero, virement, Wave, Orange Money). Dès que le paiement est vérifié, les plugins de ta formule sont dans ton espace avec leur clé."],
             ["Et à la fin du pass ?", "Rien n'est prélevé. Tu reçois un rappel quelques jours avant : prends un nouveau pass et les plugins continuent de marcher, sans rien réinstaller. Sinon, ils s'arrêtent simplement."],
             ["Et si j'achète un plugin ?", "Un plugin acheté à l'unité est à toi pour toujours, abonnement ou pas. Sa clé devient définitive."],
           ].map(([title, body]) => (
@@ -113,9 +120,13 @@ async function SubscribeSection() {
   const sub = user ? await getSubscription(user.id) : null;
   const viewer: Viewer = {
     loggedIn: !!user,
-    state: sub?.state ?? "none",
     trialUsed: sub?.trialUsed ?? false,
-    endsLabel: sub?.endsAt ? longDate.format(sub.endsAt) : null,
+    access: (sub?.formulas ?? []).map((f) => ({ formulaId: f.formulaId, name: f.name, state: f.state, endsLabel: longDate.format(f.endsAt) })),
   };
-  return <SubscribeForm settings={settings} payments={getPaymentOptions()} viewer={viewer} />;
+  const plugins = await getSubscribablePlugins();
+  const formulas: FormulaCard[] = visibleFormulas(settings).map((f) => ({
+    formula: f,
+    pluginNames: plugins.filter((p) => formulaIncludes(f, p.id)).map((p) => p.name),
+  }));
+  return <SubscribeForm settings={settings} formulas={formulas} payments={getPaymentOptions()} viewer={viewer} />;
 }

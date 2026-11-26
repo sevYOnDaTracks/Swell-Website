@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { product } from "@/db/schema";
 import { hasActiveTrial } from "@/lib/licenses";
 import { hasPurchased } from "@/lib/orders";
-import { hasSubscriptionAccess, isInSubscription } from "@/lib/subscriptions";
+import { hasProductAccess } from "@/lib/subscriptions";
 import { openPrivateFile } from "@/lib/private-storage";
 import { getCurrentUser, hasConfirmedEmail } from "@/lib/session";
 
@@ -27,7 +27,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/downloads/[p
     user.role === "admin" ||
     (await hasPurchased(user.id, productId)) ||
     (await hasActiveTrial(user.id, productId)) ||
-    (row.type === "vst" && row.published && (await isInSubscription(row.id)) && (await hasSubscriptionAccess(user.id)));
+    (row.type === "vst" && row.published && (await hasProductAccess(user.id, row.id)));
   if (!allowed) return new Response("Accès refusé", { status: 403 });
   const os = new URL(request.url).searchParams.get("os");
   const choice =

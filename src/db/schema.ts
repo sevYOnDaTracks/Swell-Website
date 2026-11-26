@@ -314,6 +314,8 @@ export const shopOrderItem = sqliteTable(
     priceCents: integer("price_cents").notNull(),
     // Pass d'abonnement (Swell All Access) : nombre de jours d'accès ajoutés quand la commande est payée.
     subscriptionDays: integer("subscription_days"),
+    // Formule de l'abonnement de ce pass (identifiant réglé dans /admin/abonnements).
+    subscriptionFormula: text("subscription_formula"),
   },
   (t) => [index("shop_order_item_order_id_idx").on(t.orderId), index("shop_order_item_product_id_idx").on(t.productId)],
 );
@@ -463,6 +465,8 @@ export const subscriptionPeriod = sqliteTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     kind: text("kind", { enum: subscriptionPeriodKinds }).notNull(),
+    // Formule donnée par cette période (vide = première formule, pour les périodes d'avant les formules).
+    formulaId: text("formula_id"),
     // Commande payée qui a donné cette période (une seule période par commande).
     orderId: text("order_id").references(() => shopOrder.id, { onDelete: "set null" }),
     days: integer("days").notNull(),

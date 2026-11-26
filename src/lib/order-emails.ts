@@ -32,7 +32,12 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
   if (!order) return;
 
   const items = await db
-    .select({ name: shopOrderItem.name, productId: shopOrderItem.productId, subscriptionDays: shopOrderItem.subscriptionDays })
+    .select({
+      name: shopOrderItem.name,
+      productId: shopOrderItem.productId,
+      subscriptionDays: shopOrderItem.subscriptionDays,
+      subscriptionFormula: shopOrderItem.subscriptionFormula,
+    })
     .from(shopOrderItem)
     .where(eq(shopOrderItem.orderId, orderId));
   const subscriptionOnly = items.length > 0 && items.every((i) => i.subscriptionDays);
@@ -52,7 +57,7 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
           `Articles : ${names}. Total : ${total}.`,
           instruction,
           subscriptionOnly
-            ? "Dès que le paiement est vérifié, ton accès à tous les plugins est prolongé et tu reçois un email."
+            ? "Dès que le paiement est vérifié, ton accès est ouvert ou prolongé et tu reçois un email."
             : "Dès que le paiement est vérifié, tes fichiers apparaissent dans ton espace et tu reçois un email.",
         ],
         cta: account,
@@ -118,13 +123,14 @@ export async function sendOrderEmails(orderId: string, event: "created" | "paid"
 
   if (event === "paid" && subscriptionOnly) {
     const sub = await getSubscription(order.userId);
+    const access = sub.formulas.find((f) => f.formulaId === items[0].subscriptionFormula) ?? sub.formulas[0];
     await sendEmail({
       to: order.clientEmail,
-      subject: `${SUBSCRIPTION_NAME} : ton accès est prolongé`,
+      subject: `${SUBSCRIPTION_NAME} ${access?.name ?? ""} : ton accès est prolongé`,
       title: "Ton abonnement est actif",
       paragraphs: [
         order.totalCents === 0 ? "Ta commande est validée." : `Merci ! Ton paiement de ${total} est bien reçu.`,
-        sub.endsAt ? `Tu as accès à tous les plugins Swell jusqu'au ${longDate.format(sub.endsAt)}.` : `${names} est actif.`,
+        access ? `Ta formule ${access.name} est active jusqu'au ${longDate.format(access.endsAt)}.` : `${names} est actif.`,
         "Tes plugins et leurs clés sont dans ton espace. Déjà installés ? Ils se débloquent tout seuls au prochain lancement.",
       ],
       cta: account,
