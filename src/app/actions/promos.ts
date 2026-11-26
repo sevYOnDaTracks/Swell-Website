@@ -5,6 +5,7 @@ import { refresh } from "next/cache";
 import { db } from "@/db";
 import { product, promoCode, promoKinds } from "@/db/schema";
 import { normalizePromoCode, resolvePromo } from "@/lib/promos";
+import { getMassSale } from "@/lib/mass-sale";
 import { withSalePrice } from "@/lib/shop-format";
 import { getCurrentUser, requireAdmin } from "@/lib/session";
 
@@ -13,11 +14,12 @@ export async function checkPromo(rawCode: string, productIds: string[]) {
   const wanted = productIds.filter((id) => typeof id === "string").slice(0, 50);
   const rows = wanted.length
     ? await db
-        .select({ priceCents: product.priceCents, salePriceCents: product.salePriceCents, saleEndsAt: product.saleEndsAt })
+        .select({ id: product.id, type: product.type, priceCents: product.priceCents, salePriceCents: product.salePriceCents, saleEndsAt: product.saleEndsAt })
         .from(product)
         .where(and(inArray(product.id, wanted), eq(product.published, true)))
     : [];
-  const subtotal = rows.reduce((sum, p) => sum + withSalePrice(p).priceCents, 0);
+  const mass = await getMassSale();
+  const subtotal = rows.reduce((sum, p) => sum + withSalePrice(p, Date.now(), mass).priceCents, 0);
   if (subtotal === 0) return { error: "Aucun article payant dans ton panier." };
   const user = await getCurrentUser();
   return resolvePromo(String(rawCode), subtotal, user?.id);

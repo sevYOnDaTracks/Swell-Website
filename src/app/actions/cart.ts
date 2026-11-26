@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { product } from "@/db/schema";
 import { getPaymentOptions as readPaymentOptions } from "@/lib/orders";
+import { getMassSale } from "@/lib/mass-sale";
 import { withSalePrice } from "@/lib/shop-format";
 
 /** Produits du panier, relus en base : prix à jour, produits dépubliés écartés. */
@@ -26,7 +27,8 @@ export async function getCartProducts(ids: string[]) {
     .where(and(inArray(product.id, wanted), eq(product.published, true)));
   // Prix barrés en cours : le panier montre le prix promo et l'ancien prix.
   const now = Date.now();
-  return rows.map((p) => withSalePrice(p, now));
+  const mass = await getMassSale();
+  return rows.map((p) => withSalePrice(p, now, mass));
 }
 
 /** Moyens de paiement ouverts (réglés sur le serveur), pour le panneau du panier. */

@@ -16,7 +16,64 @@ export function formatPrice(cents: number) {
   return cents === 0 ? "Gratuit" : euros.format(cents / 100);
 }
 
-type Priced = { priceCents: number; salePriceCents?: number | null; saleEndsAt?: Date | null };
+type Priced = { priceCents: number; salePriceCents?: number | null; saleEndsAt?: Date | null; id?: string; type?: string };
+
+/**
+ * Promo de masse (Admin → Boutique) : une remise appliquée d'un coup à tous les produits, à des types
+ * ou à une sélection, entre deux dates. Elle ne touche pas aux prix promo produit par produit :
+ * quand les deux existent, le prix le plus bas l'emporte.
+ */
+export type MassSale = {
+  enabled: boolean;
+  // Nom affiché à côté du prix (« Black Friday »), facultatif.
+  label: string;
+  kind: "percent" | "amount";
+  // Pourcentage (1 à 90) ou montant en centimes.
+  value: number;
+  // Prix rond : arrondi au ,49 ou ,99 juste en dessous (3,49 € reste 3,49 € ; 10,63 € → 10,49 € ; 10,40 € → 9,99 €).
+  roundTo99: boolean;
+  scope: "all" | "types" | "products";
+  types: string[];
+  productIds: string[];
+  excludeIds: string[];
+  startsAt: string | null;
+  endsAt: string | null;
+};
+
+export const DEFAULT_MASS_SALE: MassSale = {
+  enabled: false,
+  label: "",
+  kind: "percent",
+  value: 20,
+  roundTo99: true,
+  scope: "all",
+  types: [],
+  productIds: [],
+  excludeIds: [],
+  startsAt: null,
+  endsAt: null,
+};
+
+/** Vrai si la promo de masse court à cet instant (activée, commencée, pas finie). */
+export function massSaleRunning(m: MassSale | null | undefined, now = Date.now()): m is MassSale {
+  return !!m && m.enabled && m.value > 0 && (!m.startsAt || new Date(m.startsAt).getTime() <= now) && (!m.endsAt || new Date(m.endsAt).getTime() > now);
+}
+
+/** Vrai si ce produit est concerné par la promo de masse (quelles que soient ses dates). */
+export const massSaleApplies = (m: MassSale, p: { id?: string; type?: string; priceCents: number }) =>
+  p.priceCents > 0 &&
+  !!p.id &&
+  !m.excludeIds.includes(p.id) &&
+  (m.scope === "all" || (m.scope === "types" && !!p.type && m.types.includes(p.type)) || (m.scope === "products" && m.productIds.includes(p.id)));
+
+/** Prix de ce produit avec la promo de masse (sans regarder les dates), ou null s'il n'est pas concerné. */
+export function massSalePrice(m: MassSale, p: { id?: string; type?: string; priceCents: number }) {
+  if (!massSaleApplies(m, p)) return null;
+  let cents = m.kind === "percent" ? Math.round(p.priceCents * (1 - m.value / 100)) : p.priceCents - m.value;
+  // Jamais plus de 50 centimes de remise en plus.
+  if (m.roundTo99) cents = Math.floor((cents + 1) / 50) * 50 - 1;
+  return cents > 0 && cents < p.priceCents ? cents : null;
+}
 
 /** Vrai si le prix barré du produit est en cours (prix promo plus bas que le prix normal, pas encore terminé). */
 export function isOnSale(p: Priced, now = Date.now()) {
@@ -26,10 +83,20 @@ export function isOnSale(p: Priced, now = Date.now()) {
 /**
  * Prix payé aujourd'hui. priceCents devient le prix réel (promo comprise) et compareAtCents le prix barré.
  * Appliqué partout où un client voit ou paie un prix : catalogue, panier, commande.
+ * Prix promo du produit et promo de masse : le plus bas des deux.
  */
-export function withSalePrice<T extends Priced>(p: T, now = Date.now()) {
-  const sale = isOnSale(p, now);
-  return { ...p, priceCents: sale ? p.salePriceCents! : p.priceCents, compareAtCents: sale ? p.priceCents : null, saleEndsAt: sale ? (p.saleEndsAt ?? null) : null };
+export function withSalePrice<T extends Priced>(p: T, now = Date.now(), mass?: MassSale | null) {
+  const own = isOnSale(p, now) ? { cents: p.salePriceCents!, endsAt: p.saleEndsAt ?? null, label: null as string | null } : null;
+  const massCents = massSaleRunning(mass, now) ? massSalePrice(mass, p) : null;
+  const fromMass = massCents !== null ? { cents: massCents, endsAt: mass!.endsAt ? new Date(mass!.endsAt) : null, label: mass!.label.trim() || null } : null;
+  const best = own && fromMass ? (fromMass.cents < own.cents ? fromMass : own) : (own ?? fromMass);
+  return {
+    ...p,
+    priceCents: best ? best.cents : p.priceCents,
+    compareAtCents: best ? p.priceCents : null,
+    saleEndsAt: best ? best.endsAt : null,
+    saleLabel: best ? best.label : null,
+  };
 }
 
 /** Remise affichée sur un prix barré : « -20 % ». */
