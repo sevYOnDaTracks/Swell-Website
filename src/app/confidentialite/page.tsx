@@ -28,6 +28,11 @@ export default function ConfidentialitePage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>Gérer ton compte, tes réservations et tes achats (exécution du contrat).</li>
           <li>T&apos;envoyer les emails liés à ton compte : confirmations, rappels, mot de passe (exécution du contrat).</li>
+          <li>
+            T&apos;envoyer les nouveautés et les promos Swell : si tu l&apos;as accepté (inscription ou profil), ou si tu es déjà client pour des
+            produits similaires (intérêt légitime). Chaque email contient un lien de désinscription en un clic, et tu peux changer ton choix dans
+            ton profil à tout moment.
+          </li>
           <li>Sécuriser le site et prévenir les abus (intérêt légitime).</li>
           <li>Respecter nos obligations comptables et fiscales (obligation légale).</li>
         </ul>

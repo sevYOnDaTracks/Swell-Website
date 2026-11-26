@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BadgeCheck, Ban, ChevronLeft, ChevronRight, Gift, KeyRound, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { BadgeCheck, Ban, ChevronLeft, ChevronRight, Gift, KeyRound, Mail, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { DirectEmailForm } from "./DirectEmailForm";
 import { giftProducts } from "@/app/actions/orders";
 import { createUserByAdmin, deleteUserByAdmin, sendPasswordLinkToUser, setUserDisabled, updateUserByAdmin } from "@/app/actions/users";
 import { Avatar } from "@/components/dashboard/Avatar";
@@ -38,6 +39,7 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [gifting, setGifting] = useState<string | null>(null);
+  const [mailing, setMailing] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<{ error?: string; ok?: string } | null>(null);
   const [pending, start] = useTransition();
@@ -189,6 +191,19 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
                 <div className="flex shrink-0 items-center">
                   <button
                     type="button"
+                    title="Écrire un email"
+                    aria-label={`Écrire un email à ${u.name}`}
+                    onClick={() => {
+                      setEditing(null);
+                      setGifting(null);
+                      setMailing(mailing === u.id ? null : u.id);
+                    }}
+                    className={iconButton}
+                  >
+                    <Mail size={16} />
+                  </button>
+                  <button
+                    type="button"
                     title="Offrir un produit"
                     aria-label={`Offrir un produit à ${u.name}`}
                     onClick={() => {
@@ -245,6 +260,18 @@ export function UsersManager({ users, currentUserId, products }: { users: AdminU
                   </button>
                 </div>
               </div>
+
+              {mailing === u.id && (
+                <DirectEmailForm
+                  userId={u.id}
+                  name={u.name}
+                  email={u.email}
+                  onDone={(text) => {
+                    setMailing(null);
+                    setMessage({ ok: text });
+                  }}
+                />
+              )}
 
               {gifting === u.id && (
                 <GiftForm

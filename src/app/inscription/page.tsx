@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { AuthShell, Field, FormError, SubmitButton } from "@/components/auth/AuthShell";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { setMyMarketingConsent } from "@/app/actions/marketing";
 import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
 
 export default function SignUpPage() {
@@ -34,6 +35,8 @@ export default function SignUpPage() {
     setPending(false);
 
     if (error) return setError(authErrorMessage(error));
+    // Accord pour les emails de nouveautés et de promos (case décochée par défaut).
+    if (form.get("marketing") === "on") await setMyMarketingConsent(true);
     router.push(nextPath("/compte"));
     router.refresh();
   }
@@ -63,6 +66,10 @@ export default function SignUpPage() {
         <Field label="Email" name="email" type="email" required autoComplete="email" placeholder="toi@exemple.com" />
         <Field label="Mot de passe" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="8 caractères minimum" />
         <Field label="Confirmer le mot de passe" name="confirm" type="password" required minLength={8} autoComplete="new-password" />
+        <label className="flex cursor-pointer items-start gap-2.5 text-sm text-foreground/85">
+          <input type="checkbox" name="marketing" className="mt-0.5 h-4 w-4 shrink-0 accent-white" />
+          <span>Je veux recevoir les nouveautés et les promos Swell par email (désinscription en un clic).</span>
+        </label>
         <FormError message={error} />
         <SubmitButton pending={pending}>Créer mon compte</SubmitButton>
         <p className="text-center text-xs leading-relaxed text-muted">

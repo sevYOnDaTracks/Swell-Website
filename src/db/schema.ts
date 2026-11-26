@@ -25,6 +25,9 @@ export const user = sqliteTable("user", {
   // onboardedAt pour la boutique (swell-audio.fr), mixOnboardedAt pour mix.swell-audio.fr.
   onboardedAt: integer("onboarded_at", { mode: "timestamp_ms" }),
   mixOnboardedAt: integer("mix_onboarded_at", { mode: "timestamp_ms" }),
+  // Emails de nouveautés et de promos : accord donné (inscription ou profil) et désinscription.
+  marketingConsentAt: integer("marketing_consent_at", { mode: "timestamp_ms" }),
+  marketingOptOutAt: integer("marketing_opt_out_at", { mode: "timestamp_ms" }),
   role: text("role").default("user"),
   banned: integer("banned", { mode: "boolean" }).default(false),
   banReason: text("ban_reason"),
@@ -559,4 +562,49 @@ export const supportMessage = sqliteTable(
       .$defaultFn(() => new Date()),
   },
   (t) => [index("support_message_ticket_idx").on(t.ticketId)],
+);
+
+// --- Emails envoyés depuis l'admin (personnels et campagnes) ---------------
+
+export const campaignStatuses = ["sending", "sent"] as const;
+
+export const emailCampaign = sqliteTable("email_campaign", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  subject: text("subject").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  ctaLabel: text("cta_label"),
+  ctaHref: text("cta_href"),
+  // Public choisi (« customers », « product:<id> »...) et son nom lisible au moment de l'envoi.
+  audience: text("audience").notNull(),
+  audienceLabel: text("audience_label").notNull(),
+  status: text("status", { enum: campaignStatuses }).notNull().default("sending"),
+  recipients: integer("recipients").notNull().default(0),
+  sent: integer("sent").notNull().default(0),
+  failed: integer("failed").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
+});
+
+export const emailLog = sqliteTable(
+  "email_log",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    kind: text("kind", { enum: ["direct", "campaign"] }).notNull(),
+    campaignId: text("campaign_id").references(() => emailCampaign.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    email: text("email").notNull(),
+    subject: text("subject").notNull(),
+    ok: integer("ok", { mode: "boolean" }).notNull(),
+    sentAt: integer("sent_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [index("email_log_user_idx").on(t.userId), index("email_log_campaign_idx").on(t.campaignId)],
 );

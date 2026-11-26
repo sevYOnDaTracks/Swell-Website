@@ -11,6 +11,7 @@ import {
   Gauge,
   Headset,
   KeyRound,
+  Mail,
   Megaphone,
   Menu,
   PanelLeftClose,
@@ -66,6 +67,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: "Clients",
     items: [
       { href: "/admin/support", label: "Support", Icon: Headset, count: "support" },
+      { href: "/admin/emails", label: "Emails", Icon: Mail },
       { href: "/admin/utilisateurs", label: "Utilisateurs", Icon: Users },
     ],
   },
